@@ -7,6 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="logo.svg">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="auth.css">
+
     <style>
         .password-wrapper {
             position: relative;
@@ -17,218 +18,175 @@
             position: absolute;
             left: 10px;
             cursor: pointer;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
             background: none;
             border: none;
-            padding: 5px;
         }
-        .password-toggle svg {
-            width: 20px;
-            height: 20px;
-        }
-        input[type="password"], input[type="text"] {
+        input[type="password"],
+        input[type="text"] {
             width: 100%;
-            padding-left: 40px; /* مساحة للأيقونة */
+            padding-left: 40px;
         }
     </style>
+
     <script>
-        (function() {
+        (function () {
             try {
-                var theme = localStorage.getItem('theme-preference') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                const theme =
+                    localStorage.getItem('theme-preference') ||
+                    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
                 document.documentElement.setAttribute('data-theme', theme);
-            } catch(e) {
+            } catch {
                 document.documentElement.setAttribute('data-theme', 'light');
             }
         })();
     </script>
+
     <script src="theme-manager.js" defer></script>
 </head>
+
 <body class="auth-wrapper">
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <img src="logo.svg" alt="Logo" class="logo-image">
-                <span>منصة مدعوم</span>
-            </div>
-            <ul class="nav-menu">
-                <li><a href="index.html">الرئيسية</a></li>
-                <li><a href="sign-in.html">تسجيل الدخول</a></li>
-                <li><a href="sign-up.html">حساب جديد</a></li>
-            </ul>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="nav-logo">
+            <img src="logo.svg" alt="Logo" class="logo-image">
+            <span>منصة مدعوم</span>
         </div>
-    </nav>
+        <ul class="nav-menu">
+            <li><a href="index.html">الرئيسية</a></li>
+            <li><a href="sign-in.html">تسجيل الدخول</a></li>
+            <li><a href="sign-up.html">حساب جديد</a></li>
+        </ul>
+    </div>
+</nav>
 
-    <main class="auth-container">
-        <section class="auth-card">
-            <h1>تسجيل الدخول</h1>
-            <p class="auth-subtitle">سجل دخولك للوصول إلى لوحة التحكم الخاصة بك</p>
+<main class="auth-container">
+    <section class="auth-card">
+        <h1>تسجيل الدخول</h1>
+        <p class="auth-subtitle">سجل دخولك للوصول إلى لوحة التحكم الخاصة بك</p>
 
-            <div id="successMessage" class="message-box message-success" style="display: none;">
-                <p>تم تسجيل الدخول بنجاح! جاري التحويل...</p>
+        <div id="successMessage" class="message-box message-success" style="display:none;">
+            تم تسجيل الدخول بنجاح! جاري التحويل...
+        </div>
+
+        <div id="errorMessage" class="message-box message-error" style="display:none;">
+            <span id="errorText"></span>
+        </div>
+
+        <button id="resendEmailBtn"
+                class="btn btn-secondary"
+                style="display:none;margin-top:10px;">
+            إعادة إرسال رسالة تأكيد البريد الإلكتروني
+        </button>
+
+        <form id="signInForm">
+            <div class="form-group">
+                <label>البريد الإلكتروني</label>
+                <input type="email" id="email" required>
             </div>
 
-            <div id="errorMessage" class="message-box message-error" style="display: none;">
-                <p id="errorText"></p>
+            <div class="form-group">
+                <label>كلمة المرور</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" required minlength="8">
+                    <button type="button" id="togglePassword">👁️</button>
+                </div>
             </div>
-<button id="resendEmailBtn"
-        class="btn btn-secondary"
-        style="display:none; margin-top:10px;">
-    إعادة إرسال رسالة تأكيد البريد الإلكتروني
-</button>
-            <form id="signInForm">
-                <div class="form-group">
-                    <label for="email">البريد الإلكتروني</label>
-                    <input type="email" id="email" placeholder="أدخل بريدك الإلكتروني" required>
-                </div>
-                <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <label for="password">كلمة المرور</label>
-                        <a href="forgot-password.html" style="font-size: 0.85rem; color: var(--primary-color); text-decoration: none;">نسيت كلمة المرور؟</a>
-                    </div>
-                    <div class="password-wrapper">
-                        <input type="password" id="password" placeholder="••••••••" required minlength="8">
-                        <button type="button" class="password-toggle" id="togglePassword" aria-label="إظهار كلمة المرور">
-                            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="auth-actions">
-                    <button type="submit" class="btn btn-primary" id="loginBtn">
-                        <span id="loginBtnText">تسجيل الدخول</span>
-                        <span id="loginBtnLoader" style="display: none;">جاري التحقق...</span>
-                    </button>
-                </div>
-            </form>
-            <p class="auth-footer-text">لا تملك حساباً؟ <a href="sign-up.html">أنشئ حساباً جديداً</a></p>
-        </section>
-    </main>
 
-    <script type="module">
-        import { signIn, getCurrentUser } from './auth-client.js';
-        import { supabase } from './api-config.js';
-        const form = document.getElementById('signInForm');
-        const submitBtn = document.getElementById('loginBtn');
-        const btnText = document.getElementById('loginBtnText');
-        const btnLoader = document.getElementById('loginBtnLoader');
-        const errorMessage = document.getElementById('errorMessage');
-        const errorText = document.getElementById('errorText');
-        const successMessage = document.getElementById('successMessage');
-        const passwordInput = document.getElementById('password');
-        const togglePassword = document.getElementById('togglePassword');
-        const resendBtn = document.getElementById('resendEmailBtn');
+            <button class="btn btn-primary" id="loginBtn" type="submit">
+                <span id="loginBtnText">تسجيل الدخول</span>
+                <span id="loginBtnLoader" style="display:none;">جاري التحقق...</span>
+            </button>
+        </form>
+    </section>
+</main>
 
-        // ميزة إظهار كلمة المرور
-        togglePassword.addEventListener('click', () => {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            // تغيير الأيقونة
-            if (type === 'text') {
-                togglePassword.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
-            } else {
-                togglePassword.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
-            }
-        });
+<script type="module">
+import { signIn, getCurrentUser } from './auth-client.js';
+import { supabase } from './api-config.js';
 
-        function setLoading(isLoading) {
-            submitBtn.disabled = isLoading;
-            btnText.style.display = isLoading ? 'none' : 'inline';
-            btnLoader.style.display = isLoading ? 'inline' : 'none';
-        }
+const form = document.getElementById('signInForm');
+const submitBtn = document.getElementById('loginBtn');
+const btnText = document.getElementById('loginBtnText');
+const btnLoader = document.getElementById('loginBtnLoader');
+const errorMessage = document.getElementById('errorMessage');
+const errorText = document.getElementById('errorText');
+const successMessage = document.getElementById('successMessage');
+const resendBtn = document.getElementById('resendEmailBtn');
+const togglePassword = document.getElementById('togglePassword');
+const passwordInput = document.getElementById('password');
 
-       form.addEventListener('submit', async (e) => {
+let isLoggingIn = false;
+
+togglePassword.onclick = () => {
+    passwordInput.type =
+        passwordInput.type === 'password' ? 'text' : 'password';
+};
+
+function setLoading(state) {
+    submitBtn.disabled = state;
+    btnText.style.display = state ? 'none' : 'inline';
+    btnLoader.style.display = state ? 'inline' : 'none';
+}
+
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    isLoggingIn = true;
+
     setLoading(true);
     errorMessage.style.display = 'none';
     resendBtn.style.display = 'none';
 
     const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    const password = passwordInput.value;
 
     try {
-        const { data, error } = await signIn(email, password);
+        const { error } = await signIn(email, password);
         if (error) throw error;
 
         successMessage.style.display = 'block';
 
         let user = await getCurrentUser();
-
-        if (!user || !user.profile) {
-            await new Promise(r => setTimeout(r, 1500));
+        if (!user?.profile) {
+            await new Promise(r => setTimeout(r, 1200));
             user = await getCurrentUser();
         }
 
-        if (user && user.profile) {
-            window.location.replace(
-                user.profile.role === 'admin'
-                    ? 'admin-dashboard.html'
-                    : 'customer-dashboard.html'
-            );
-        } else {
-            window.location.replace('customer-dashboard.html');
-        }
+        window.location.replace(
+            user?.profile?.role === 'admin'
+                ? 'admin-dashboard.html'
+                : 'customer-dashboard.html'
+        );
 
     } catch (err) {
-        console.log('AUTH ERROR >>>', err);
-
-        errorMessage.style.display = 'block';
+        isLoggingIn = false;
         setLoading(false);
+        errorMessage.style.display = 'block';
 
-        if (
-            err.message === 'Email not confirmed' ||
-            err.message?.toLowerCase().includes('confirm') ||
-            err.message?.toLowerCase().includes('verify')
-        ) {
-            errorText.textContent =
-                'بريدك الإلكتروني غير مفعل. من فضلك فعّل الحساب من خلال الإيميل.';
-
+        if (err.message?.toLowerCase().includes('confirm')) {
+            errorText.textContent = 'بريدك الإلكتروني غير مفعل.';
             resendBtn.style.display = 'block';
 
             resendBtn.onclick = async () => {
                 resendBtn.disabled = true;
-                resendBtn.textContent = 'جاري إرسال رسالة التأكيد...';
-
-                const { error } = await supabase.auth.resend({
-                    type: 'signup',
-                    email
-                });
-
-                if (error) {
-                    resendBtn.disabled = false;
-                    resendBtn.textContent = 'فشل الإرسال، حاول مرة أخرى';
-                } else {
-                    resendBtn.textContent = 'تم إرسال رسالة التأكيد 📩';
-                }
+                resendBtn.textContent = 'جاري الإرسال...';
+                await supabase.auth.resend({ type: 'signup', email });
+                resendBtn.textContent = 'تم الإرسال 📩';
             };
 
         } else if (err.message === 'Invalid login credentials') {
-            errorText.textContent =
-                'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+            errorText.textContent = 'بيانات الدخول غير صحيحة.';
         } else {
-            errorText.textContent =
-                'فشل تسجيل الدخول. حاول مرة أخرى.';
+            errorText.textContent = 'حدث خطأ، حاول مرة أخرى.';
         }
     }
 });
 
-
-        // التحقق إذا كان مسجل دخول بالفعل
-      // منع اللوب
-let isLoggingIn = false;
-
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    isLoggingIn = true;
-    // باقي الكود زي ما هو
-});
-// التحقق إذا كان مسجل دخول بالفعل (لو مش في عملية Login)
+// Redirect لو مسجل دخول مسبقًا
 (async () => {
     if (isLoggingIn) return;
-
     const user = await getCurrentUser();
-    if (user && user.profile) {
+    if (user?.profile) {
         window.location.replace(
             user.profile.role === 'admin'
                 ? 'admin-dashboard.html'
@@ -236,7 +194,7 @@ form.addEventListener('submit', async (e) => {
         );
     }
 })();
+</script>
 
-    </script>
 </body>
 </html>
