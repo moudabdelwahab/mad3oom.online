@@ -173,6 +173,7 @@
         const user = await requireAuth('admin');
         if (!user) {
             window.location.replace('sign-in.html');
+            return;
         }
 
         // 2. عرض البيانات

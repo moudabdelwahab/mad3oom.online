@@ -169,7 +169,10 @@
 
         // 1. حماية الصفحة
         const user = await requireAuth('customer');
-       
+        if (!user) {
+            window.location.replace('sign-in.html');
+            return;
+        }
 
         // 2. عرض البيانات الأساسية
         const displayName = user.profile?.full_name || user.email;

@@ -42,9 +42,8 @@ export async function signUp(email, password) {
 /**
  * تسجيل الخروج
  */
-    // مسح أي بيانات مخزنة محلياً قد تتعلق بالجلسة
- export async function logout() {
-  return await supabase.auth.signOut();
+export async function logout() {
+    return await supabase.auth.signOut();
 }
 
 
@@ -70,27 +69,39 @@ export async function getCurrentUser() {
 }
 
 /**
+ * وظيفة بديلة لـ getCurrentUser تستخدم في index.html
+ */
+export async function currentSession() {
+    return await getCurrentUser();
+}
+
+/**
  * حماية الصفحات بناءً على الدور (Role) المسترجع من قاعدة البيانات
  */
-const result = await requireAuth('user');
+export async function requireAuth(requiredRole = 'user') {
+    const user = await getCurrentUser();
 
-if (result?.error === 'UNAUTHENTICATED') {
-  window.location.replace('sign-in.html');
-  return;
+    if (!user) {
+        return null;
+    }
+
+    const userRole = user.profile?.role || 'customer';
+
+    // إذا كان المطلوب 'admin' والمستخدم ليس 'admin'
+    if (requiredRole === 'admin' && userRole !== 'admin') {
+        window.location.replace('customer-dashboard.html');
+        return null;
+    }
+
+    // إذا كان المطلوب 'customer' والمستخدم 'admin' (اختياري: يمكن للأدمن دخول لوحة العميل)
+    if (requiredRole === 'customer' && userRole === 'admin') {
+        // نترك الخيار للأدمن أو نوجهه للوحة الإدارة
+        // window.location.replace('admin-dashboard.html');
+        // return null;
+    }
+
+    return user;
 }
-
-if (result?.error === 'FORBIDDEN') {
-  window.location.replace(
-    result.role === 'admin'
-      ? 'admin-dashboard.html'
-      : 'customer-dashboard.html'
-  );
-  return;
-}
-
-const user = result.user;
-
-
 
 /**
  * تحديث بيانات البروفايل
