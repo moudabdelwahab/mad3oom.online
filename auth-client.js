@@ -4,14 +4,26 @@ import { supabase } from './api-config.js';
  * تسجيل الدخول باستخدام البريد الإلكتروني وكلمة المرور
  */
 export async function signIn(email, password) {
-    console.log('Attempting sign in for:', email);
     const result = await supabase.auth.signInWithPassword({
         email,
         password
     });
-    if (result.error) console.error('Sign in error details:', result.error);
+
+    if (result.error) return result;
+
+    // ⛔ منع الدخول لو الإيميل مش متفعل
+    if (!result.data.user.email_confirmed_at) {
+        // تسجيل الخروج عشان نكسر أي Session مؤقت
+        await supabase.auth.signOut();
+        return {
+            data: null,
+            error: { message: 'Email not confirmed' }
+        };
+    }
+
     return result;
 }
+
 
 /**
  * إنشاء حساب جديد
