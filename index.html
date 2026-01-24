@@ -488,16 +488,17 @@
             if (signUpLink) signUpLink.style.display = 'none';
             if (signOutLink) {
                 signOutLink.style.display = 'inline-block';
-                signOutLink.onclick = async (event) => {
+                signOutLink.addEventListener('click', async (event) => {
                     event.preventDefault();
                     event.stopPropagation();
                     try {
                         await logout();
+                        window.location.href = 'sign-in.html';
                     } catch (err) {
                         console.error('Logout error:', err);
+                        window.location.href = 'sign-in.html';
                     }
-                    window.location.replace('sign-in.html');
-                };
+                });
             }
             // Show restricted navigation and pages
             restrictedNavs.forEach(nav => nav.style.display = 'inline-block');

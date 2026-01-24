@@ -244,17 +244,17 @@
         // 5. تسجيل الخروج
         const signOutBtn = document.getElementById('signOutLink');
         if (signOutBtn) {
-            signOutBtn.onclick = async (e) => {
+            signOutBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 try {
                     await logout();
+                    window.location.href = 'sign-in.html';
                 } catch (err) {
                     console.error('Logout error:', err);
-                } finally {
-                    window.location.replace('sign-in.html');
+                    window.location.href = 'sign-in.html';
                 }
-            };
+            });
         }
 
         // 6. تحميل التذاكر والإحصائيات (نفس المنطق السابق)
