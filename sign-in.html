@@ -18,8 +18,17 @@
             position: absolute;
             left: 10px;
             cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background: none;
             border: none;
+            padding: 5px;
+        }
+        .password-toggle svg {
+            width: 20px;
+            height: 20px;
         }
         input[type="password"],
         input[type="text"] {
@@ -31,11 +40,11 @@
     <script>
         (function () {
             try {
-                const theme =
+                var theme =
                     localStorage.getItem('theme-preference') ||
                     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
                 document.documentElement.setAttribute('data-theme', theme);
-            } catch {
+            } catch (e) {
                 document.documentElement.setAttribute('data-theme', 'light');
             }
         })();
@@ -66,38 +75,60 @@
         <p class="auth-subtitle">سجل دخولك للوصول إلى لوحة التحكم الخاصة بك</p>
 
         <div id="successMessage" class="message-box message-success" style="display:none;">
-            تم تسجيل الدخول بنجاح! جاري التحويل...
+            <p>تم تسجيل الدخول بنجاح! جاري التحويل...</p>
         </div>
 
         <div id="errorMessage" class="message-box message-error" style="display:none;">
-            <span id="errorText"></span>
+            <p id="errorText"></p>
         </div>
 
         <button id="resendEmailBtn"
                 class="btn btn-secondary"
-                style="display:none;margin-top:10px;">
+                style="display:none; margin-top:10px;">
             إعادة إرسال رسالة تأكيد البريد الإلكتروني
         </button>
 
         <form id="signInForm">
             <div class="form-group">
-                <label>البريد الإلكتروني</label>
-                <input type="email" id="email" required>
+                <label for="email">البريد الإلكتروني</label>
+                <input type="email" id="email" placeholder="أدخل بريدك الإلكتروني" required>
             </div>
 
             <div class="form-group">
-                <label>كلمة المرور</label>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <label for="password">كلمة المرور</label>
+                    <a href="forgot-password.html"
+                       style="font-size:.85rem;color:var(--primary-color);text-decoration:none;">
+                        نسيت كلمة المرور؟
+                    </a>
+                </div>
+
                 <div class="password-wrapper">
-                    <input type="password" id="password" required minlength="8">
-                    <button type="button" id="togglePassword">👁️</button>
+                    <input type="password" id="password" placeholder="••••••••" required minlength="8">
+                    <button type="button"
+                            class="password-toggle"
+                            id="togglePassword"
+                            aria-label="إظهار كلمة المرور">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
-            <button class="btn btn-primary" id="loginBtn" type="submit">
-                <span id="loginBtnText">تسجيل الدخول</span>
-                <span id="loginBtnLoader" style="display:none;">جاري التحقق...</span>
-            </button>
+            <div class="auth-actions">
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    <span id="loginBtnText">تسجيل الدخول</span>
+                    <span id="loginBtnLoader" style="display:none;">جاري التحقق...</span>
+                </button>
+            </div>
         </form>
+
+        <p class="auth-footer-text">
+            لا تملك حساباً؟ <a href="sign-up.html">أنشئ حساباً جديداً</a>
+        </p>
     </section>
 </main>
 
@@ -112,16 +143,17 @@ const btnLoader = document.getElementById('loginBtnLoader');
 const errorMessage = document.getElementById('errorMessage');
 const errorText = document.getElementById('errorText');
 const successMessage = document.getElementById('successMessage');
-const resendBtn = document.getElementById('resendEmailBtn');
-const togglePassword = document.getElementById('togglePassword');
 const passwordInput = document.getElementById('password');
+const togglePassword = document.getElementById('togglePassword');
+const resendBtn = document.getElementById('resendEmailBtn');
 
 let isLoggingIn = false;
 
-togglePassword.onclick = () => {
+// إظهار / إخفاء كلمة المرور
+togglePassword.addEventListener('click', () => {
     passwordInput.type =
         passwordInput.type === 'password' ? 'text' : 'password';
-};
+});
 
 function setLoading(state) {
     submitBtn.disabled = state;
@@ -129,6 +161,7 @@ function setLoading(state) {
     btnLoader.style.display = state ? 'inline' : 'none';
 }
 
+// تسجيل الدخول
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
     isLoggingIn = true;
@@ -147,8 +180,8 @@ form.addEventListener('submit', async (e) => {
         successMessage.style.display = 'block';
 
         let user = await getCurrentUser();
-        if (!user?.profile) {
-            await new Promise(r => setTimeout(r, 1200));
+        if (!user || !user.profile) {
+            await new Promise(r => setTimeout(r, 1500));
             user = await getCurrentUser();
         }
 
@@ -163,21 +196,26 @@ form.addEventListener('submit', async (e) => {
         setLoading(false);
         errorMessage.style.display = 'block';
 
-        if (err.message?.toLowerCase().includes('confirm')) {
-            errorText.textContent = 'بريدك الإلكتروني غير مفعل.';
+        if (
+            err.message === 'Email not confirmed' ||
+            err.message?.toLowerCase().includes('confirm') ||
+            err.message?.toLowerCase().includes('verify')
+        ) {
+            errorText.textContent =
+                'بريدك الإلكتروني غير مفعل. من فضلك فعّل الحساب من خلال الإيميل.';
             resendBtn.style.display = 'block';
 
             resendBtn.onclick = async () => {
                 resendBtn.disabled = true;
-                resendBtn.textContent = 'جاري الإرسال...';
+                resendBtn.textContent = 'جاري إرسال رسالة التأكيد...';
                 await supabase.auth.resend({ type: 'signup', email });
-                resendBtn.textContent = 'تم الإرسال 📩';
+                resendBtn.textContent = 'تم إرسال رسالة التأكيد 📩';
             };
 
         } else if (err.message === 'Invalid login credentials') {
-            errorText.textContent = 'بيانات الدخول غير صحيحة.';
+            errorText.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
         } else {
-            errorText.textContent = 'حدث خطأ، حاول مرة أخرى.';
+            errorText.textContent = 'فشل تسجيل الدخول. حاول مرة أخرى.';
         }
     }
 });
