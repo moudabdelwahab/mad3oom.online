@@ -245,17 +245,17 @@
         // 5. تسجيل الخروج
         const signOutBtn = document.getElementById('signOutLink');
         if (signOutBtn) {
-            signOutBtn.addEventListener('click', async (e) => {
+            signOutBtn.onclick = async (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 try {
                     await logout();
                 } catch (err) {
                     console.error('Logout error:', err);
                 } finally {
-                    // دائماً نوجه المستخدم لصفحة تسجيل الدخول حتى لو فشل الـ API
                     window.location.replace('sign-in.html');
                 }
-            });
+            };
         }
 
         // 6. تحميل وإدارة التذاكر
