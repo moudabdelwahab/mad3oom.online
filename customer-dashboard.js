@@ -10,7 +10,7 @@ import {
 
     /* ================= AUTH ================= */
 
-    const session = await requireAuth('customer');
+    const session = await requireAuth('user');
     if (!session) return;
 
     const welcomeEl = document.getElementById('welcomeUser');
@@ -108,4 +108,4 @@ function bindCreateTicket() {
         await renderTickets();
     });
 }
-const session = await requireAuth('customer');
+const session = await requireAuth('user');
