@@ -108,4 +108,3 @@ function bindCreateTicket() {
         await renderTickets();
     });
 }
-const session = await requireAuth('user');
