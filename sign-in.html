@@ -138,76 +138,81 @@
             btnLoader.style.display = isLoading ? 'inline' : 'none';
         }
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            setLoading(true);
-            errorMessage.style.display = 'none';
+       form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    errorMessage.style.display = 'none';
+    resendBtn.style.display = 'none';
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-            try {
-                const { data, error } = await signIn(email, password);
-                if (error) throw error;
+    try {
+        const { data, error } = await signIn(email, password);
+        if (error) throw error;
 
-                successMessage.style.display = 'block';
-                
-                // الحصول على بيانات المستخدم والدور من البروفايل
-                let user = await getCurrentUser();
-                
-                // محاولة التأكد من وجود البروفايل (في حال تأخر الـ Trigger)
-                if (!user || !user.profile) {
-                    await new Promise(r => setTimeout(r, 1500));
-                    user = await getCurrentUser();
-                }
+        successMessage.style.display = 'block';
 
-                if (user && user.profile) {
-                    if (user.profile.role === 'admin') {
-                        window.location.replace('admin-dashboard.html');
-                    } else {
-                        window.location.replace('customer-dashboard.html');
-                    }
+        let user = await getCurrentUser();
+
+        if (!user || !user.profile) {
+            await new Promise(r => setTimeout(r, 1500));
+            user = await getCurrentUser();
+        }
+
+        if (user && user.profile) {
+            window.location.replace(
+                user.profile.role === 'admin'
+                    ? 'admin-dashboard.html'
+                    : 'customer-dashboard.html'
+            );
+        } else {
+            window.location.replace('customer-dashboard.html');
+        }
+
+    } catch (err) {
+        console.log('AUTH ERROR >>>', err);
+
+        errorMessage.style.display = 'block';
+        setLoading(false);
+
+        if (
+            err.message === 'Email not confirmed' ||
+            err.message?.toLowerCase().includes('confirm') ||
+            err.message?.toLowerCase().includes('verify')
+        ) {
+            errorText.textContent =
+                'بريدك الإلكتروني غير مفعل. من فضلك فعّل الحساب من خلال الإيميل.';
+
+            resendBtn.style.display = 'block';
+
+            resendBtn.onclick = async () => {
+                resendBtn.disabled = true;
+                resendBtn.textContent = 'جاري إرسال رسالة التأكيد...';
+
+                const { error } = await supabase.auth.resend({
+                    type: 'signup',
+                    email
+                });
+
+                if (error) {
+                    resendBtn.disabled = false;
+                    resendBtn.textContent = 'فشل الإرسال، حاول مرة أخرى';
                 } else {
-                    window.location.replace('customer-dashboard.html');
+                    resendBtn.textContent = 'تم إرسال رسالة التأكيد 📩';
                 }
-} catch (err) {
-    errorMessage.style.display = 'block';
-    setLoading(false);
+            };
 
-    // ❌ إيميل مش متفعل
-    if (err.message === 'Email not confirmed') {
-        errorText.textContent = 'بريدك الإلكتروني غير مفعل. من فضلك فعّل الحساب من خلال الإيميل.';
-        resendBtn.style.display = 'block';
-
-        resendBtn.onclick = async () => {
-            resendBtn.disabled = true;
-            resendBtn.textContent = 'جاري إرسال رسالة التأكيد...';
-
-            const { error } = await supabase.auth.resend({
-                type: 'signup',
-                email: email
-            });
-
-            if (error) {
-                resendBtn.disabled = false;
-                resendBtn.textContent = 'فشل الإرسال، حاول مرة أخرى';
-            } else {
-                resendBtn.textContent = 'تم إرسال رسالة التأكيد 📩';
-            }
-        };
-
+        } else if (err.message === 'Invalid login credentials') {
+            errorText.textContent =
+                'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+        } else {
+            errorText.textContent =
+                'فشل تسجيل الدخول. حاول مرة أخرى.';
+        }
     }
-    // ❌ بيانات غلط
-    else if (err.message === 'Invalid login credentials') {
-        errorText.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
-        resendBtn.style.display = 'none';
-    }
-    // ❌ أي خطأ تاني
-    else {
-        errorText.textContent = 'فشل تسجيل الدخول. حاول مرة أخرى.';
-        resendBtn.style.display = 'none';
-    }
-}
+});
+
 
         // التحقق إذا كان مسجل دخول بالفعل
         (async () => {
