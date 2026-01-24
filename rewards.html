@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO Meta Tags -->
+    <title>نظام المكافآت - منصة مدعوم</title>
+    <meta name="description" content="نظام المكافآت والنقاط لمنصة مدعوم - اجمع النقاط من خلال الإبلاغ عن المشاكل واستمتع بالمزايا الحصرية">
+    <meta property="og:title" content="نظام المكافآت - منصة مدعوم">
+    <meta property="og:description" content="نظام المكافآت والنقاط لمنصة مدعوم">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://mad3oom.online/logo.svg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="نظام المكافآت - منصة مدعوم">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="alternate icon" href="logo.svg">
+    <!-- Theme script must load BEFORE CSS to prevent FOUC -->
+    <script>
+        // Inline theme initialization - runs immediately before page render
+        (function() {
+            try {
+                var theme = 'light';
+                if (typeof Storage !== 'undefined' && window.localStorage) {
+                    var stored = localStorage.getItem('theme-preference');
+                    if (stored === 'light' || stored === 'dark') {
+                        theme = stored;
+                    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        theme = 'dark';
+                    }
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    theme = 'dark';
+                }
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch(e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="rewards-styles.css">
+    <script src="theme-manager.js" defer></script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="logo.svg" alt="Logo" class="logo-image" style="width: 40px; height: 40px; margin-left: 0.5rem;">
+                <span>منصة مدعوم</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button class="theme-toggle" aria-label="Toggle theme" title="تبديل الوضع الليلي/النهاري">
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html">الرئيسية</a></li>
+                <li><a href="#wallet">محفظتي</a></li>
+                <li><a href="#report">الإبلاغ عن مشكلة</a></li>
+                <li><a href="#history">السجل</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1 class="hero-title">نظام المكافآت والنقاط</h1>
+            <p class="hero-subtitle">اجمع النقاط من خلال الإبلاغ عن المشاكل واستمتع بالمزايا الحصرية</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Wallet Section (Restricted) -->
+        <section id="wallet" class="wallet-section restricted-section" style="display: none;">
+            <h2 class="section-title">محفظتي</h2>
+            
+            <div class="wallet-grid">
+                <!-- Points Card -->
+                <div class="wallet-card points-card">
+                    <div class="card-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 6v12"></path>
+                            <path d="M9 9h6"></path>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3>إجمالي النقاط</h3>
+                        <div class="points-display" id="totalPoints">0</div>
+                        <p class="card-subtitle">نقطة متراكمة</p>
+                    </div>
+                </div>
+
+                <!-- Available Points Card -->
+                <div class="wallet-card available-card">
+                    <div class="card-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"></path>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3>النقاط المتاحة</h3>
+                        <div class="points-display" id="availablePoints">0</div>
+                        <p class="card-subtitle">جاهزة للاستخدام</p>
+                    </div>
+                </div>
+
+                <!-- Pending Points Card -->
+                <div class="wallet-card pending-card">
+                    <div class="card-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3>النقاط قيد المراجعة</h3>
+                        <div class="points-display" id="pendingPoints">0</div>
+                        <p class="card-subtitle">في انتظار الموافقة</p>
+                    </div>
+                </div>
+
+                <!-- Level Card -->
+                <div class="wallet-card level-card">
+                    <div class="card-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3>مستوى العضوية</h3>
+                        <div class="level-display" id="memberLevel">عضو جديد</div>
+                        <p class="card-subtitle">حسب عدد النقاط</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-section">
+                <h3>تقدمك نحو المستوى التالي</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="levelProgress" style="width: 0%"></div>
+                </div>
+                <p class="progress-text">
+                    <span id="currentLevelPoints">0</span> / <span id="nextLevelPoints">100</span> نقطة
+                </p>
+            </div>
+        </section>
+
+        <!-- Report Problem Section -->
+        <section id="report" class="report-section">
+            <h2 class="section-title">الإبلاغ عن مشكلة</h2>
+            <p class="section-subtitle">ساعدنا في تحسين الخدمة من خلال الإبلاغ عن المشاكل والأعطال</p>
+
+            <div class="report-container">
+                <form id="reportForm" onsubmit="submitReport(event)" class="report-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="problemType">نوع المشكلة *</label>
+                            <select id="problemType" name="problemType" required onchange="updatePointsEstimate()">
+                                <option value="">اختر نوع المشكلة</option>
+                                <option value="bug">خطأ برمجي (Bug)</option>
+                                <option value="performance">مشكلة في الأداء</option>
+                                <option value="ui">مشكلة في الواجهة</option>
+                                <option value="security">مشكلة أمان</option>
+                                <option value="feature">اقتراح ميزة جديدة</option>
+                                <option value="other">أخرى</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="severity">درجة الخطورة *</label>
+                            <select id="severity" name="severity" required onchange="updatePointsEstimate()">
+                                <option value="">اختر درجة الخطورة</option>
+                                <option value="low">منخفضة (10 نقاط)</option>
+                                <option value="medium">متوسطة (25 نقطة)</option>
+                                <option value="high">عالية (50 نقطة)</option>
+                                <option value="critical">حرجة (100 نقطة)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="title">عنوان المشكلة *</label>
+                        <input 
+                            type="text" 
+                            id="title" 
+                            name="title" 
+                            required 
+                            placeholder="اكتب عنواناً واضحاً للمشكلة"
+                        >
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="description">وصف تفصيلي للمشكلة *</label>
+                        <textarea 
+                            id="description" 
+                            name="description" 
+                            rows="6" 
+                            required 
+                            placeholder="اشرح المشكلة بالتفصيل، الخطوات المؤدية إليها، والتأثير المتوقع..."
+                        ></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">بريدك الإلكتروني *</label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                required 
+                                placeholder="أدخل بريدك الإلكتروني"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">رقم هاتفك (اختياري)</label>
+                            <input 
+                                type="tel" 
+                                id="phone" 
+                                name="phone" 
+                                placeholder="—"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="attachment">إرفاق صورة أو ملف (اختياري)</label>
+                        <input 
+                            type="file" 
+                            id="attachment" 
+                            name="attachment" 
+                            accept="image/*,.pdf"
+                        >
+                        <small>الملفات المدعومة: صور، PDF</small>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="notificationMethod">طريقة الإشعار المفضلة *</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="notificationMethod" value="email" required checked>
+                                البريد الإلكتروني
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="notificationMethod" value="telegram" required>
+                                تليجرام
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="notificationMethod" value="both" required>
+                                كلاهما
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="points-estimate">
+                        <h4>النقاط المتوقعة:</h4>
+                        <div class="estimate-value" id="estimatedPoints">0</div>
+                        <p>بعد مراجعة وقبول البلاغ</p>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="reset" class="btn btn-secondary">مسح</button>
+                        <button type="submit" class="btn btn-primary">إرسال البلاغ</button>
+                    </div>
+                </form>
+
+                <!-- Points Scale Info -->
+                <div class="points-scale">
+                    <h3>جدول النقاط</h3>
+                    <table class="points-table">
+                        <thead>
+                            <tr>
+                                <th>درجة الخطورة</th>
+                                <th>عدد النقاط</th>
+                                <th>الوصف</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>منخفضة</td>
+                                <td>10 نقاط</td>
+                                <td>مشاكل بسيطة لا تؤثر على الاستخدام</td>
+                            </tr>
+                            <tr>
+                                <td>متوسطة</td>
+                                <td>25 نقطة</td>
+                                <td>مشاكل تؤثر على بعض المستخدمين</td>
+                            </tr>
+                            <tr>
+                                <td>عالية</td>
+                                <td>50 نقطة</td>
+                                <td>مشاكل تؤثر على عدد كبير من المستخدمين</td>
+                            </tr>
+                            <tr>
+                                <td>حرجة</td>
+                                <td>100 نقطة</td>
+                                <td>مشاكل تعطل الخدمة بالكامل</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- History Section -->
+        <section id="history" class="history-section">
+            <h2 class="section-title">سجل النقاط</h2>
+
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterHistory('all', event)">الكل</button>
+                <button class="filter-btn" onclick="filterHistory('earned', event)">النقاط المكتسبة</button>
+                <button class="filter-btn" onclick="filterHistory('pending', event)">قيد المراجعة</button>
+                <button class="filter-btn" onclick="filterHistory('rejected', event)">المرفوضة</button>
+            </div>
+
+            <div class="history-list" id="historyList">
+                <div class="empty-state">
+                    <p>لا توجد سجلات حتى الآن</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 منصة مدعوم. جميع الحقوق محفوظة.</p>
+            <div class="footer-links">
+                <a href="index.html">الرئيسية</a>
+                <a href="#wallet">محفظتي</a>
+                <a href="#report">الإبلاغ</a>
+                <a href="#history">السجل</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="rewards-script.js"></script>
+    <script type="module">
+        import { currentSession } from './auth-client.js';
+        
+        // Check if user is logged in
+        const user = await currentSession();
+        const walletSection = document.getElementById('wallet');
+        
+        if (user && walletSection) {
+            walletSection.style.display = 'block';
+        } else if (walletSection) {
+            walletSection.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

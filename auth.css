@@ -1,0 +1,366 @@
+/* ==================== Auth Pages ==================== */
+/* ==================== Light Theme (Default) ==================== */
+:root,
+:root[data-theme='light'] {
+    /* Base Color Palette - Professional Blue */
+    --color-primary: #003366;
+    --color-primary-variant: #0055AA;
+    --color-accent: #0077CC;
+    --color-background: #F5F5F5;
+    --color-surface: #FFFFFF;
+    --color-text: #333333;
+    --color-text-secondary: #777777;
+    --color-muted: #EEEEEE;
+    --color-success: #2E8A3A;
+    --color-warning: #E0A800;
+    --color-danger: #D9534F;
+    --color-border: #DDDDDD;
+    
+    /* Legacy mappings for compatibility */
+    --brand-navy: var(--color-primary);
+    --brand-cyan: var(--color-accent);
+    --brand-gray: var(--color-muted);
+    --primary-color: var(--color-accent);
+    --primary-dark: var(--color-primary-variant);
+    --secondary-color: var(--color-muted);
+    --accent-color: var(--color-accent);
+    --success-color: var(--color-success);
+    --warning-color: var(--color-warning);
+    --danger-color: var(--color-danger);
+    --bg-primary: var(--color-primary);
+    --bg-secondary: var(--color-surface);
+    --bg-tertiary: var(--color-muted);
+    --text-primary: var(--color-text);
+    --text-secondary: var(--color-text-secondary);
+    --text-tertiary: var(--color-text-secondary);
+    --border-color: var(--color-border);
+    --border-color-hover: var(--color-accent);
+    --hover-bg: rgba(0, 119, 204, 0.08);
+    
+    /* Shadows */
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-glow: 0 0 20px rgba(0, 119, 204, 0.2);
+    
+    /* Input backgrounds */
+    --input-bg: #FFFFFF;
+    --input-text: var(--color-text);
+    
+    /* Responsive spacing */
+    --container-padding: clamp(1rem, 4vw, 2rem);
+    --section-padding: clamp(2rem, 6vw, 4rem);
+}
+
+/* ==================== Dark Theme ==================== */
+:root[data-theme='dark'] {
+    /* Base Color Palette - Dark Mode */
+    --color-primary: #1a1a2e;
+    --color-primary-variant: #16213e;
+    --color-accent: #0088DD;
+    --color-background: #0E0E10;
+    --color-surface: #1A1A1A;
+    --color-text: #E0E0E0;
+    --color-text-secondary: #B0B0B0;
+    --color-muted: #2A2A2A;
+    --color-success: #4CAF50;
+    --color-warning: #FFB300;
+    --color-danger: #F44336;
+    --color-border: #333333;
+    
+    /* Legacy mappings for compatibility */
+    --brand-navy: var(--color-primary);
+    --brand-cyan: var(--color-accent);
+    --brand-gray: var(--color-muted);
+    --primary-color: var(--color-accent);
+    --primary-dark: var(--color-primary-variant);
+    --secondary-color: var(--color-muted);
+    --accent-color: var(--color-accent);
+    --success-color: var(--color-success);
+    --warning-color: var(--color-warning);
+    --danger-color: var(--color-danger);
+    --bg-primary: var(--color-primary);
+    --bg-secondary: var(--color-surface);
+    --bg-tertiary: var(--color-muted);
+    --text-primary: var(--color-text);
+    --text-secondary: var(--color-text-secondary);
+    --text-tertiary: var(--color-text-secondary);
+    --border-color: var(--color-border);
+    --border-color-hover: var(--color-accent);
+    --hover-bg: rgba(0, 136, 221, 0.15);
+    
+    /* Shadows */
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 0 20px rgba(0, 136, 221, 0.4);
+    
+    /* Input backgrounds */
+    --input-bg: #242424;
+    --input-text: var(--color-text);
+}
+
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-background);
+}
+
+.auth-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--container-padding);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: clamp(320px, 90vw, 420px);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    padding: clamp(1.5rem, 4vw, 2rem);
+    backdrop-filter: blur(10px);
+}
+
+.auth-card h1 {
+    font-size: clamp(1.5rem, 4vw, 1.75rem);
+    margin-bottom: 0.5rem;
+    text-align: center;
+    color: var(--color-text);
+}
+
+.auth-subtitle {
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: clamp(0.875rem, 2vw, 1rem);
+}
+
+.auth-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+    color: var(--color-text-secondary);
+    margin: 1.25rem 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+}
+
+.auth-footer-text {
+    text-align: center;
+    color: var(--color-text-secondary);
+    margin-top: 1rem;
+    font-size: clamp(0.875rem, 2vw, 1rem);
+}
+
+.auth-footer-text a {
+    color: var(--color-accent);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.auth-footer-text a:hover {
+    color: var(--color-primary-variant);
+    text-shadow: 0 0 8px rgba(0, 119, 204, 0.3);
+    text-decoration: underline;
+}
+
+.oauth-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+}
+
+.oauth-button {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: clamp(0.625rem, 2vw, 0.75rem) 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: center;
+    min-height: 44px;
+    font-size: clamp(0.875rem, 2vw, 1rem);
+}
+
+.oauth-button:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: var(--hover-bg);
+}
+
+/* Message boxes */
+.message-box {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid;
+    animation: slideDown 0.3s ease;
+}
+
+.message-success {
+    background: rgba(46, 138, 58, 0.1);
+    border-color: rgba(46, 138, 58, 0.3);
+    color: var(--color-success);
+}
+
+.message-error {
+    background: rgba(217, 83, 79, 0.1);
+    border-color: rgba(217, 83, 79, 0.3);
+    color: var(--color-danger);
+}
+
+.message-box p {
+    margin: 0;
+    font-size: clamp(0.875rem, 2vw, 0.95rem);
+    line-height: 1.5;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Form help text */
+.form-help {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: clamp(0.75rem, 1.5vw, 0.85rem);
+    color: var(--color-text-secondary);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: clamp(0.875rem, 2vw, 1rem);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: clamp(0.625rem, 2vw, 0.75rem);
+    background: var(--input-bg);
+    color: var(--input-text);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: clamp(0.875rem, 2vw, 1rem);
+    font-family: inherit;
+    min-height: 44px;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.form-group input:invalid:not(:focus):not(:placeholder-shown) {
+    border-color: var(--color-danger);
+}
+
+.form-group input:valid:not(:placeholder-shown) {
+    border-color: var(--color-success);
+}
+
+/* Loading state */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ==================== Responsive Design ==================== */
+
+/* Extra small devices (phones): max-width 575px */
+@media (max-width: 575px) {
+    .auth-container {
+        padding: 1rem;
+    }
+    
+    .auth-card {
+        padding: clamp(1rem, 3vw, 1.25rem);
+        border-radius: 10px;
+    }
+    
+    .auth-card h1 {
+        font-size: 1.5rem;
+    }
+    
+    .message-box {
+        padding: 0.75rem;
+        font-size: clamp(0.875rem, 2vw, 0.9rem);
+    }
+    
+    .auth-actions {
+        gap: 0.5rem;
+    }
+    
+    .oauth-buttons {
+        gap: 0.5rem;
+    }
+}
+
+/* Small devices (tablets): 576px-767px */
+@media (min-width: 576px) and (max-width: 767px) {
+    .auth-card {
+        max-width: 400px;
+    }
+}
+
+/* Medium devices (small laptops): 768px-991px */
+@media (min-width: 768px) and (max-width: 991px) {
+    .auth-card {
+        max-width: 420px;
+    }
+}
+
+/* Large devices (desktops): 992px-1199px */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .auth-card {
+        max-width: 450px;
+    }
+}
+
+/* Extra large (wide screens): 1200px+ */
+@media (min-width: 1200px) {
+    .auth-card {
+        max-width: 480px;
+    }
+}

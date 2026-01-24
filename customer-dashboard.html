@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة العميل - منصة مدعوم</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme-preference') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch(e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <script src="theme-manager.js" defer></script>
+    <style>
+        .profile-section {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-sm);
+            margin-top: 2rem;
+        }
+        .profile-form {
+            display: grid;
+            gap: 1.5rem;
+            max-width: 600px;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        .nav-tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+        }
+        .nav-tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="logo.svg" alt="Logo" class="logo-image">
+                <span>لوحة العميل</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button class="theme-toggle" aria-label="Toggle theme">
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </button>
+            </div>
+            <ul class="nav-menu">
+                <li id="welcomeUser"></li>
+                <li><a href="#" id="profileLink" class="nav-tab-trigger" data-tab="profile">الملف الشخصي</a></li>
+                <li><a href="#" id="signOutLink">تسجيل الخروج</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container" style="margin-top: 2rem;">
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-tab="tickets">تذاكري</div>
+            <div class="nav-tab" data-tab="profile">الملف الشخصي</div>
+        </div>
+
+        <!-- قسم التذاكر -->
+        <div id="ticketsTab" class="tab-content active">
+            <div class="page-header">
+                <h1>تذاكري</h1>
+                <button class="btn btn-primary" id="openCreateTicket">إنشاء تذكرة جديدة</button>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <p class="stat-label">إجمالي التذاكر</p>
+                    <p class="stat-value" id="userTotalTickets">0</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">قيد المعالجة</p>
+                    <p class="stat-value" id="userInProgressTickets">0</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">المحلولة</p>
+                    <p class="stat-value" id="userResolvedTickets">0</p>
+                </div>
+            </div>
+
+            <div id="userTicketsList" class="tickets-list" style="margin-top: 2rem;">
+                <p class="empty-state">جاري تحميل التذاكر...</p>
+            </div>
+        </div>
+
+        <!-- قسم البروفايل -->
+        <div id="profileTab" class="tab-content">
+            <div class="profile-section">
+                <h2>إعدادات الملف الشخصي</h2>
+                <p>يمكنك تعديل بياناتك الشخصية من هنا</p>
+                
+                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem;"></div>
+
+                <form id="profileForm" class="profile-form">
+                    <div class="form-group">
+                        <label for="profileFullName">الاسم الكامل</label>
+                        <input type="text" id="profileFullName" placeholder="أدخل اسمك الكامل">
+                    </div>
+                    <div class="form-group">
+                        <label for="profileEmail">البريد الإلكتروني (للقراءة فقط)</label>
+                        <input type="email" id="profileEmail" readonly style="background: var(--bg-secondary); cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label for="profilePhone">رقم الهاتف</label>
+                        <input type="tel" id="profilePhone" placeholder="أدخل رقم هاتفك">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="saveProfileBtn">حفظ التغييرات</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Create Ticket Modal -->
+    <div id="userTicketModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeUserTicketModal">&times;</span>
+            <h2>إنشاء تذكرة جديدة</h2>
+            <form id="userCreateTicketForm">
+                <div class="form-group">
+                    <label for="userTicketTitle">العنوان</label>
+                    <input type="text" id="userTicketTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="userTicketDescription">الوصف</label>
+                    <textarea id="userTicketDescription" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="userTicketPriority">الأولوية</label>
+                    <select id="userTicketPriority" required>
+                        <option value="low">منخفضة</option>
+                        <option value="medium" selected>متوسطة</option>
+                        <option value="high">عالية</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">إنشاء التذكرة</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { requireAuth, logout, updateProfile } from './auth-client.js';
+        import { fetchUserTickets, createTicket, fetchTicketStats } from './tickets-service.js';
+
+        // 1. حماية الصفحة
+        const user = await requireAuth('customer');
+       
+
+        // 2. عرض البيانات الأساسية
+        const displayName = user.profile?.full_name || user.email;
+        document.getElementById('welcomeUser').textContent = `مرحباً، ${displayName}`;
+        document.getElementById('profileEmail').value = user.email;
+        document.getElementById('profileFullName').value = user.profile?.full_name || '';
+        document.getElementById('profilePhone').value = user.profile?.phone || '';
+
+        // 3. التبديل بين التبويبات
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.nav-tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tabName);
+            });
+            
+            contents.forEach(c => {
+                c.classList.toggle('active', c.id === `${tabName}Tab`);
+            });
+        }
+
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+        });
+
+        // ربط زر الملف الشخصي في النافبار
+        document.getElementById('profileLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            switchTab('profile');
+        });
+
+        // 4. تحديث البروفايل
+        const profileForm = document.getElementById('profileForm');
+        const profileMessage = document.getElementById('profileMessage');
+
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const saveBtn = document.getElementById('saveProfileBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'جاري الحفظ...';
+
+            try {
+                const updates = {
+                    full_name: document.getElementById('profileFullName').value,
+                    phone: document.getElementById('profilePhone').value,
+                    updated_at: new Date()
+                };
+
+                const { error } = await updateProfile(updates);
+                if (error) throw error;
+
+                profileMessage.style.display = 'block';
+                profileMessage.className = 'message-box message-success';
+                profileMessage.textContent = 'تم تحديث الملف الشخصي بنجاح';
+                
+                document.getElementById('welcomeUser').textContent = `مرحباً، ${updates.full_name}`;
+
+            } catch (err) {
+                profileMessage.style.display = 'block';
+                profileMessage.className = 'message-box message-error';
+                profileMessage.textContent = err.message || 'فشل تحديث الملف الشخصي';
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'حفظ التغييرات';
+            }
+        });
+
+        // 5. تسجيل الخروج
+        const signOutBtn = document.getElementById('signOutLink');
+        if (signOutBtn) {
+            signOutBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    await logout();
+                } catch (err) {
+                    console.error('Logout error:', err);
+                } finally {
+                    // دائماً نوجه المستخدم لصفحة تسجيل الدخول حتى لو فشل الـ API
+                    window.location.replace('sign-in.html');
+                }
+            });
+        }
+
+        // 6. تحميل التذاكر والإحصائيات (نفس المنطق السابق)
+        async function loadDashboardData() {
+            try {
+                const stats = await fetchTicketStats();
+                document.getElementById('userTotalTickets').textContent = stats.total || 0;
+                document.getElementById('userInProgressTickets').textContent = stats.inProgress || 0;
+                document.getElementById('userResolvedTickets').textContent = stats.resolved || 0;
+
+                const tickets = await fetchUserTickets();
+                const list = document.getElementById('userTicketsList');
+                list.innerHTML = '';
+
+                if (tickets.length === 0) {
+                    list.innerHTML = '<p class="empty-state">لا توجد تذاكر حالياً</p>';
+                } else {
+                    tickets.forEach(t => {
+                        const div = document.createElement('div');
+                        div.className = 'ticket-item';
+                        div.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <h3>${t.title}</h3>
+                                <span class="status-badge status-${t.status}">${t.status}</span>
+                            </div>
+                            <p>${t.description}</p>
+                            <small>الأولوية: ${t.priority} | التاريخ: ${new Date(t.created_at).toLocaleDateString('ar-EG')}</small>
+                        `;
+                        list.appendChild(div);
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading dashboard:', err);
+            }
+        }
+
+        loadDashboardData();
+
+        // 7. إنشاء تذكرة
+        const modal = document.getElementById('userTicketModal');
+        document.getElementById('openCreateTicket').onclick = () => modal.style.display = 'block';
+        document.getElementById('closeUserTicketModal').onclick = () => modal.style.display = 'none';
+
+        document.getElementById('userCreateTicketForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                title: document.getElementById('userTicketTitle').value,
+                description: document.getElementById('userTicketDescription').value,
+                priority: document.getElementById('userTicketPriority').value
+            };
+
+            try {
+                await createTicket(data);
+                modal.style.display = 'none';
+                document.getElementById('userCreateTicketForm').reset();
+                loadDashboardData();
+            } catch (err) {
+                alert('فشل إنشاء التذكرة');
+            }
+        };
+    </script>
+</body>
+</html>

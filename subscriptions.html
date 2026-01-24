@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- SEO Meta Tags -->
+    <title>الاشتراكات والخطط - منصة مدعوم</title>
+    <meta name="description" content="خطط الاشتراك لمنصة مدعوم - اختر الخطة المناسبة لاحتياجاتك واستمتع بالمزايا الحصرية">
+    <meta property="og:title" content="الاشتراكات والخطط - منصة مدعوم">
+    <meta property="og:description" content="خطط الاشتراك لمنصة مدعوم">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://mad3oom.online/logo.svg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="الاشتراكات والخطط - منصة مدعوم">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="alternate icon" href="logo.svg">
+    <!-- Theme script must load BEFORE CSS to prevent FOUC -->
+    <script>
+        // Inline theme initialization - runs immediately before page render
+        (function() {
+            try {
+                var theme = 'light';
+                if (typeof Storage !== 'undefined' && window.localStorage) {
+                    var stored = localStorage.getItem('theme-preference');
+                    if (stored === 'light' || stored === 'dark') {
+                        theme = stored;
+                    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        theme = 'dark';
+                    }
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    theme = 'dark';
+                }
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch(e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="subscriptions-styles.css">
+    <script src="theme-manager.js" defer></script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="logo.svg" alt="Logo" class="logo-image" style="width: 40px; height: 40px; margin-left: 0.5rem;">
+                <span>منصة مدعوم</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button class="theme-toggle" aria-label="Toggle theme" title="تبديل الوضع الليلي/النهاري">
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html">الرئيسية</a></li>
+                <li><a href="#individuals">الأفراد</a></li>
+                <li><a href="#enterprises">الشركات</a></li>
+                <li><a href="#faq">الأسئلة الشائعة</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1 class="hero-title">خطط الاشتراك</h1>
+            <p class="hero-subtitle">اختر الخطة المناسبة لاحتياجاتك واستمتع بالمزايا الحصرية</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Individuals Section -->
+        <section id="individuals" class="pricing-section">
+            <div class="section-header">
+                <h2 class="section-title">خطط للأفراد</h2>
+                <p class="section-subtitle">اختر الخطة المناسبة لك واستمتع بخدمات الدعم الفني الاحترافية</p>
+            </div>
+
+            <!-- Toggle Button -->
+            <div class="toggle-container">
+                <span class="toggle-label">الفترة:</span>
+                <button class="toggle-btn" onclick="toggleBilling('individuals')">
+                    <span class="toggle-option active">شهري</span>
+                    <span class="toggle-option">سنوي</span>
+                </button>
+            </div>
+
+            <!-- Pricing Cards -->
+            <div class="pricing-grid">
+                <!-- Free Plan -->
+                <div class="pricing-card free-plan">
+                    <div class="plan-header">
+                        <h3 class="plan-name">مجاني</h3>
+                        <p class="plan-description">مثالي للمبتدئين</p>
+                    </div>
+
+                    <div class="plan-price">
+                        <span class="currency">EGP</span>
+                        <span class="amount">0</span>
+                        <span class="period">/شهر</span>
+                    </div>
+
+                    <div class="plan-features">
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>الوصول إلى نظام التذاكر الأساسي</span>
+                        </div>
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>محادثة مع فريق الدعم (ساعات العمل)</span>
+                        </div>
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>الإبلاغ عن المشاكل والأعطال</span>
+                        </div>
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>تجميع النقاط من البلاغات</span>
+                        </div>
+                        <div class="feature disabled">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            <span>دعم أولوية</span>
+                        </div>
+                        <div class="feature disabled">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            <span>تقارير مفصلة</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-secondary btn-full">ابدأ الآن</button>
+                </div>
+
+                <!-- Premium Plan -->
+                <div class="pricing-card premium-plan featured">
+                    <div class="badge">الأكثر شهرة</div>
+                    <div class="plan-header">
+                        <h3 class="plan-name">مدفوع</h3>
+                        <p class="plan-description">قريباً - الإعلان عنه قريبة</p>
+                    </div>
+
+                    <div class="plan-price">
+                        <span class="currency">EGP</span>
+                        <span class="amount">XX</span>
+                        <span class="period">/شهر</span>
+                    </div>
+
+                    <div class="coming-soon-banner">
+                        <span>قريباً</span>
+                    </div>
+
+                    <div class="plan-features">
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>جميع مميزات الخطة المجانية</span>
+                        </div>
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>دعم أولوية 24/7</span>
+                        </div>
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>تقارير مفصلة وتحليلات</span>
+                        </div>
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>مكافآت نقاط مضاعفة</span>
+                        </div>
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>وصول مبكر للميزات الجديدة</span>
+                        </div>
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>شارة خاصة على الملف الشخصي</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-secondary btn-full" disabled>قريباً</button>
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="comparison-section">
+                <h3 class="comparison-title">مقارنة الخطط</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>الميزة</th>
+                            <th>مجاني</th>
+                            <th>مدفوع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>نظام التذاكر</td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td>المحادثة مع الدعم</td>
+                            <td>ساعات العمل فقط</td>
+                            <td>24/7</td>
+                        </tr>
+                        <tr>
+                            <td>الإبلاغ عن المشاكل</td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td>نظام النقاط</td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="check">✓ مضاعف</span></td>
+                        </tr>
+                        <tr>
+                            <td>التقارير والتحليلات</td>
+                            <td><span class="cross">✗</span></td>
+                            <td><span class="check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td>الدعم الأولوي</td>
+                            <td><span class="cross">✗</span></td>
+                            <td><span class="check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td>وصول مبكر للميزات</td>
+                            <td><span class="cross">✗</span></td>
+                            <td><span class="check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td>شارة خاصة</td>
+                            <td><span class="cross">✗</span></td>
+                            <td><span class="check">✓</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Enterprises Section -->
+        <section id="enterprises" class="pricing-section enterprises-section">
+            <div class="section-header">
+                <h2 class="section-title">خطط للشركات</h2>
+                <p class="section-subtitle">حلول مخصصة لاحتياجات مؤسستك</p>
+            </div>
+
+            <div class="enterprise-card">
+                <div class="enterprise-content">
+                    <h3 class="enterprise-title">خطط مخصصة للشركات</h3>
+                    <p class="enterprise-description">
+                        نحن نقدم حلولاً مخصصة ومرنة لاحتياجات مؤسستك. سواء كنت شركة ناشئة أو مؤسسة كبيرة، لدينا الخطة المناسبة لك.
+                    </p>
+
+                    <div class="enterprise-features">
+                        <h4>المميزات الرئيسية:</h4>
+                        <ul>
+                            <li>
+                                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>عدد غير محدود من المستخدمين</span>
+                            </li>
+                            <li>
+                                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>دعم مخصص 24/7</span>
+                            </li>
+                            <li>
+                                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>تقارير متقدمة وتحليلات مفصلة</span>
+                            </li>
+                            <li>
+                                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>تكامل مع أنظمتك الحالية</span>
+                            </li>
+                            <li>
+                                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>API مخصص وتطوير مخصص</span>
+                            </li>
+                            <li>
+                                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>تدريب شامل للفريق</span>
+                            </li>
+                            <li>
+                                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>ضمان وقت التشغيل (SLA)</span>
+                            </li>
+                            <li>
+                                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>أمان وخصوصية عالية</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="coming-soon-banner large">
+                        <span>سيتم الإعلان عن التفاصيل قريباً</span>
+                    </div>
+
+                    <button class="btn btn-primary btn-large" onclick="contactSales()">تواصل معنا للمزيد</button>
+                </div>
+
+                <div class="enterprise-image">
+                    <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        
+                        <!-- Building -->
+                        <rect x="50" y="100" width="300" height="150" fill="url(#grad1)" rx="10"/>
+                        
+                        <!-- Windows -->
+                        <rect x="70" y="120" width="30" height="30" fill="#0f172a" rx="3"/>
+                        <rect x="120" y="120" width="30" height="30" fill="#0f172a" rx="3"/>
+                        <rect x="170" y="120" width="30" height="30" fill="#0f172a" rx="3"/>
+                        <rect x="220" y="120" width="30" height="30" fill="#0f172a" rx="3"/>
+                        
+                        <rect x="70" y="170" width="30" height="30" fill="#0f172a" rx="3"/>
+                        <rect x="120" y="170" width="30" height="30" fill="#0f172a" rx="3"/>
+                        <rect x="170" y="170" width="30" height="30" fill="#0f172a" rx="3"/>
+                        <rect x="220" y="170" width="30" height="30" fill="#0f172a" rx="3"/>
+                        
+                        <!-- Door -->
+                        <rect x="175" y="220" width="50" height="60" fill="#a855f7" rx="3"/>
+                        <circle cx="220" cy="250" r="3" fill="#0f172a"/>
+                        
+                        <!-- People -->
+                        <circle cx="100" cy="280" r="8" fill="#3b82f6"/>
+                        <rect x="95" y="290" width="10" height="15" fill="#3b82f6"/>
+                        
+                        <circle cx="200" cy="280" r="8" fill="#06b6d4"/>
+                        <rect x="195" y="290" width="10" height="15" fill="#06b6d4"/>
+                        
+                        <circle cx="300" cy="280" r="8" fill="#a855f7"/>
+                        <rect x="295" y="290" width="10" height="15" fill="#a855f7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section id="faq" class="faq-section">
+            <h2 class="section-title">الأسئلة الشائعة</h2>
+
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h3 class="faq-question">هل يمكنني تغيير خطتي لاحقاً؟</h3>
+                    <p class="faq-answer">نعم، يمكنك تغيير خطتك في أي وقت. التغييرات ستنعكس على الفاتورة التالية.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3 class="faq-question">هل هناك فترة تجريبية مجانية؟</h3>
+                    <p class="faq-answer">الخطة المجانية متاحة بشكل دائم بدون حد زمني. جرب جميع الميزات الأساسية مجاناً.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3 class="faq-question">كيف يتم حساب النقاط؟</h3>
+                    <p class="faq-answer">النقاط تُحسب بناءً على درجة خطورة المشكلة المُبلغ عنها. تتراوح من 10 إلى 100 نقطة.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3 class="faq-question">هل يمكنني استخدام النقاط للحصول على خصومات؟</h3>
+                    <p class="faq-answer">نعم، يمكنك استخدام النقاط للحصول على خصومات على الخطط المدفوعة والمزايا الإضافية.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3 class="faq-question">ما هي طرق الدفع المتاحة؟</h3>
+                    <p class="faq-answer">نقبل بطاقات الائتمان والتحويلات البنكية والمحافظ الرقمية.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3 class="faq-question">هل هناك عقد طويل الأجل؟</h3>
+                    <p class="faq-answer">لا، جميع الاشتراكات شهرية أو سنوية بدون التزام طويل الأجل. يمكنك الإلغاء في أي وقت.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="cta-content">
+                <h2>هل أنت مستعد للبدء؟</h2>
+                <p>اختر الخطة المناسبة لك واستمتع بخدمات الدعم الفني الاحترافية</p>
+                <div class="cta-buttons">
+                    <button class="btn btn-primary btn-large" onclick="scrollToSection('individuals')">استكشف الخطط</button>
+                    <button class="btn btn-secondary btn-large" onclick="contactSales()">تواصل معنا</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 منصة مدعوم. جميع الحقوق محفوظة.</p>
+            <div class="footer-links">
+                <a href="index.html">الرئيسية</a>
+                <a href="#individuals">الأفراد</a>
+                <a href="#enterprises">الشركات</a>
+                <a href="#faq">الأسئلة الشائعة</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="subscriptions-script.js"></script>
+</body>
+</html>

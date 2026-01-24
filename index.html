@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
+    <title>منصة مدعوم - نظام الدعم الفني الاحترافي</title>
+    <meta name="description" content="نظام دعم فني متكامل يجمع بين نظام التذاكر والمحادثة الفورية لتقديم أفضل خدمة عملاء. ابدأ الآن واحصل على الدعم الذي تحتاجه.">
+    <meta name="keywords" content="دعم فني, تذاكر, محادثة فورية, خدمة عملاء, منصة مدعوم">
+    <meta name="author" content="منصة مدعوم">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="منصة مدعوم - نظام الدعم الفني الاحترافي">
+    <meta property="og:description" content="نظام دعم فني متكامل يجمع بين نظام التذاكر والمحادثة الفورية لتقديم أفضل خدمة عملاء">
+    <meta property="og:image" content="https://mad3oom.online/logo.svg">
+    <meta property="og:url" content="https://mad3oom.online/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ar_SA">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="منصة مدعوم - نظام الدعم الفني الاحترافي">
+    <meta name="twitter:description" content="نظام دعم فني متكامل يجمع بين نظام التذاكر والمحادثة الفورية">
+    <meta name="twitter:image" content="https://mad3oom.online/logo.svg">
+    
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="alternate icon" href="logo.svg">
+    <!-- Theme script must load BEFORE CSS to prevent FOUC -->
+    <script>
+        // Inline theme initialization - runs immediately before page render
+        (function() {
+            try {
+                var theme = 'light';
+                if (typeof Storage !== 'undefined' && window.localStorage) {
+                    var stored = localStorage.getItem('theme-preference');
+                    if (stored === 'light' || stored === 'dark') {
+                        theme = stored;
+                    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        theme = 'dark';
+                    }
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    theme = 'dark';
+                }
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch(e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <script src="api-config.js"></script>
+    <script src="theme-manager.js" defer></script>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/logo.png" alt="Logo" class="logo-image">
+                <span>منصة مدعوم</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button class="theme-toggle" aria-label="Toggle theme" title="تبديل الوضع الليلي/النهاري">
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+                <button class="hamburger" aria-label="Toggle menu" onclick="toggleMobileMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#" onclick="showPage('home'); closeMobileMenu();">الرئيسية</a></li>
+                <li class="restricted-nav" style="display: none;"><a href="#" onclick="showPage('dashboard'); closeMobileMenu();">لوحة التحكم</a></li>
+                <li class="restricted-nav" style="display: none;"><a href="#" onclick="showPage('tickets'); closeMobileMenu();">التذاكر</a></li>
+                <li class="restricted-nav" style="display: none;"><a href="#" onclick="showPage('chat'); closeMobileMenu();">المحادثة</a></li>
+                <li><a href="#" onclick="showPage('about'); closeMobileMenu();">حول</a></li>
+                <li><a href="rewards.html" onclick="closeMobileMenu();">المكافآت</a></li>
+                <li><a href="subscriptions.html" onclick="closeMobileMenu();">الخطط والأسعار</a></li>
+                <li><a href="sign-in.html" id="navSignIn" onclick="closeMobileMenu();">تسجيل الدخول</a></li>
+                <li><a href="sign-up.html" id="navSignUp" onclick="closeMobileMenu();">إنشاء حساب</a></li>
+                <li><a href="#" id="navSignOut" style="display: none;" onclick="closeMobileMenu();">تسجيل الخروج</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Home Page -->
+    <div id="home" class="page active">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>مساعد الدعم الفني <span class="gradient-text">الاحترافي</span></h1>
+                <p>نظام دعم فني متكامل يجمع بين نظام التذاكر والمحادثة الفورية لتقديم أفضل خدمة عملاء</p>
+                <div class="hero-buttons">
+                    <a href="sign-in.html" class="btn btn-primary">ابدأ الآن</a>
+                    <button class="btn btn-secondary" onclick="showPage('about')">تعرف أكثر</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features">
+            <h2>المميزات الرئيسية</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #3b82f6, #0ea5e9);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                        </svg>
+                    </div>
+                    <h3>نظام التذاكر</h3>
+                    <p>إنشاء وإدارة تذاكر الدعم بسهولة مع تتبع الحالة والأولويات المختلفة</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
+                        </svg>
+                    </div>
+                    <h3>المحادثة الفورية</h3>
+                    <p>تواصل مباشر وفوري مع فريق الدعم للحصول على الإجابات بسرعة</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #a855f7, #9333ea);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <line x1="12" y1="2" x2="12" y2="22"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 000 7H6"></path>
+                        </svg>
+                    </div>
+                    <h3>لوحة التحكم</h3>
+                    <p>عرض شامل لجميع التذاكر والإحصائيات والمقاييس الهامة</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Support Section -->
+        <section class="image-section">
+            <div class="image-section-content">
+                <div class="image-wrapper">
+                    <img 
+                        src="assets/images/technical-support.svg" 
+                        alt="اكتشاف الأعطال لحظياً ومعالجتها بدقة" 
+                        class="section-image"
+                        loading="lazy"
+                    >
+                    <div class="image-caption">
+                        <p>اكتشاف الأعطال لحظياً ومعالجتها بدقة داخل بيئة تشغيل مستقرة.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- System Operations Section -->
+        <section class="image-section">
+            <div class="image-section-content">
+                <div class="image-wrapper">
+                    <img 
+                        src="assets/images/system-operations.svg" 
+                        alt="تشغيل يعتمد على دمج الأتمتة بالمتابعة البشرية" 
+                        class="section-image"
+                        loading="lazy"
+                    >
+                    <div class="image-caption">
+                        <p>تشغيل يعتمد على دمج الأتمتة بالمتابعة البشرية لضمان استقرار الخدمة.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta">
+            <h2>هل تحتاج إلى مساعدة؟</h2>
+            <p>تواصل معنا الآن واحصل على دعم فني متخصص وسريع الاستجابة</p>
+            <div class="cta-buttons">
+                <a href="sign-in.html" class="btn btn-primary">ابدأ المحادثة</a>
+                <a href="sign-in.html" class="btn btn-accent">أنشئ تذكرة</a>
+            </div>
+        </section>
+    </div>
+
+    <!-- Dashboard Page (Restricted) -->
+    <div id="dashboard" class="page restricted-page" style="display: none;">
+        <div class="page-header">
+            <h1>لوحة التحكم</h1>
+        </div>
+
+        <div class="dashboard-container">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #0ea5e9);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <p class="stat-label">إجمالي التذاكر</p>
+                        <p class="stat-value" id="totalTickets">—</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #eab308, #ca8a04);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <path d="M12 1v6m0 6v6"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <p class="stat-label">التذاكر المفتوحة</p>
+                        <p class="stat-value" id="openTickets" style="color: #facc15;">—</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <p class="stat-label">التذاكر المحلولة</p>
+                        <p class="stat-value" id="resolvedTickets" style="color: #22c55e;">—</p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <p class="stat-label">الرسائل</p>
+                        <p class="stat-value" id="messageCount" style="color: #06b6d4;">—</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h2>الإجراءات السريعة</h2>
+                <div class="actions-grid">
+                    <button class="btn btn-primary" onclick="showPage('tickets')">عرض جميع التذاكر</button>
+                    <button class="btn btn-accent" onclick="showPage('chat')">الذهاب إلى المحادثة</button>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="recent-activity">
+                <h2>النشاط الأخير</h2>
+                <div id="activityList" class="activity-list">
+                    <p class="empty-state">لا توجد أنشطة حديثة حتى الآن</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tickets Page (Restricted) -->
+    <div id="tickets" class="page restricted-page" style="display: none;">
+        <div class="page-header">
+            <h1>نظام التذاكر</h1>
+            <button class="btn btn-primary" onclick="openTicketModal()">إنشاء تذكرة جديدة</button>
+        </div>
+
+        <div class="tickets-container">
+            <div class="filter-section">
+                <select id="statusFilter" onchange="filterTickets()">
+                    <option value="">جميع التذاكر</option>
+                    <option value="open">مفتوحة</option>
+                    <option value="in-progress">قيد المعالجة</option>
+                    <option value="resolved">محلولة</option>
+                </select>
+                <select id="priorityFilter" onchange="filterTickets()">
+                    <option value="">جميع الأولويات</option>
+                    <option value="low">منخفضة</option>
+                    <option value="medium">متوسطة</option>
+                    <option value="high">عالية</option>
+                </select>
+            </div>
+
+            <div id="ticketsList" class="tickets-list">
+                <p class="empty-state">لا توجد تذاكر حتى الآن</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Page (Restricted) -->
+    <div id="chat" class="page restricted-page" style="display: none;">
+        <div class="page-header">
+            <h1>المحادثة الفورية</h1>
+        </div>
+
+        <div class="chat-container">
+            <div id="chatMessages" class="chat-messages">
+                <!-- Messages will be added here -->
+            </div>
+
+            <div class="chat-input-area">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="اكتب رسالتك هنا..." 
+                    onkeypress="handleMessageKeyPress(event)"
+                >
+                <button class="btn btn-primary" onclick="sendMessage()">إرسال</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Page -->
+    <div id="about" class="page">
+        <div class="page-header">
+            <h1>حول الخدمة</h1>
+        </div>
+
+        <div class="about-container">
+            <div class="about-section">
+                <h2>من نحن</h2>
+                <p>نحن فريق متخصص في تقديم خدمات الدعم الفني المتميزة والاحترافية. نعمل على توفير أفضل تجربة للعملاء من خلال نظام متكامل يجمع بين التذاكر والمحادثة الفورية.</p>
+            </div>
+
+            <div class="about-section">
+                <h2>رؤيتنا</h2>
+                <p>تقديم حلول دعم فني سريعة وفعالة تلبي احتياجات العملاء وتتجاوز توقعاتهم.</p>
+            </div>
+
+            <div class="about-section">
+                <h2>قيمنا</h2>
+                <ul class="values-list">
+                    <li>الاحترافية والجودة العالية</li>
+                    <li>الاستجابة السريعة والفعالة</li>
+                    <li>الشفافية والأمانة</li>
+                    <li>التطور المستمر والتحسين</li>
+                </ul>
+            </div>
+
+            <div class="about-section">
+                <h2>تواصل معنا</h2>
+                <div class="contact-info">
+                    <p><strong>البريد الإلكتروني:</strong> —support@mad3oom.online</p>
+                    <p><strong>الهاتف: </strong> +201274000741</p>
+                    <p><strong>الموقع:</strong> https://wwww.mad3oom.online</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Modal -->
+    <div id="ticketModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTicketModal()">&times;</span>
+            <h2>إنشاء تذكرة جديدة</h2>
+            <form id="ticketForm" onsubmit="createTicket(event)">
+                <div class="form-group">
+                    <label for="ticketTitle">العنوان *</label>
+                    <input type="text" id="ticketTitle" required placeholder="أدخل عنوان التذكرة">
+                </div>
+                <div class="form-group">
+                    <label for="ticketDescription">الوصف *</label>
+                    <textarea id="ticketDescription" rows="4" required placeholder="اشرح المشكلة بالتفصيل"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="ticketPriority">الأولوية *</label>
+                    <select id="ticketPriority" required>
+                        <option value="low">منخفضة</option>
+                        <option value="medium" selected>متوسطة</option>
+                        <option value="high">عالية</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ticketAttachment">إرفاق ملف (اختياري)</label>
+                    <input type="file" id="ticketAttachment" accept="image/*,.pdf,.doc,.docx">
+                    <small>الحد الأقصى: 10MB. أنواع الملفات المدعومة: صور، PDF، Word</small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeTicketModal()">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">إنشاء التذكرة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h3>منصة مدعوم</h3>
+                    <p>نظام دعم فني متكامل لتقديم أفضل خدمة عملاء</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" onclick="showPage('home')">الرئيسية</a></li>
+                        <li><a href="#" id="footerCreateTicket" onclick="showPage('tickets')">إنشاء تذكرة</a></li>
+                        <li><a href="#" id="footerStartChat" onclick="showPage('chat')">بدء المحادثة</a></li>
+                        <li><a href="customer-dashboard.html" id="footerDashboard" style="display: none;">لوحة التحكم</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>معلومات</h4>
+                    <ul class="footer-links">
+                        <li><a href="subscriptions.html">الخطط والأسعار</a></li>
+                        <li><a href="rewards.html">نظام المكافآت</a></li>
+                        <li><a href="#" onclick="showPage('about')">حول الخدمة</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>قانوني</h4>
+                    <ul class="footer-links">
+                        <li><a href="privacy.html">سياسة الخصوصية</a></li>
+                        <li><a href="terms.html">شروط الاستخدام</a></li>
+                        <li><a href="cookies.html">سياسة الكوكيز</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2026 منصة مدعوم. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module" src="script.js"></script>
+    <script type="module">
+        import { currentSession, logout } from './auth-client.js';
+        
+        // Expose necessary functions to global scope for inline onclick handlers
+        window.updateTicketStatus = async (id, status) => {
+            const { updateTicketStatus } = await import('./script.js');
+            if (typeof updateTicketStatus === 'function') {
+                updateTicketStatus(id, status);
+            }
+        };
+        
+        window.deleteTicket = async (id) => {
+            const { deleteTicket } = await import('./script.js');
+            if (typeof deleteTicket === 'function') {
+                deleteTicket(id);
+            }
+        };
+
+        const signOutLink = document.getElementById('navSignOut');
+        const signInLink = document.getElementById('navSignIn');
+        const signUpLink = document.getElementById('navSignUp');
+        const restrictedNavs = document.querySelectorAll('.restricted-nav');
+        const restrictedPages = document.querySelectorAll('.restricted-page');
+        const footerDashboard = document.getElementById('footerDashboard');
+        const footerCreateTicket = document.getElementById('footerCreateTicket');
+        const footerStartChat = document.getElementById('footerStartChat');
+
+        // Check session and update UI
+        const user = await currentSession();
+
+        if (user) {
+            // User is logged in
+            if (signInLink) signInLink.style.display = 'none';
+            if (signUpLink) signUpLink.style.display = 'none';
+            if (signOutLink) {
+                signOutLink.style.display = 'inline-block';
+                signOutLink.addEventListener('click', async (event) => {
+                    event.preventDefault();
+                    try {
+                        await logout();
+                    } catch (err) {
+                        console.error('Logout error:', err);
+                    }
+                    window.location.replace('sign-in.html');
+                });
+            }
+            // Show restricted navigation and pages
+            restrictedNavs.forEach(nav => nav.style.display = 'inline-block');
+            restrictedPages.forEach(page => page.style.display = 'block');
+            if (footerDashboard) footerDashboard.style.display = 'inline-block';
+        } else {
+            // User is not logged in
+            if (signInLink) signInLink.style.display = 'inline-block';
+            if (signUpLink) signUpLink.style.display = 'inline-block';
+            if (signOutLink) signOutLink.style.display = 'none';
+            // Hide restricted navigation and pages
+            restrictedNavs.forEach(nav => nav.style.display = 'none');
+            restrictedPages.forEach(page => page.style.display = 'none');
+            if (footerDashboard) footerDashboard.style.display = 'none';
+            
+            // Redirect if trying to access restricted pages
+            const hash = window.location.hash.replace('#', '');
+            if (['dashboard', 'tickets', 'chat'].includes(hash)) {
+                window.location.replace('sign-in.html');
+            }
+        }
+
+        // Update footer links based on auth state
+        if (footerCreateTicket && !user) {
+            footerCreateTicket.onclick = () => window.location.href = 'sign-in.html';
+        }
+        if (footerStartChat && !user) {
+            footerStartChat.onclick = () => window.location.href = 'sign-in.html';
+        }
+    </script>
+</body>
+</html>

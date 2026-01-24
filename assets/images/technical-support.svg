@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="gradTech1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1C2333;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#252B3D;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1C2333;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="600" fill="url(#gradTech1)"/>
+  <!-- Server Racks Background -->
+  <rect x="50" y="150" width="80" height="300" fill="#3b82f6" opacity="0.15" rx="4"/>
+  <rect x="150" y="150" width="80" height="300" fill="#06b6d4" opacity="0.15" rx="4"/>
+  <rect x="250" y="150" width="80" height="300" fill="#a855f7" opacity="0.15" rx="4"/>
+  <rect x="850" y="150" width="80" height="300" fill="#3b82f6" opacity="0.15" rx="4"/>
+  <rect x="950" y="150" width="80" height="300" fill="#06b6d4" opacity="0.15" rx="4"/>
+  <rect x="1050" y="150" width="80" height="300" fill="#a855f7" opacity="0.15" rx="4"/>
+  <!-- Holographic Elements -->
+  <circle cx="300" cy="200" r="50" fill="none" stroke="#CFE8FF" stroke-width="2" opacity="0.4"/>
+  <circle cx="300" cy="200" r="30" fill="none" stroke="#CFE8FF" stroke-width="1" opacity="0.3"/>
+  <circle cx="900" cy="200" r="50" fill="none" stroke="#CFE8FF" stroke-width="2" opacity="0.4"/>
+  <circle cx="900" cy="200" r="30" fill="none" stroke="#CFE8FF" stroke-width="1" opacity="0.3"/>
+  <!-- Central Shield Icon -->
+  <path d="M 600 250 L 650 280 L 650 320 L 600 350 L 550 320 L 550 280 Z" fill="#CFE8FF" opacity="0.3" stroke="#CFE8FF" stroke-width="2"/>
+  <text x="600" y="310" font-family="Arial, sans-serif" font-size="48" fill="#CFE8FF" text-anchor="middle" font-weight="bold">?</text>
+  <!-- Text -->
+  <text x="600" y="450" font-family="Arial, sans-serif" font-size="28" fill="#CFE8FF" text-anchor="middle" font-weight="bold">Technical Support</text>
+  <text x="600" y="480" font-family="Arial, sans-serif" font-size="16" fill="#E2E8F0" text-anchor="middle">اكتشاف الأعطال لحظياً ومعالجتها بدقة</text>
+</svg>
