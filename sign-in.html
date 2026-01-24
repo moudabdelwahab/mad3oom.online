@@ -215,16 +215,28 @@
 
 
         // التحقق إذا كان مسجل دخول بالفعل
-        (async () => {
-            const user = await getCurrentUser();
-            if (user && user.profile) {
-                if (user.profile.role === 'admin') {
-                    window.location.replace('admin-dashboard.html');
-                } else {
-                    window.location.replace('customer-dashboard.html');
-                }
-            }
-        })();
+      // منع اللوب
+let isLoggingIn = false;
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    isLoggingIn = true;
+    // باقي الكود زي ما هو
+});
+// التحقق إذا كان مسجل دخول بالفعل (لو مش في عملية Login)
+(async () => {
+    if (isLoggingIn) return;
+
+    const user = await getCurrentUser();
+    if (user && user.profile) {
+        window.location.replace(
+            user.profile.role === 'admin'
+                ? 'admin-dashboard.html'
+                : 'customer-dashboard.html'
+        );
+    }
+})();
+
     </script>
 </body>
 </html>
