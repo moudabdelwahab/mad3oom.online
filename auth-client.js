@@ -72,38 +72,23 @@ export async function getCurrentUser() {
 /**
  * حماية الصفحات بناءً على الدور (Role) المسترجع من قاعدة البيانات
  */
-export async function requireAuth(requiredRole = null) {
-  const { data: { session } } = await supabase.auth.getSession();
+const result = await requireAuth('user');
 
- if (!session || !session.user.email_confirmed_at) {
-  await supabase.auth.signOut();
+if (result?.error === 'UNAUTHENTICATED') {
   window.location.replace('sign-in.html');
-  return null;
+  return;
 }
 
-
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
-
-  if (error || !profile) {
-    console.error('Profile not ready or blocked', error);
-    return null; // ❌ مفيش reload
-  }
-
-  if (requiredRole && profile.role !== requiredRole && profile.role !== 'admin') {
-    window.location.replace(
-      profile.role === 'admin'
-        ? 'admin-dashboard.html'
-        : 'customer-dashboard.html'
-    );
-    return null;
-  }
-
-  return { ...session.user, profile };
+if (result?.error === 'FORBIDDEN') {
+  window.location.replace(
+    result.role === 'admin'
+      ? 'admin-dashboard.html'
+      : 'customer-dashboard.html'
+  );
+  return;
 }
+
+const user = result.user;
 
 
 
