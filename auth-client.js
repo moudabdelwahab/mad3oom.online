@@ -75,10 +75,12 @@ export async function getCurrentUser() {
 export async function requireAuth(requiredRole = null) {
   const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
-    window.location.replace('sign-in.html');
-    return null;
-  }
+ if (!session || !session.user.email_confirmed_at) {
+  await supabase.auth.signOut();
+  window.location.replace('sign-in.html');
+  return null;
+}
+
 
   const { data: profile, error } = await supabase
     .from('profiles')
