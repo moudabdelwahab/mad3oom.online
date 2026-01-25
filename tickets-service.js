@@ -82,11 +82,17 @@ export async function uploadTicketImage(file) {
 
     const { data, error: uploadError } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file);
+        .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+        });
 
     if (uploadError) {
         console.error('Upload error details:', uploadError);
-        throw new Error(`فشل رفع الصورة: ${uploadError.message}. تأكد من وجود Bucket باسم '${bucketName}' في Supabase.`);
+        if (uploadError.message.includes('bucket not found') || uploadError.error === 'Bucket not found') {
+            throw new Error(`لم يتم العثور على Storage Bucket باسم '${bucketName}'. يرجى إنشاؤه في لوحة تحكم Supabase وتفعيله كـ Public.`);
+        }
+        throw new Error(`فشل رفع الصورة: ${uploadError.message}`);
     }
 
     const { data: { publicUrl } } = supabase.storage
