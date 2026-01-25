@@ -153,11 +153,15 @@
                     </div>
                     <div class="form-group">
                         <label for="profileEmail">البريد الإلكتروني</label>
-                        <input type="email" id="profileEmail" readonly style="background: var(--bg-secondary); cursor: not-allowed;">
+                        <input type="email" id="profileEmail" placeholder="أدخل بريدك الإلكتروني">
                     </div>
                     <div class="form-group">
                         <label for="profilePhone">رقم الهاتف</label>
                         <input type="tel" id="profilePhone" placeholder="أدخل رقم هاتفك">
+                    </div>
+                    <div class="form-group">
+                        <label for="profilePassword">كلمة المرور الجديدة</label>
+                        <input type="password" id="profilePassword" placeholder="اتركها فارغة إذا لا تريد التغيير">
                     </div>
                     <button type="submit" class="btn btn-primary" id="saveProfileBtn">حفظ التغييرات</button>
                 </form>
@@ -167,7 +171,7 @@
 
     <script type="module">
         import { requireAuth, logout, updateProfile } from './auth-client.js';
-        import { supabase } from './api-config.js';
+        import { fetchUserTickets, fetchTicketStats, updateTicketStatus, deleteTicket } from './tickets-service.js';
 
         // 1. حماية الصفحة (Admin Only)
         const user = await requireAuth('admin');
@@ -217,20 +221,37 @@
             saveBtn.textContent = 'جاري الحفظ...';
 
             try {
-                const updates = {
-                    full_name: document.getElementById('profileFullName').value,
-                    phone: document.getElementById('profilePhone').value,
-                    updated_at: new Date()
-                };
+                const fullName = document.getElementById('profileFullName').value;
+                const phone = document.getElementById('profilePhone').value;
+                const email = document.getElementById('profileEmail').value;
+                const password = document.getElementById('profilePassword').value;
 
-                const { error } = await updateProfile(updates);
-                if (error) throw error;
+                // 1. تحديث البروفايل
+                const { error: profileError } = await updateProfile({
+                    full_name: fullName,
+                    phone: phone,
+                    updated_at: new Date()
+                });
+                if (profileError) throw profileError;
+
+                // 2. تحديث الإيميل
+                if (email !== user.email) {
+                    const { error: emailError } = await import('./auth-client.js').then(m => m.updateEmail(email));
+                    if (emailError) throw emailError;
+                }
+
+                // 3. تحديث كلمة المرور
+                if (password) {
+                    const { error: pwdError } = await import('./auth-client.js').then(m => m.updatePassword(password));
+                    if (pwdError) throw pwdError;
+                }
 
                 profileMessage.style.display = 'block';
                 profileMessage.className = 'message-box message-success';
-                profileMessage.textContent = 'تم تحديث بيانات المسؤول بنجاح';
+                profileMessage.textContent = 'تم تحديث بيانات المسؤول بنجاح. إذا قمت بتغيير الإيميل، يرجى تأكيده.';
                 
-                document.getElementById('welcomeAdmin').textContent = `مرحباً أدمن، ${updates.full_name}`;
+                document.getElementById('welcomeAdmin').textContent = `مرحباً أدمن، ${fullName}`;
+                document.getElementById('profilePassword').value = '';
 
             } catch (err) {
                 profileMessage.style.display = 'block';
@@ -261,21 +282,12 @@
         // 6. تحميل وإدارة التذاكر
         async function loadAdminTickets() {
             try {
-                const { data: tickets, error } = await supabase
-                    .from('tickets')
-                    .select('*, profiles(email)')
-                    .order('created_at', { ascending: false });
+                const stats = await fetchTicketStats();
+                document.getElementById('admTotal').textContent = stats.total;
+                document.getElementById('admOpen').textContent = stats.open;
+                document.getElementById('admResolved').textContent = stats.resolved;
 
-                if (error) throw error;
-
-                const total = tickets.length;
-                const open = tickets.filter(t => t.status === 'open').length;
-                const resolved = tickets.filter(t => t.status === 'resolved').length;
-
-                document.getElementById('admTotal').textContent = total;
-                document.getElementById('admOpen').textContent = open;
-                document.getElementById('admResolved').textContent = resolved;
-
+                const tickets = await fetchUserTickets();
                 const tbody = document.getElementById('admTicketsBody');
                 tbody.innerHTML = '';
 
@@ -293,29 +305,34 @@
                         <td><span class="status-badge status-${t.status}">${t.status}</span></td>
                         <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
                         <td>
-                            <button class="btn btn-secondary btn-sm" onclick="updateStatus('${t.id}', 'resolved')">حل</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteTicket('${t.id}')">حذف</button>
+                            <button class="btn btn-secondary btn-sm" data-id="${t.id}" data-action="resolve">حل</button>
+                            <button class="btn btn-danger btn-sm" data-id="${t.id}" data-action="delete">حذف</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
+                });
+
+                // ربط الأحداث بالأزرار
+                tbody.querySelectorAll('button').forEach(btn => {
+                    btn.onclick = async () => {
+                        const id = btn.dataset.id;
+                        const action = btn.dataset.action;
+                        if (action === 'resolve') {
+                            await updateTicketStatus(id, 'resolved');
+                        } else if (action === 'delete') {
+                            if (confirm('هل أنت متأكد من حذف هذه التذكرة؟')) {
+                                await deleteTicket(id);
+                            } else {
+                                return;
+                            }
+                        }
+                        loadAdminTickets();
+                    };
                 });
             } catch (err) {
                 console.error('Admin tickets error:', err);
             }
         }
-
-        // جعل الوظائف متاحة عالمياً للأزرار
-        window.updateStatus = async (id, status) => {
-            await supabase.from('tickets').update({ status }).eq('id', id);
-            loadAdminTickets();
-        };
-
-        window.deleteTicket = async (id) => {
-            if (confirm('هل أنت متأكد من حذف هذه التذكرة؟')) {
-                await supabase.from('tickets').delete().eq('id', id);
-                loadAdminTickets();
-            }
-        };
 
         loadAdminTickets();
     </script>

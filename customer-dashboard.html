@@ -123,12 +123,17 @@
                         <input type="text" id="profileFullName" placeholder="أدخل اسمك الكامل">
                     </div>
                     <div class="form-group">
-                        <label for="profileEmail">البريد الإلكتروني (للقراءة فقط)</label>
-                        <input type="email" id="profileEmail" readonly style="background: var(--bg-secondary); cursor: not-allowed;">
+                        <label for="profileEmail">البريد الإلكتروني</label>
+                        <input type="email" id="profileEmail" placeholder="أدخل بريدك الإلكتروني">
+                        <small>ملاحظة: إذا قمت بتغيير البريد، ستحتاج لتأكيده قبل تسجيل الدخول المرة القادمة.</small>
                     </div>
                     <div class="form-group">
                         <label for="profilePhone">رقم الهاتف</label>
                         <input type="tel" id="profilePhone" placeholder="أدخل رقم هاتفك">
+                    </div>
+                    <div class="form-group">
+                        <label for="profilePassword">كلمة المرور الجديدة</label>
+                        <input type="password" id="profilePassword" placeholder="اتركها فارغة إذا لا تريد التغيير">
                     </div>
                     <button type="submit" class="btn btn-primary" id="saveProfileBtn">حفظ التغييرات</button>
                 </form>
@@ -216,25 +221,42 @@
             saveBtn.textContent = 'جاري الحفظ...';
 
             try {
-                const updates = {
-                    full_name: document.getElementById('profileFullName').value,
-                    phone: document.getElementById('profilePhone').value,
-                    updated_at: new Date()
-                };
+                const fullName = document.getElementById('profileFullName').value;
+                const phone = document.getElementById('profilePhone').value;
+                const email = document.getElementById('profileEmail').value;
+                const password = document.getElementById('profilePassword').value;
 
-                const { error } = await updateProfile(updates);
-                if (error) throw error;
+                // 1. تحديث البروفايل (الاسم والهاتف)
+                const { error: profileError } = await updateProfile({
+                    full_name: fullName,
+                    phone: phone,
+                    updated_at: new Date()
+                });
+                if (profileError) throw profileError;
+
+                // 2. تحديث الإيميل إذا تغير
+                if (email !== user.email) {
+                    const { error: emailError } = await import('./auth-client.js').then(m => m.updateEmail(email));
+                    if (emailError) throw emailError;
+                }
+
+                // 3. تحديث كلمة المرور إذا أدخلت
+                if (password) {
+                    const { error: pwdError } = await import('./auth-client.js').then(m => m.updatePassword(password));
+                    if (pwdError) throw pwdError;
+                }
 
                 profileMessage.style.display = 'block';
                 profileMessage.className = 'message-box message-success';
-                profileMessage.textContent = 'تم تحديث الملف الشخصي بنجاح';
+                profileMessage.textContent = 'تم تحديث البيانات بنجاح. إذا قمت بتغيير الإيميل، يرجى تأكيده.';
                 
-                document.getElementById('welcomeUser').textContent = `مرحباً، ${updates.full_name}`;
+                document.getElementById('welcomeUser').textContent = `مرحباً، ${fullName}`;
+                document.getElementById('profilePassword').value = '';
 
             } catch (err) {
                 profileMessage.style.display = 'block';
                 profileMessage.className = 'message-box message-error';
-                profileMessage.textContent = err.message || 'فشل تحديث الملف الشخصي';
+                profileMessage.textContent = err.message || 'فشل تحديث البيانات';
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'حفظ التغييرات';

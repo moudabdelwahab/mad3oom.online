@@ -141,3 +141,14 @@ export async function updatePassword(newPassword) {
     });
     return { data, error };
 }
+
+/**
+ * تحديث البريد الإلكتروني
+ * ملاحظة: سيتطلب تأكيد البريد الجديد عبر رابط يصل إليه
+ */
+export async function updateEmail(newEmail) {
+    const { data, error } = await supabase.auth.updateUser({
+        email: newEmail
+    });
+    return { data, error };
+}
