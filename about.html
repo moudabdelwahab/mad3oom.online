@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حول منصة مدعوم | رؤيتنا وأهدافنا</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme-preference') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch(e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <script src="theme-manager.js" defer></script>
+    <style>
+        .about-hero {
+            padding: 6rem 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-variant));
+            color: white;
+            border-radius: 0 0 3rem 3rem;
+            margin-bottom: 4rem;
+        }
+        .about-hero h1 {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            margin-bottom: 1.5rem;
+        }
+        .about-hero p {
+            font-size: 1.25rem;
+            max-width: 800px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        .about-section {
+            max-width: 1000px;
+            margin: 0 auto 6rem;
+            padding: 0 2rem;
+        }
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+        .about-card {
+            background: var(--color-surface);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
+            transition: transform 0.3s ease;
+        }
+        .about-card:hover {
+            transform: translateY(-10px);
+        }
+        .about-card h3 {
+            color: var(--color-accent);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        .vision-mission {
+            display: flex;
+            flex-direction: column;
+            gap: 4rem;
+        }
+        .vision-item {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+        }
+        .vision-item:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+        .vision-text {
+            flex: 1;
+            min-width: 300px;
+        }
+        .vision-text h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--color-primary);
+        }
+        .vision-image {
+            flex: 1;
+            min-width: 300px;
+            border-radius: 2rem;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .vision-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/logo.png" alt="Logo" class="logo-image">
+                <span>منصة مدعوم</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button class="theme-toggle" aria-label="Toggle theme">
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </button>
+                <ul class="nav-menu">
+                    <li><a href="index.html">الرئيسية</a></li>
+                    <li><a href="about.html" class="active">حول</a></li>
+                    <li><a href="rewards.html">المكافآت</a></li>
+                    <li><a href="subscriptions.html">الخطط والأسعار</a></li>
+                    <li><a href="sign-in.html">تسجيل الدخول</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <header class="about-hero">
+        <h1>عن منصة مدعوم</h1>
+        <p>نحن نسعى لإعادة تعريف مفهوم الدعم الفني من خلال حلول ذكية، سريعة، وسهلة الاستخدام تضع العميل في المقدمة.</p>
+    </header>
+
+    <main class="about-section">
+        <div class="vision-mission">
+            <div class="vision-item">
+                <div class="vision-text">
+                    <h2>رؤيتنا</h2>
+                    <p>أن نكون المنصة الرائدة في العالم العربي لتقديم خدمات الدعم الفني المتكاملة، حيث يلتقي الابتكار بالاحترافية لخدمة الشركات والأفراد على حد سواء.</p>
+                </div>
+                <div class="vision-image">
+                    <img src="assets/images/technical-support.svg" alt="رؤيتنا">
+                </div>
+            </div>
+
+            <div class="vision-item">
+                <div class="vision-text">
+                    <h2>رسالتنا</h2>
+                    <p>توفير بيئة دعم فني مستقرة وآمنة تعتمد على أحدث تقنيات الأتمتة مع الحفاظ على اللمسة البشرية الضرورية لحل المشكلات المعقدة بدقة وسرعة.</p>
+                </div>
+                <div class="vision-image">
+                    <img src="assets/images/system-operations.svg" alt="رسالتنا">
+                </div>
+            </div>
+        </div>
+
+        <div class="about-grid">
+            <div class="about-card">
+                <h3>السرعة</h3>
+                <p>نظامنا مصمم للاستجابة الفورية، مما يقلل من وقت انتظار العميل ويزيد من كفاءة العمل.</p>
+            </div>
+            <div class="about-card">
+                <h3>الاحترافية</h3>
+                <p>فريقنا وأدواتنا تعمل وفق أعلى المعايير العالمية لضمان جودة الخدمة المقدمة.</p>
+            </div>
+            <div class="about-card">
+                <h3>الابتكار</h3>
+                <p>نطور أدواتنا باستمرار لدمج الذكاء الاصطناعي والأتمتة في تحسين تجربة المستخدم.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer style="text-align: center; padding: 4rem 2rem; background: var(--color-surface); border-top: 1px solid var(--color-border);">
+        <p>&copy; 2026 منصة مدعوم. جميع الحقوق محفوظة.</p>
+    </footer>
+</body>
+</html>
