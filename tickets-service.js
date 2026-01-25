@@ -2,7 +2,6 @@ import { supabase } from './api-config.js';
 
 /**
  * جلب التذاكر
- * ملاحظة: سياسات RLS في Supabase ستضمن أن العميل يرى تذاكره فقط، والأدمن يرى الجميع.
  */
 export async function fetchUserTickets(filters = {}) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -21,16 +20,15 @@ export async function fetchUserTickets(filters = {}) {
         .order('created_at', { ascending: false });
 
     // إذا كان المستخدم عميلاً، نفلتر التذاكر الخاصة به فقط
-    // ملاحظة: RLS قد تقوم بذلك تلقائياً، ولكن هذا التأكيد إضافي
     if (profile && profile.role !== 'admin') {
         query = query.eq('user_id', user.id);
     }
 
-    if (filters.status) {
+    if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status);
     }
 
-    if (filters.priority) {
+    if (filters.priority && filters.priority !== 'all') {
         query = query.eq('priority', filters.priority);
     }
 
@@ -45,13 +43,12 @@ export async function fetchUserTickets(filters = {}) {
 
 /**
  * إنشاء تذكرة جديدة
- * ملاحظة: لا نمرر user_id يدوياً، Supabase سيعتمد على auth.uid() عبر RLS أو Default Value.
  */
 export async function createTicket({ title, description, priority, image_url = null }) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('tickets')
         .insert({
             user_id: user.id,
@@ -60,9 +57,11 @@ export async function createTicket({ title, description, priority, image_url = n
             priority,
             status: 'open',
             image_url
-        });
+        })
+        .select();
 
     if (error) throw error;
+    return data[0];
 }
 
 /**
@@ -72,12 +71,11 @@ export async function uploadTicketImage(file) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
+    // تنظيف اسم الملف من الحروف غير الصالحة
     const fileExt = file.name.split('.').pop();
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
 
-    // محاولة الرفع إلى 'tickets' كاسم افتراضي أكثر احتمالاً للوجود
-    // أو يمكنك إنشاء Bucket باسم 'tickets' في لوحة تحكم Supabase
     const bucketName = 'tickets';
 
     const { data, error: uploadError } = await supabase.storage
@@ -89,8 +87,9 @@ export async function uploadTicketImage(file) {
 
     if (uploadError) {
         console.error('Upload error details:', uploadError);
-        if (uploadError.message.includes('bucket not found') || uploadError.error === 'Bucket not found') {
-            throw new Error(`لم يتم العثور على Storage Bucket باسم '${bucketName}'. يرجى إنشاؤه في لوحة تحكم Supabase وتفعيله كـ Public.`);
+        // إذا كان الخطأ بسبب عدم وجود الـ Bucket، نحاول توضيح ذلك
+        if (uploadError.message?.includes('bucket not found') || uploadError.error === 'Bucket not found') {
+            throw new Error(`Storage Bucket 'tickets' غير موجود. يرجى إنشاؤه في Supabase وجعله Public.`);
         }
         throw new Error(`فشل رفع الصورة: ${uploadError.message}`);
     }
@@ -116,13 +115,24 @@ export function subscribeToTickets(callback) {
 
 /**
  * جلب إحصائيات التذاكر
- * ملاحظة: تعتمد أيضاً على RLS لضمان دقة الأرقام حسب صلاحية المستخدم.
  */
 export async function fetchTicketStats() {
-    const { data, error } = await supabase
-        .from('tickets')
-        .select('status');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { total: 0, open: 0, inProgress: 0, resolved: 0 };
 
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    let query = supabase.from('tickets').select('status');
+    
+    if (profile && profile.role !== 'admin') {
+        query = query.eq('user_id', user.id);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
 
     return {
@@ -134,7 +144,7 @@ export async function fetchTicketStats() {
 }
 
 /**
- * تحديث حالة التذكرة (للمسؤول)
+ * تحديث حالة التذكرة
  */
 export async function updateTicketStatus(ticketId, status) {
     const { error } = await supabase
