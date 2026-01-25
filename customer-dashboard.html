@@ -504,8 +504,16 @@
             try {
                 let image_url = null;
                 const imageFile = document.getElementById('userTicketImage').files[0];
+                
                 if (imageFile) {
-                    image_url = await uploadTicketImage(imageFile);
+                    try {
+                        image_url = await uploadTicketImage(imageFile);
+                    } catch (uploadErr) {
+                        console.warn('Image upload failed, proceeding without image:', uploadErr);
+                        if (!confirm('فشل رفع الصورة (تأكد من إعداد Storage Bucket باسم "tickets"). هل تريد الاستمرار وإنشاء التذكرة بدون صورة؟')) {
+                            throw new Error('تم إلغاء العملية بواسطة المستخدم');
+                        }
+                    }
                 }
 
                 const data = {
@@ -521,7 +529,9 @@
                 document.getElementById('imagePreview').style.display = 'none';
                 loadDashboardData();
             } catch (err) {
-                alert('فشل إنشاء التذكرة: ' + err.message);
+                if (err.message !== 'تم إلغاء العملية بواسطة المستخدم') {
+                    alert('فشل إنشاء التذكرة: ' + err.message);
+                }
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'إنشاء التذكرة';

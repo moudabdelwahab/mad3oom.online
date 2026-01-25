@@ -74,16 +74,23 @@ export async function uploadTicketImage(file) {
 
     const fileExt = file.name.split('.').pop();
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-    const filePath = `ticket-images/${fileName}`;
+    const filePath = `${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-        .from('mad3oom-assets')
+    // محاولة الرفع إلى 'tickets' كاسم افتراضي أكثر احتمالاً للوجود
+    // أو يمكنك إنشاء Bucket باسم 'tickets' في لوحة تحكم Supabase
+    const bucketName = 'tickets';
+
+    const { data, error: uploadError } = await supabase.storage
+        .from(bucketName)
         .upload(filePath, file);
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw new Error(`فشل رفع الصورة: ${uploadError.message}. تأكد من وجود Bucket باسم '${bucketName}' في Supabase.`);
+    }
 
     const { data: { publicUrl } } = supabase.storage
-        .from('mad3oom-assets')
+        .from(bucketName)
         .getPublicUrl(filePath);
 
     return publicUrl;
