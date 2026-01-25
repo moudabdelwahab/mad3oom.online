@@ -106,3 +106,42 @@ export async function deleteTicket(ticketId) {
 
     if (error) throw error;
 }
+
+/**
+ * إضافة رد على تذكرة
+ */
+export async function addTicketReply(ticketId, message) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+        .from('ticket_replies')
+        .insert({
+            ticket_id: ticketId,
+            user_id: user.id,
+            message: message
+        });
+
+    if (error) throw error;
+
+    // تحديث حالة التذكرة إلى 'in-progress' إذا كانت 'open'
+    await supabase
+        .from('tickets')
+        .update({ status: 'in-progress' })
+        .eq('id', ticketId)
+        .eq('status', 'open');
+}
+
+/**
+ * جلب ردود التذكرة
+ */
+export async function fetchTicketReplies(ticketId) {
+    const { data, error } = await supabase
+        .from('ticket_replies')
+        .select('*, profiles(full_name, role)')
+        .eq('ticket_id', ticketId)
+        .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data;
+}

@@ -42,6 +42,12 @@
             cursor: pointer;
             border-radius: 0.5rem;
             transition: all 0.3s;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .nav-tab:hover {
+            background: var(--hover-bg);
+            color: var(--primary-color);
         }
         .nav-tab.active {
             background: var(--primary-color);
@@ -49,9 +55,14 @@
         }
         .tab-content {
             display: none;
+            animation: fadeIn 0.3s ease-in-out;
         }
         .tab-content.active {
             display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         table {
             width: 100%;
@@ -69,7 +80,84 @@
         th {
             background: var(--bg-secondary);
             color: var(--text-secondary);
+            font-weight: 600;
         }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status-open { background: rgba(224, 168, 0, 0.15); color: var(--warning-color); }
+        .status-resolved { background: rgba(46, 138, 58, 0.15); color: var(--success-color); }
+        .status-closed { background: var(--color-muted); color: var(--text-secondary); }
+        
+        /* تحسينات الفلترة والبحث */
+        .admin-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .filter-group select {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .reply-item {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            background: var(--bg-secondary);
+        }
+        .reply-admin { border-right: 4px solid var(--primary-color); }
+        .reply-user { border-right: 4px solid var(--success-color); }
     </style>
 </head>
 <body>
@@ -84,16 +172,16 @@
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                     <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                 </button>
+                <ul class="nav-menu">
+                    <li id="welcomeAdmin" style="color: var(--color-nav-text); font-weight: 500;"></li>
+                    <li><a href="#" id="profileLink">الملف الشخصي</a></li>
+                    <li><a href="#" id="signOutLink">تسجيل الخروج</a></li>
+                </ul>
             </div>
-            <ul class="nav-menu">
-                <li id="welcomeAdmin"></li>
-                <li><a href="#" id="profileLink" class="nav-tab-trigger" data-tab="profile">الملف الشخصي</a></li>
-                <li><a href="#" id="signOutLink">تسجيل الخروج</a></li>
-            </ul>
         </div>
     </nav>
 
-    <main class="container" style="margin-top: 2rem;">
+    <main class="container" style="margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem;">
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="overview">إدارة التذاكر</div>
             <div class="nav-tab" data-tab="profile">الملف الشخصي</div>
@@ -107,20 +195,40 @@
             
             <div class="stats-grid">
                 <div class="stat-card">
-                    <p class="stat-label">إجمالي التذاكر</p>
-                    <p class="stat-value" id="admTotal">0</p>
+                    <div class="stat-content">
+                        <p class="stat-label">إجمالي التذاكر</p>
+                        <p class="stat-value" id="admTotal">0</p>
+                    </div>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">المفتوحة</p>
-                    <p class="stat-value" id="admOpen" style="color: var(--warning-color);">0</p>
+                    <div class="stat-content">
+                        <p class="stat-label">المفتوحة</p>
+                        <p class="stat-value" id="admOpen" style="color: var(--warning-color);">0</p>
+                    </div>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">المحلولة</p>
-                    <p class="stat-value" id="admResolved" style="color: var(--success-color);">0</p>
+                    <div class="stat-content">
+                        <p class="stat-label">المحلولة</p>
+                        <p class="stat-value" id="admResolved" style="color: var(--success-color);">0</p>
+                    </div>
                 </div>
             </div>
 
-            <div style="overflow-x: auto; margin-top: 2rem;">
+            <div class="admin-controls">
+                <div class="search-box">
+                    <input type="text" id="ticketSearch" placeholder="بحث في التذاكر...">
+                </div>
+                <div class="filter-group">
+                    <select id="statusFilter">
+                        <option value="">كل الحالات</option>
+                        <option value="open">مفتوحة</option>
+                        <option value="resolved">محلولة</option>
+                        <option value="closed">مغلقة</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto; background: var(--card-bg); border-radius: 1rem; box-shadow: var(--shadow-sm);">
                 <table>
                     <thead>
                         <tr>
@@ -132,7 +240,7 @@
                         </tr>
                     </thead>
                     <tbody id="admTicketsBody">
-                        <tr><td colspan="5" style="text-align:center;">جاري تحميل البيانات...</td></tr>
+                        <tr><td colspan="5" style="text-align:center; padding: 3rem;">جاري تحميل البيانات...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -142,49 +250,73 @@
         <div id="profileTab" class="tab-content">
             <div class="profile-section">
                 <h2>إعدادات المسؤول</h2>
-                <p>تعديل بيانات الحساب الإداري</p>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">تعديل بيانات الحساب الإداري</p>
                 
-                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem;"></div>
+                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 0.5rem;"></div>
 
                 <form id="profileForm" class="profile-form">
                     <div class="form-group">
                         <label for="profileFullName">الاسم الكامل</label>
-                        <input type="text" id="profileFullName" placeholder="أدخل اسمك الكامل">
+                        <input type="text" id="profileFullName" class="form-control" placeholder="أدخل اسمك الكامل">
                     </div>
                     <div class="form-group">
                         <label for="profileEmail">البريد الإلكتروني</label>
-                        <input type="email" id="profileEmail" placeholder="أدخل بريدك الإلكتروني">
+                        <input type="email" id="profileEmail" class="form-control" placeholder="أدخل بريدك الإلكتروني">
                     </div>
                     <div class="form-group">
                         <label for="profilePhone">رقم الهاتف</label>
-                        <input type="tel" id="profilePhone" placeholder="أدخل رقم هاتفك">
+                        <input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك">
                     </div>
                     <div class="form-group">
                         <label for="profilePassword">كلمة المرور الجديدة</label>
-                        <input type="password" id="profilePassword" placeholder="اتركها فارغة إذا لا تريد التغيير">
+                        <input type="password" id="profilePassword" class="form-control" placeholder="اتركها فارغة إذا لا تريد التغيير">
                     </div>
-                    <button type="submit" class="btn btn-primary" id="saveProfileBtn">حفظ التغييرات</button>
+                    <button type="submit" class="btn btn-primary" id="saveProfileBtn" style="width: fit-content; padding: 0.75rem 2rem;">حفظ التغييرات</button>
                 </form>
             </div>
         </div>
     </main>
 
+    <!-- Modal الرد على التذكرة -->
+    <div id="replyModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTicketTitle">الرد على التذكرة</h2>
+            <div id="repliesList" style="margin: 1.5rem 0; max-height: 300px; overflow-y: auto;">
+                <!-- الردود ستظهر هنا -->
+            </div>
+            <form id="replyForm">
+                <textarea id="replyMessage" class="form-control" style="width: 100%; min-height: 100px; margin-bottom: 1rem; padding: 0.75rem;" placeholder="اكتب ردك هنا..." required></textarea>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('replyModal').classList.remove('active')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">إرسال الرد</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
         import { requireAuth, logout, updateProfile } from './auth-client.js';
-        import { fetchUserTickets, fetchTicketStats, updateTicketStatus, deleteTicket } from './tickets-service.js';
+        import { fetchUserTickets, fetchTicketStats, updateTicketStatus, deleteTicket, addTicketReply, fetchTicketReplies } from './tickets-service.js';
 
         // 1. حماية الصفحة (Admin Only)
-        const user = await requireAuth('admin');
-        if (!user) {
+        let user;
+        try {
+            user = await requireAuth('admin');
+            if (!user) {
+                window.location.replace('sign-in.html');
+            }
+        } catch (err) {
+            console.error('Auth error:', err);
             window.location.replace('sign-in.html');
-            return;
         }
 
-        // 2. عرض البيانات
-        document.getElementById('welcomeAdmin').textContent = `مرحباً أدمن، ${user.profile?.full_name || user.email}`;
-        document.getElementById('profileEmail').value = user.email;
-        document.getElementById('profileFullName').value = user.profile?.full_name || '';
-        document.getElementById('profilePhone').value = user.profile?.phone || '';
+        // 2. عرض البيانات الأولية
+        if (user) {
+            document.getElementById('welcomeAdmin').textContent = `مرحباً، ${user.profile?.full_name || user.email}`;
+            document.getElementById('profileEmail').value = user.email;
+            document.getElementById('profileFullName').value = user.profile?.full_name || '';
+            document.getElementById('profilePhone').value = user.profile?.phone || '';
+        }
 
         // 3. التبديل بين التبويبات
         function switchTab(tabName) {
@@ -198,8 +330,14 @@
             contents.forEach(c => {
                 c.classList.toggle('active', c.id === `${tabName}Tab`);
             });
+
+            // حفظ التبويب الحالي في URL
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tabName);
+            window.history.pushState({}, '', url);
         }
 
+        // ربط أحداث التبويبات
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', () => switchTab(tab.dataset.tab));
         });
@@ -209,6 +347,13 @@
             e.preventDefault();
             switchTab('profile');
         });
+
+        // التحقق من التبويب في URL عند التحميل
+        const params = new URLSearchParams(window.location.search);
+        const activeTab = params.get('tab');
+        if (activeTab && (activeTab === 'overview' || activeTab === 'profile')) {
+            switchTab(activeTab);
+        }
 
         // 4. تحديث البروفايل
         const profileForm = document.getElementById('profileForm');
@@ -226,7 +371,6 @@
                 const email = document.getElementById('profileEmail').value;
                 const password = document.getElementById('profilePassword').value;
 
-                // 1. تحديث البروفايل
                 const { error: profileError } = await updateProfile({
                     full_name: fullName,
                     phone: phone,
@@ -234,28 +378,28 @@
                 });
                 if (profileError) throw profileError;
 
-                // 2. تحديث الإيميل
                 if (email !== user.email) {
                     const { error: emailError } = await import('./auth-client.js').then(m => m.updateEmail(email));
                     if (emailError) throw emailError;
                 }
 
-                // 3. تحديث كلمة المرور
                 if (password) {
                     const { error: pwdError } = await import('./auth-client.js').then(m => m.updatePassword(password));
                     if (pwdError) throw pwdError;
                 }
 
                 profileMessage.style.display = 'block';
-                profileMessage.className = 'message-box message-success';
-                profileMessage.textContent = 'تم تحديث بيانات المسؤول بنجاح. إذا قمت بتغيير الإيميل، يرجى تأكيده.';
+                profileMessage.style.background = 'rgba(46, 138, 58, 0.1)';
+                profileMessage.style.color = 'var(--success-color)';
+                profileMessage.textContent = 'تم تحديث البيانات بنجاح.';
                 
-                document.getElementById('welcomeAdmin').textContent = `مرحباً أدمن، ${fullName}`;
+                document.getElementById('welcomeAdmin').textContent = `مرحباً، ${fullName}`;
                 document.getElementById('profilePassword').value = '';
 
             } catch (err) {
                 profileMessage.style.display = 'block';
-                profileMessage.className = 'message-box message-error';
+                profileMessage.style.background = 'rgba(217, 83, 79, 0.1)';
+                profileMessage.style.color = 'var(--danger-color)';
                 profileMessage.textContent = err.message || 'فشل التحديث';
             } finally {
                 saveBtn.disabled = false;
@@ -264,35 +408,38 @@
         });
 
         // 5. تسجيل الخروج
-        const signOutBtn = document.getElementById('signOutLink');
-        if (signOutBtn) {
-            signOutBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+        document.getElementById('signOutLink').addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
                 try {
                     await logout();
                     window.location.href = 'sign-in.html';
                 } catch (err) {
                     console.error('Logout error:', err);
-                    window.location.href = 'sign-in.html';
+                    alert('حدث خطأ أثناء تسجيل الخروج');
                 }
-            });
-        }
+            }
+        });
 
         // 6. تحميل وإدارة التذاكر
         async function loadAdminTickets() {
+            const tbody = document.getElementById('admTicketsBody');
             try {
+                // تحميل الإحصائيات
                 const stats = await fetchTicketStats();
                 document.getElementById('admTotal').textContent = stats.total;
                 document.getElementById('admOpen').textContent = stats.open;
                 document.getElementById('admResolved').textContent = stats.resolved;
 
-                const tickets = await fetchUserTickets();
-                const tbody = document.getElementById('admTicketsBody');
+                // تحميل التذاكر مع الفلاتر
+                const status = document.getElementById('statusFilter').value;
+                const search = document.getElementById('ticketSearch').value;
+                
+                const tickets = await fetchUserTickets({ status, search });
                 tbody.innerHTML = '';
 
-                if (tickets.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا توجد تذاكر حالياً</td></tr>';
+                if (!tickets || tickets.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 3rem;">لا توجد تذاكر تطابق البحث</td></tr>';
                     return;
                 }
 
@@ -300,13 +447,19 @@
                     const tr = document.createElement('tr');
                     const userIdentifier = t.profiles?.full_name || t.profiles?.email || 'مستخدم مجهول';
                     tr.innerHTML = `
-                        <td>${userIdentifier}</td>
+                        <td>
+                            <div style="font-weight: 600;">${userIdentifier}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">${t.profiles?.email || ''}</div>
+                        </td>
                         <td>${t.title}</td>
-                        <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+                        <td><span class="status-badge status-${t.status}">${t.status === 'open' ? 'مفتوحة' : t.status === 'resolved' ? 'محلولة' : 'مغلقة'}</span></td>
                         <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
                         <td>
-                            <button class="btn btn-secondary btn-sm" data-id="${t.id}" data-action="resolve">حل</button>
-                            <button class="btn btn-danger btn-sm" data-id="${t.id}" data-action="delete">حذف</button>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-primary btn-sm" data-id="${t.id}" data-title="${t.title}" data-action="reply">رد</button>
+                                ${t.status !== 'resolved' ? `<button class="btn btn-secondary btn-sm" data-id="${t.id}" data-action="resolve">حل</button>` : ''}
+                                <button class="btn btn-danger btn-sm" data-id="${t.id}" data-action="delete">حذف</button>
+                            </div>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -314,15 +467,24 @@
 
                 // ربط الأحداث بالأزرار
                 tbody.querySelectorAll('button').forEach(btn => {
-                    btn.onclick = async () => {
+                    btn.onclick = async (e) => {
+                        e.preventDefault();
                         const id = btn.dataset.id;
                         const action = btn.dataset.action;
-                        if (action === 'resolve') {
+                        const title = btn.dataset.title;
+                        
+                        btn.disabled = true;
+                        if (action === 'reply') {
+                            openReplyModal(id, title);
+                            btn.disabled = false;
+                            return;
+                        } else if (action === 'resolve') {
                             await updateTicketStatus(id, 'resolved');
                         } else if (action === 'delete') {
                             if (confirm('هل أنت متأكد من حذف هذه التذكرة؟')) {
                                 await deleteTicket(id);
                             } else {
+                                btn.disabled = false;
                                 return;
                             }
                         }
@@ -331,9 +493,69 @@
                 });
             } catch (err) {
                 console.error('Admin tickets error:', err);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--danger-color); padding: 3rem;">حدث خطأ أثناء تحميل البيانات</td></tr>';
             }
         }
 
+        // ربط الفلاتر والبحث
+        document.getElementById('statusFilter').addEventListener('change', loadAdminTickets);
+        let searchTimeout;
+        document.getElementById('ticketSearch').addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadAdminTickets, 500);
+        });
+
+        // إدارة الردود
+        let currentTicketId = null;
+        async function openReplyModal(ticketId, title) {
+            currentTicketId = ticketId;
+            document.getElementById('modalTicketTitle').textContent = `الرد على: ${title}`;
+            document.getElementById('replyModal').classList.add('active');
+            document.getElementById('repliesList').innerHTML = 'جاري تحميل الردود...';
+            
+            try {
+                const replies = await fetchTicketReplies(ticketId);
+                const list = document.getElementById('repliesList');
+                list.innerHTML = replies.length ? '' : '<p style="text-align:center; color:var(--text-secondary);">لا توجد ردود سابقة</p>';
+                
+                replies.forEach(r => {
+                    const div = document.createElement('div');
+                    div.className = `reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'}`;
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.85rem;">
+                            <span style="font-weight:600;">${r.profiles?.full_name || 'مستخدم'}</span>
+                            <span style="color:var(--text-secondary);">${new Date(r.created_at).toLocaleString('ar-EG')}</span>
+                        </div>
+                        <div>${r.message}</div>
+                    `;
+                    list.appendChild(div);
+                });
+                list.scrollTop = list.scrollHeight;
+            } catch (err) {
+                console.error('Fetch replies error:', err);
+                document.getElementById('repliesList').innerHTML = 'خطأ في تحميل الردود';
+            }
+        }
+
+        document.getElementById('replyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('replyMessage').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            submitBtn.disabled = true;
+            try {
+                await addTicketReply(currentTicketId, msg);
+                document.getElementById('replyMessage').value = '';
+                openReplyModal(currentTicketId, document.getElementById('modalTicketTitle').textContent.replace('الرد على: ', ''));
+                loadAdminTickets();
+            } catch (err) {
+                alert('فشل إرسال الرد: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
+        // التحميل الأولي
         loadAdminTickets();
     </script>
 </body>
