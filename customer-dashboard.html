@@ -42,6 +42,12 @@
             cursor: pointer;
             border-radius: 0.5rem;
             transition: all 0.3s;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .nav-tab:hover {
+            background: var(--hover-bg);
+            color: var(--primary-color);
         }
         .nav-tab.active {
             background: var(--primary-color);
@@ -49,9 +55,101 @@
         }
         .tab-content {
             display: none;
+            animation: fadeIn 0.3s ease-in-out;
         }
         .tab-content.active {
             display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* تحسينات البحث والتحكم */
+        .dashboard-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .close {
+            position: absolute;
+            left: 1.5rem;
+            top: 1.5rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        
+        .ticket-item {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .ticket-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status-open { background: rgba(224, 168, 0, 0.15); color: var(--warning-color); }
+        .status-in-progress { background: rgba(0, 119, 204, 0.15); color: var(--primary-color); }
+        .status-resolved { background: rgba(46, 138, 58, 0.15); color: var(--success-color); }
+        
+        .image-preview {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+            display: none;
         }
     </style>
 </head>
@@ -67,16 +165,16 @@
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                     <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                 </button>
+                <ul class="nav-menu">
+                    <li id="welcomeUser" style="color: var(--color-nav-text); font-weight: 500;"></li>
+                    <li><a href="#" id="profileLink">الملف الشخصي</a></li>
+                    <li><a href="#" id="signOutLink">تسجيل الخروج</a></li>
+                </ul>
             </div>
-            <ul class="nav-menu">
-                <li id="welcomeUser"></li>
-                <li><a href="#" id="profileLink" class="nav-tab-trigger" data-tab="profile">الملف الشخصي</a></li>
-                <li><a href="#" id="signOutLink">تسجيل الخروج</a></li>
-            </ul>
         </div>
     </nav>
 
-    <main class="container" style="margin-top: 2rem;">
+    <main class="container" style="margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem;">
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="tickets">تذاكري</div>
             <div class="nav-tab" data-tab="profile">الملف الشخصي</div>
@@ -84,28 +182,40 @@
 
         <!-- قسم التذاكر -->
         <div id="ticketsTab" class="tab-content active">
-            <div class="page-header">
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h1>تذاكري</h1>
                 <button class="btn btn-primary" id="openCreateTicket">إنشاء تذكرة جديدة</button>
             </div>
             
             <div class="stats-grid">
                 <div class="stat-card">
-                    <p class="stat-label">إجمالي التذاكر</p>
-                    <p class="stat-value" id="userTotalTickets">0</p>
+                    <div class="stat-content">
+                        <p class="stat-label">إجمالي التذاكر</p>
+                        <p class="stat-value" id="userTotalTickets">0</p>
+                    </div>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">قيد المعالجة</p>
-                    <p class="stat-value" id="userInProgressTickets">0</p>
+                    <div class="stat-content">
+                        <p class="stat-label">قيد المعالجة</p>
+                        <p class="stat-value" id="userInProgressTickets" style="color: var(--primary-color);">0</p>
+                    </div>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label">المحلولة</p>
-                    <p class="stat-value" id="userResolvedTickets">0</p>
+                    <div class="stat-content">
+                        <p class="stat-label">المحلولة</p>
+                        <p class="stat-value" id="userResolvedTickets" style="color: var(--success-color);">0</p>
+                    </div>
                 </div>
             </div>
 
-            <div id="userTicketsList" class="tickets-list" style="margin-top: 2rem;">
-                <p class="empty-state">جاري تحميل التذاكر...</p>
+            <div class="dashboard-controls">
+                <div class="search-box">
+                    <input type="text" id="ticketSearch" placeholder="بحث في تذاكري...">
+                </div>
+            </div>
+
+            <div id="userTicketsList" class="tickets-list" style="margin-top: 1rem;">
+                <div style="text-align:center; padding: 3rem; color: var(--text-secondary);">جاري تحميل التذاكر...</div>
             </div>
         </div>
 
@@ -113,29 +223,28 @@
         <div id="profileTab" class="tab-content">
             <div class="profile-section">
                 <h2>إعدادات الملف الشخصي</h2>
-                <p>يمكنك تعديل بياناتك الشخصية من هنا</p>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">تعديل بياناتك الشخصية</p>
                 
-                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem;"></div>
+                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 0.5rem;"></div>
 
                 <form id="profileForm" class="profile-form">
                     <div class="form-group">
                         <label for="profileFullName">الاسم الكامل</label>
-                        <input type="text" id="profileFullName" placeholder="أدخل اسمك الكامل">
+                        <input type="text" id="profileFullName" class="form-control" placeholder="أدخل اسمك الكامل">
                     </div>
                     <div class="form-group">
                         <label for="profileEmail">البريد الإلكتروني</label>
-                        <input type="email" id="profileEmail" placeholder="أدخل بريدك الإلكتروني">
-                        <small>ملاحظة: إذا قمت بتغيير البريد، ستحتاج لتأكيده قبل تسجيل الدخول المرة القادمة.</small>
+                        <input type="email" id="profileEmail" class="form-control" placeholder="أدخل بريدك الإلكتروني">
                     </div>
                     <div class="form-group">
                         <label for="profilePhone">رقم الهاتف</label>
-                        <input type="tel" id="profilePhone" placeholder="أدخل رقم هاتفك">
+                        <input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك">
                     </div>
                     <div class="form-group">
                         <label for="profilePassword">كلمة المرور الجديدة</label>
-                        <input type="password" id="profilePassword" placeholder="اتركها فارغة إذا لا تريد التغيير">
+                        <input type="password" id="profilePassword" class="form-control" placeholder="اتركها فارغة إذا لا تريد التغيير">
                     </div>
-                    <button type="submit" class="btn btn-primary" id="saveProfileBtn">حفظ التغييرات</button>
+                    <button type="submit" class="btn btn-primary" id="saveProfileBtn" style="width: fit-content; padding: 0.75rem 2rem;">حفظ التغييرات</button>
                 </form>
             </div>
         </div>
@@ -146,45 +255,58 @@
         <div class="modal-content">
             <span class="close" id="closeUserTicketModal">&times;</span>
             <h2>إنشاء تذكرة جديدة</h2>
-            <form id="userCreateTicketForm">
+            <form id="userCreateTicketForm" style="margin-top: 1.5rem;">
                 <div class="form-group">
                     <label for="userTicketTitle">العنوان</label>
-                    <input type="text" id="userTicketTitle" required>
+                    <input type="text" id="userTicketTitle" class="form-control" required placeholder="عنوان المشكلة">
                 </div>
                 <div class="form-group">
                     <label for="userTicketDescription">الوصف</label>
-                    <textarea id="userTicketDescription" rows="4" required></textarea>
+                    <textarea id="userTicketDescription" class="form-control" rows="4" required placeholder="اشرح المشكلة بالتفصيل"></textarea>
                 </div>
                 <div class="form-group">
                     <label for="userTicketPriority">الأولوية</label>
-                    <select id="userTicketPriority" required>
+                    <select id="userTicketPriority" class="form-control" required>
                         <option value="low">منخفضة</option>
                         <option value="medium" selected>متوسطة</option>
                         <option value="high">عالية</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">إنشاء التذكرة</button>
+                <div class="form-group">
+                    <label for="userTicketImage">إرفاق صورة (اختياري)</label>
+                    <input type="file" id="userTicketImage" class="form-control" accept="image/*">
+                    <img id="imagePreview" class="image-preview">
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('userTicketModal').classList.remove('active')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary" id="submitTicketBtn">إنشاء التذكرة</button>
+                </div>
             </form>
         </div>
     </div>
 
     <script type="module">
         import { requireAuth, logout, updateProfile } from './auth-client.js';
-        import { fetchUserTickets, createTicket, fetchTicketStats } from './tickets-service.js';
+        import { fetchUserTickets, createTicket, fetchTicketStats, uploadTicketImage, subscribeToTickets } from './tickets-service.js';
 
         // 1. حماية الصفحة
-        const user = await requireAuth('customer');
-        if (!user) {
+        let user;
+        try {
+            user = await requireAuth('customer');
+            if (!user) {
+                window.location.replace('sign-in.html');
+            }
+        } catch (err) {
             window.location.replace('sign-in.html');
-            return;
         }
 
         // 2. عرض البيانات الأساسية
-        const displayName = user.profile?.full_name || user.email;
-        document.getElementById('welcomeUser').textContent = `مرحباً، ${displayName}`;
-        document.getElementById('profileEmail').value = user.email;
-        document.getElementById('profileFullName').value = user.profile?.full_name || '';
-        document.getElementById('profilePhone').value = user.profile?.phone || '';
+        if (user) {
+            document.getElementById('welcomeUser').textContent = `مرحباً، ${user.profile?.full_name || user.email}`;
+            document.getElementById('profileEmail').value = user.email;
+            document.getElementById('profileFullName').value = user.profile?.full_name || '';
+            document.getElementById('profilePhone').value = user.profile?.phone || '';
+        }
 
         // 3. التبديل بين التبويبات
         function switchTab(tabName) {
@@ -204,7 +326,6 @@
             tab.addEventListener('click', () => switchTab(tab.dataset.tab));
         });
 
-        // ربط زر الملف الشخصي في النافبار
         document.getElementById('profileLink').addEventListener('click', (e) => {
             e.preventDefault();
             switchTab('profile');
@@ -226,7 +347,6 @@
                 const email = document.getElementById('profileEmail').value;
                 const password = document.getElementById('profilePassword').value;
 
-                // 1. تحديث البروفايل (الاسم والهاتف)
                 const { error: profileError } = await updateProfile({
                     full_name: fullName,
                     phone: phone,
@@ -234,29 +354,29 @@
                 });
                 if (profileError) throw profileError;
 
-                // 2. تحديث الإيميل إذا تغير
                 if (email !== user.email) {
                     const { error: emailError } = await import('./auth-client.js').then(m => m.updateEmail(email));
                     if (emailError) throw emailError;
                 }
 
-                // 3. تحديث كلمة المرور إذا أدخلت
                 if (password) {
                     const { error: pwdError } = await import('./auth-client.js').then(m => m.updatePassword(password));
                     if (pwdError) throw pwdError;
                 }
 
                 profileMessage.style.display = 'block';
-                profileMessage.className = 'message-box message-success';
-                profileMessage.textContent = 'تم تحديث البيانات بنجاح. إذا قمت بتغيير الإيميل، يرجى تأكيده.';
+                profileMessage.style.background = 'rgba(46, 138, 58, 0.1)';
+                profileMessage.style.color = 'var(--success-color)';
+                profileMessage.textContent = 'تم تحديث البيانات بنجاح.';
                 
                 document.getElementById('welcomeUser').textContent = `مرحباً، ${fullName}`;
                 document.getElementById('profilePassword').value = '';
 
             } catch (err) {
                 profileMessage.style.display = 'block';
-                profileMessage.className = 'message-box message-error';
-                profileMessage.textContent = err.message || 'فشل تحديث البيانات';
+                profileMessage.style.background = 'rgba(217, 83, 79, 0.1)';
+                profileMessage.style.color = 'var(--danger-color)';
+                profileMessage.textContent = err.message || 'فشل التحديث';
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'حفظ التغييرات';
@@ -264,79 +384,123 @@
         });
 
         // 5. تسجيل الخروج
-        const signOutBtn = document.getElementById('signOutLink');
-        if (signOutBtn) {
-            signOutBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+        document.getElementById('signOutLink').addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
                 try {
                     await logout();
                     window.location.href = 'sign-in.html';
                 } catch (err) {
-                    console.error('Logout error:', err);
                     window.location.href = 'sign-in.html';
                 }
-            });
-        }
+            }
+        });
 
-        // 6. تحميل التذاكر والإحصائيات (نفس المنطق السابق)
+        // 6. تحميل التذاكر والإحصائيات
         async function loadDashboardData() {
+            const list = document.getElementById('userTicketsList');
             try {
                 const stats = await fetchTicketStats();
                 document.getElementById('userTotalTickets').textContent = stats.total || 0;
                 document.getElementById('userInProgressTickets').textContent = stats.inProgress || 0;
                 document.getElementById('userResolvedTickets').textContent = stats.resolved || 0;
 
-                const tickets = await fetchUserTickets();
-                const list = document.getElementById('userTicketsList');
+                const search = document.getElementById('ticketSearch').value;
+                const tickets = await fetchUserTickets({ search });
                 list.innerHTML = '';
 
-                if (tickets.length === 0) {
-                    list.innerHTML = '<p class="empty-state">لا توجد تذاكر حالياً</p>';
+                if (!tickets || tickets.length === 0) {
+                    list.innerHTML = '<div style="text-align:center; padding: 3rem; color: var(--text-secondary);">لا توجد تذاكر حالياً</div>';
                 } else {
                     tickets.forEach(t => {
                         const div = document.createElement('div');
                         div.className = 'ticket-item';
                         div.innerHTML = `
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <h3>${t.title}</h3>
-                                <span class="status-badge status-${t.status}">${t.status}</span>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+                                <h3 style="margin:0;">${t.title}</h3>
+                                <span class="status-badge status-${t.status}">${t.status === 'open' ? 'مفتوحة' : t.status === 'resolved' ? 'محلولة' : 'قيد المعالجة'}</span>
                             </div>
-                            <p>${t.description}</p>
-                            <small>الأولوية: ${t.priority} | التاريخ: ${new Date(t.created_at).toLocaleDateString('ar-EG')}</small>
+                            <p style="color: var(--text-secondary); margin-bottom: 1rem;">${t.description}</p>
+                            ${t.image_url ? `<img src="${t.image_url}" style="max-width:100%; border-radius:0.5rem; margin-bottom:1rem; max-height:150px; object-fit:cover;">` : ''}
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); display: flex; gap: 1rem;">
+                                <span>الأولوية: ${t.priority === 'high' ? 'عالية' : t.priority === 'medium' ? 'متوسطة' : 'منخفضة'}</span>
+                                <span>التاريخ: ${new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
+                            </div>
                         `;
                         list.appendChild(div);
                     });
                 }
             } catch (err) {
-                console.error('Error loading dashboard:', err);
+                list.innerHTML = '<div style="text-align:center; padding: 3rem; color: var(--danger-color);">حدث خطأ أثناء تحميل التذاكر</div>';
             }
         }
 
-        loadDashboardData();
+        // البحث
+        let searchTimeout;
+        document.getElementById('ticketSearch').addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadDashboardData, 500);
+        });
 
         // 7. إنشاء تذكرة
         const modal = document.getElementById('userTicketModal');
-        document.getElementById('openCreateTicket').onclick = () => modal.style.display = 'block';
-        document.getElementById('closeUserTicketModal').onclick = () => modal.style.display = 'none';
+        document.getElementById('openCreateTicket').onclick = () => modal.classList.add('active');
+        document.getElementById('closeUserTicketModal').onclick = () => modal.classList.remove('active');
+
+        // معاينة الصورة
+        document.getElementById('userTicketImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = event.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
 
         document.getElementById('userCreateTicketForm').onsubmit = async (e) => {
             e.preventDefault();
-            const data = {
-                title: document.getElementById('userTicketTitle').value,
-                description: document.getElementById('userTicketDescription').value,
-                priority: document.getElementById('userTicketPriority').value
-            };
+            const submitBtn = document.getElementById('submitTicketBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'جاري الإنشاء...';
 
             try {
+                let image_url = null;
+                const imageFile = document.getElementById('userTicketImage').files[0];
+                if (imageFile) {
+                    image_url = await uploadTicketImage(imageFile);
+                }
+
+                const data = {
+                    title: document.getElementById('userTicketTitle').value,
+                    description: document.getElementById('userTicketDescription').value,
+                    priority: document.getElementById('userTicketPriority').value,
+                    image_url
+                };
+
                 await createTicket(data);
-                modal.style.display = 'none';
+                modal.classList.remove('active');
                 document.getElementById('userCreateTicketForm').reset();
+                document.getElementById('imagePreview').style.display = 'none';
                 loadDashboardData();
             } catch (err) {
-                alert('فشل إنشاء التذكرة');
+                alert('فشل إنشاء التذكرة: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'إنشاء التذكرة';
             }
         };
+
+        // 8. التحديث التلقائي
+        subscribeToTickets(() => {
+            loadDashboardData();
+        });
+
+        // التحميل الأولي
+        loadDashboardData();
     </script>
 </body>
 </html>

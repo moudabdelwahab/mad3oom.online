@@ -47,7 +47,7 @@ export async function fetchUserTickets(filters = {}) {
  * إنشاء تذكرة جديدة
  * ملاحظة: لا نمرر user_id يدوياً، Supabase سيعتمد على auth.uid() عبر RLS أو Default Value.
  */
-export async function createTicket({ title, description, priority }) {
+export async function createTicket({ title, description, priority, image_url = null }) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -58,10 +58,47 @@ export async function createTicket({ title, description, priority }) {
             title,
             description,
             priority,
-            status: 'open'
+            status: 'open',
+            image_url
         });
 
     if (error) throw error;
+}
+
+/**
+ * رفع صورة إلى Supabase Storage
+ */
+export async function uploadTicketImage(file) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+    const filePath = `ticket-images/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('mad3oom-assets')
+        .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('mad3oom-assets')
+        .getPublicUrl(filePath);
+
+    return publicUrl;
+}
+
+/**
+ * الاشتراك في التحديثات التلقائية للتذاكر
+ */
+export function subscribeToTickets(callback) {
+    return supabase
+        .channel('public:tickets')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, payload => {
+            callback(payload);
+        })
+        .subscribe();
 }
 
 /**

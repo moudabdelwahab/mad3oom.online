@@ -296,7 +296,7 @@
 
     <script type="module">
         import { requireAuth, logout, updateProfile } from './auth-client.js';
-        import { fetchUserTickets, fetchTicketStats, updateTicketStatus, deleteTicket, addTicketReply, fetchTicketReplies } from './tickets-service.js';
+        import { fetchUserTickets, fetchTicketStats, updateTicketStatus, deleteTicket, addTicketReply, fetchTicketReplies, subscribeToTickets } from './tickets-service.js';
 
         // 1. حماية الصفحة (Admin Only)
         let user;
@@ -553,6 +553,11 @@
             } finally {
                 submitBtn.disabled = false;
             }
+        });
+
+        // التحديث التلقائي
+        subscribeToTickets(() => {
+            loadAdminTickets();
         });
 
         // التحميل الأولي
