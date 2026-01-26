@@ -185,7 +185,8 @@ form.addEventListener('submit', async (e) => {
             user = await getCurrentUser();
         }
 
-        const targetPage = user?.profile?.role === 'admin' ? 'admin-dashboard.html' : 'customer-dashboard.html';
+        const userRole = user?.profile?.role || 'customer';
+        const targetPage = userRole === 'admin' ? 'admin-dashboard.html' : 'customer-dashboard.html';
         window.location.replace(targetPage);
 
     } catch (err) {
@@ -222,7 +223,8 @@ form.addEventListener('submit', async (e) => {
     if (isLoggingIn) return;
     const user = await getCurrentUser();
     if (user) {
-        const targetPage = user.profile?.role === 'admin' ? 'admin-dashboard.html' : 'customer-dashboard.html';
+        const userRole = user.profile?.role || 'customer';
+        const targetPage = userRole === 'admin' ? 'admin-dashboard.html' : 'customer-dashboard.html';
         window.location.replace(targetPage);
     }
 })();

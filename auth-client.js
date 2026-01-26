@@ -93,11 +93,10 @@ export async function requireAuth(requiredRole = 'user') {
         return null;
     }
 
-    // إذا كان المطلوب 'customer' والمستخدم 'admin' (اختياري: يمكن للأدمن دخول لوحة العميل)
-    if (requiredRole === 'customer' && userRole === 'admin') {
-        // نترك الخيار للأدمن أو نوجهه للوحة الإدارة
-        // window.location.replace('admin-dashboard.html');
-        // return null;
+    // إذا كان المستخدم 'admin' يحاول دخول صفحة 'user' أو 'customer'، نوجهه للوحة الإدارة
+    if (requiredRole !== 'admin' && userRole === 'admin') {
+        window.location.replace('admin-dashboard.html');
+        return null;
     }
 
     return user;
