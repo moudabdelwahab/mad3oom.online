@@ -496,12 +496,13 @@
                     list.innerHTML = '<p style="text-align:center; color: var(--text-secondary); padding: 1rem;">لا توجد ردود بعد</p>';
                 } else {
                     replies.forEach(r => {
-                        const isAdmin = r.profiles?.role === 'admin';
+                        const profile = r.profiles;
+                        const isAdmin = profile?.role === 'admin';
                         const div = document.createElement('div');
                         div.className = `reply-item ${isAdmin ? 'admin' : ''}`;
                         div.innerHTML = `
                             <div class="reply-meta">
-                                <strong>${r.profiles?.full_name || 'مستخدم'} ${isAdmin ? '(الدعم الفني)' : ''}</strong>
+                                <strong>${profile?.full_name || 'مستخدم'} ${isAdmin ? '(الدعم الفني)' : ''}</strong>
                                 <span>${new Date(r.created_at).toLocaleString('ar-EG')}</span>
                             </div>
                             <div class="reply-text" style="white-space: pre-wrap;">${r.message}</div>

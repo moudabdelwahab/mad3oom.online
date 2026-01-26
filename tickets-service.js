@@ -8,19 +8,19 @@ export async function fetchUserTickets(filters = {}) {
     if (!user) throw new Error('User not authenticated');
 
     // جلب البروفايل لمعرفة الدور
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
     let query = supabase
         .from('tickets')
-        .select('*, profiles(full_name, email)')
+        .select('*, profiles!tickets_user_id_fkey(full_name, email)')
         .order('created_at', { ascending: false });
 
-    // إذا كان المستخدم عميلاً، نفلتر التذاكر الخاصة به فقط
-    if (profile && profile.role !== 'admin') {
+    // إذا كان المستخدم عميلاً (أو لا يوجد بروفايل بعد)، نفلتر التذاكر الخاصة به فقط
+    if (!profile || profile.role !== 'admin') {
         query = query.eq('user_id', user.id);
     }
 
@@ -61,7 +61,7 @@ export async function createTicket({ title, description, priority, image_url = n
         .select();
 
     if (error) throw error;
-    return data[0];
+    return (data && data.length > 0) ? data[0] : null;
 }
 
 /**
@@ -124,11 +124,11 @@ export async function fetchTicketStats() {
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
     let query = supabase.from('tickets').select('status');
     
-    if (profile && profile.role !== 'admin') {
+    if (!profile || profile.role !== 'admin') {
         query = query.eq('user_id', user.id);
     }
 
@@ -198,7 +198,7 @@ export async function addTicketReply(ticketId, message) {
 export async function fetchTicketReplies(ticketId) {
     const { data, error } = await supabase
         .from('ticket_replies')
-        .select('*, profiles(full_name, role)')
+        .select('*, profiles!ticket_replies_user_id_fkey(full_name, role)')
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true });
 

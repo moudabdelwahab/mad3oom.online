@@ -445,11 +445,15 @@
 
                 tickets.forEach(t => {
                     const tr = document.createElement('tr');
-                    const userIdentifier = t.profiles?.full_name || t.profiles?.email || 'مستخدم مجهول';
+                    // محاولة جلب البيانات من البروفايل المرتبط
+                    const profile = t.profiles;
+                    const userIdentifier = profile?.full_name || profile?.email || 'مستخدم مجهول';
+                    const userEmail = profile?.email || '';
+                    
                     tr.innerHTML = `
                         <td>
                             <div style="font-weight: 600;">${userIdentifier}</div>
-                            <div style="font-size: 0.8rem; color: var(--text-secondary);">${t.profiles?.email || ''}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">${userEmail}</div>
                         </td>
                         <td>${t.title}</td>
                         <td><span class="status-badge status-${t.status}">${t.status === 'open' ? 'مفتوحة' : t.status === 'resolved' ? 'محلولة' : 'مغلقة'}</span></td>
@@ -520,10 +524,11 @@
                 
                 replies.forEach(r => {
                     const div = document.createElement('div');
-                    div.className = `reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'}`;
+                    const profile = r.profiles;
+                    div.className = `reply-item ${profile?.role === 'admin' ? 'reply-admin' : 'reply-user'}`;
                     div.innerHTML = `
                         <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.85rem;">
-                            <span style="font-weight:600;">${r.profiles?.full_name || 'مستخدم'}</span>
+                            <span style="font-weight:600;">${profile?.full_name || 'مستخدم'}</span>
                             <span style="color:var(--text-secondary);">${new Date(r.created_at).toLocaleString('ar-EG')}</span>
                         </div>
                         <div>${r.message}</div>
