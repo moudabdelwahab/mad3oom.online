@@ -13,12 +13,18 @@ export async function signIn(email, password) {
 
     // ⛔ منع الدخول لو الإيميل مش متفعل
     if (!result.data.user.email_confirmed_at) {
-        // تسجيل الخروج عشان نكسر أي Session مؤقت
         await supabase.auth.signOut();
         return {
             data: null,
             error: { message: 'Email not confirmed' }
         };
+    }
+
+    // حفظ الجلسة في كوكيز لضمان استمراريتها
+    const session = result.data.session;
+    if (session) {
+        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; SameSite=Lax`;
+        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=31536000; SameSite=Lax`;
     }
 
     return result;
@@ -43,6 +49,9 @@ export async function signUp(email, password) {
  * تسجيل الخروج
  */
 export async function logout() {
+    // مسح الكوكيز عند تسجيل الخروج
+    document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
+    document.cookie = "sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
     return await supabase.auth.signOut();
 }
 
@@ -78,14 +87,65 @@ export async function currentSession() {
 /**
  * حماية الصفحات بناءً على الدور (Role) المسترجع من قاعدة البيانات
  */
+/**
+ * التوجيه التلقائي بناءً على حالة الجلسة والدور
+ */
+export async function autoRedirect() {
+    const user = await getCurrentUser();
+    if (!user) return;
+
+    const userRole = user.profile?.role || 'customer';
+    const currentPath = window.location.pathname;
+
+    if (currentPath.endsWith('index.html') || currentPath === '/' || currentPath.endsWith('sign-in.html') || currentPath.endsWith('sign-up.html')) {
+        if (userRole === 'admin') {
+            window.location.replace('admin-dashboard.html');
+        } else {
+            window.location.replace('customer-dashboard.html');
+        }
+    }
+}
+
+/**
+ * ميزة دخول الإدمن على حساب العميل في جلسة منفصلة
+ */
+export async function adminImpersonateUser(userId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    
+    if (profile?.role !== 'admin') {
+        throw new Error('Unauthorized');
+    }
+
+    // فتح نافذة جديدة مع بارامتر خاص للتمثيل
+    const impersonateUrl = `${window.location.origin}/customer-dashboard.html?impersonate=${userId}`;
+    window.open(impersonateUrl, '_blank');
+}
+
 export async function requireAuth(requiredRole = 'user') {
     const user = await getCurrentUser();
 
     if (!user) {
+        // إذا لم يكن هناك مستخدم، نوجهه لصفحة تسجيل الدخول
+        if (!window.location.pathname.endsWith('sign-in.html')) {
+            window.location.replace('sign-in.html');
+        }
         return null;
     }
 
     const userRole = user.profile?.role || 'customer';
+
+    // التحقق من وجود بارامتر التمثيل (Impersonation)
+    const urlParams = new URLSearchParams(window.location.search);
+    const impersonateId = urlParams.get('impersonate');
+    
+    if (impersonateId && userRole === 'admin') {
+        // إذا كان إدمن ويقوم بالتمثيل، نجلب بيانات العميل المستهدف
+        const { data: targetProfile } = await supabase.from('profiles').select('*').eq('id', impersonateId).single();
+        if (targetProfile) {
+            return { id: impersonateId, profile: targetProfile, isImpersonated: true };
+        }
+    }
 
     // إذا كان المطلوب 'admin' والمستخدم ليس 'admin'
     if (requiredRole === 'admin' && userRole !== 'admin') {
@@ -93,8 +153,8 @@ export async function requireAuth(requiredRole = 'user') {
         return null;
     }
 
-    // إذا كان المستخدم 'admin' يحاول دخول صفحة 'user' أو 'customer'، نوجهه للوحة الإدارة
-    if (requiredRole !== 'admin' && userRole === 'admin') {
+    // إذا كان المستخدم 'admin' يحاول دخول صفحة 'customer' بدون تمثيل، نوجهه للوحة الإدارة
+    if (requiredRole === 'customer' && userRole === 'admin' && !impersonateId) {
         window.location.replace('admin-dashboard.html');
         return null;
     }

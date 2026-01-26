@@ -19,7 +19,7 @@
     <script src="theme-manager.js" defer></script>
     <style>
         .profile-section {
-            background: var(--card-bg);
+            background: var(--color-surface);
             padding: 2rem;
             border-radius: 1rem;
             box-shadow: var(--shadow-sm);
@@ -34,8 +34,9 @@
             display: flex;
             gap: 1rem;
             margin-bottom: 2rem;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--color-border);
             padding-bottom: 0.5rem;
+            overflow-x: auto;
         }
         .nav-tab {
             padding: 0.5rem 1rem;
@@ -43,14 +44,15 @@
             border-radius: 0.5rem;
             transition: all 0.3s;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: var(--color-text-secondary);
+            white-space: nowrap;
         }
         .nav-tab:hover {
             background: var(--hover-bg);
-            color: var(--primary-color);
+            color: var(--color-accent);
         }
         .nav-tab.active {
-            background: var(--primary-color);
+            background: var(--color-accent);
             color: white;
         }
         .tab-content {
@@ -68,18 +70,18 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
-            background: var(--card-bg);
+            background: var(--color-surface);
             border-radius: 0.5rem;
             overflow: hidden;
         }
         th, td {
             padding: 1rem;
             text-align: right;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--color-border);
         }
         th {
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
+            background: var(--color-muted);
+            color: var(--color-text-secondary);
             font-weight: 600;
         }
         .status-badge {
@@ -88,11 +90,10 @@
             font-size: 0.85rem;
             font-weight: 600;
         }
-        .status-open { background: rgba(224, 168, 0, 0.15); color: var(--warning-color); }
-        .status-resolved { background: rgba(46, 138, 58, 0.15); color: var(--success-color); }
-        .status-closed { background: var(--color-muted); color: var(--text-secondary); }
+        .status-open { background: rgba(224, 168, 0, 0.15); color: var(--color-warning); }
+        .status-resolved { background: rgba(46, 138, 58, 0.15); color: var(--color-success); }
+        .status-closed { background: var(--color-muted); color: var(--color-text-secondary); }
         
-        /* تحسينات الفلترة والبحث */
         .admin-controls {
             display: flex;
             justify-content: space-between;
@@ -110,9 +111,9 @@
             width: 100%;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--color-border);
             background: var(--input-bg);
-            color: var(--text-primary);
+            color: var(--color-text);
         }
         .filter-group {
             display: flex;
@@ -121,12 +122,11 @@
         .filter-group select {
             padding: 0.75rem;
             border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--color-border);
             background: var(--input-bg);
-            color: var(--text-primary);
+            color: var(--color-text);
         }
         
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -141,7 +141,7 @@
         }
         .modal.active { display: flex; }
         .modal-content {
-            background: var(--card-bg);
+            background: var(--color-surface);
             padding: 2rem;
             border-radius: 1rem;
             width: 90%;
@@ -154,60 +154,71 @@
             padding: 1rem;
             border-radius: 0.5rem;
             margin-bottom: 1rem;
-            background: var(--bg-secondary);
+            background: var(--color-muted);
         }
-        .reply-admin { border-right: 4px solid var(--primary-color); }
-        .reply-user { border-right: 4px solid var(--success-color); }
+        .reply-admin { border-right: 4px solid var(--color-accent); }
+        .reply-user { border-right: 4px solid var(--color-success); }
+
+        .btn-danger {
+            background: var(--color-danger);
+            color: white;
+        }
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
-                <img src="logo.svg" alt="Logo" class="logo-image">
+                <img src="/assets/images/logo.png" alt="Logo" class="logo-image">
                 <span>لوحة الإدارة</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme" style="flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme">
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                     <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                 </button>
                 
                 <div class="notification-wrapper" style="position: relative; display: flex; align-items: center;">
-                    <button id="notificationBtn" class="notification-btn" style="position: relative; flex-shrink: 0; background: none; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.5rem; cursor: pointer; color: var(--text-primary); display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                    <button id="notificationBtn" class="notification-btn" style="background: none; border: 1px solid var(--color-border); border-radius: 0.5rem; padding: 0.5rem; cursor: pointer; color: var(--color-text); display: flex; align-items: center; justify-content: center;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                         </svg>
-                        <span id="notificationBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger-color); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--card-bg);">0</span>
+                        <span id="notificationBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--color-danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-surface);">0</span>
                     </button>
-                    <div id="notificationDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: var(--shadow-lg); z-index: 1001; margin-top: 0.5rem; max-height: 400px; overflow-y: auto;">
-                        <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+                    <div id="notificationDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 300px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.5rem; box-shadow: var(--shadow); z-index: 1001; margin-top: 0.5rem; max-height: 400px; overflow-y: auto;">
+                        <div style="padding: 1rem; border-bottom: 1px solid var(--color-border); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
                             <span>الإشعارات</span>
-                            <button id="clearNotifications" style="font-size: 0.8rem; color: var(--primary-color); background: none; border: none; cursor: pointer;">مسح الكل</button>
+                            <button id="clearNotifications" style="font-size: 0.8rem; color: var(--color-accent); background: none; border: none; cursor: pointer;">مسح الكل</button>
                         </div>
                         <div id="notificationsList" style="padding: 0.5rem;">
-                            <p style="text-align: center; padding: 1rem; color: var(--text-secondary);">لا توجد إشعارات جديدة</p>
+                            <p style="text-align: center; padding: 1rem; color: var(--color-text-secondary);">لا توجد إشعارات جديدة</p>
                         </div>
                     </div>
                 </div>
 
-                <ul class="nav-menu" style="display: flex; align-items: center; gap: 1rem; margin: 0; padding: 0; list-style: none;">
-                    <li id="welcomeAdmin" style="color: var(--color-nav-text); font-weight: 500; white-space: nowrap;"></li>
-                    <li><a href="#" id="profileLink">الملف الشخصي</a></li>
-                    <li><a href="#" id="signOutLink">تسجيل الخروج</a></li>
-                </ul>
+                <div class="profile-nav-item" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" id="profileNavBtn">
+                    <div style="width: 32px; height: 32px; background: var(--color-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;" id="adminInitial">A</div>
+                    <span id="welcomeAdmin" style="color: var(--color-nav-text); font-weight: 500; display: none;"></span>
+                </div>
+                
+                <button id="signOutBtn" class="btn btn-secondary btn-sm">خروج</button>
             </div>
         </div>
     </nav>
 
-    <main class="container" style="margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem;">
+    <main class="dashboard-container" style="margin-top: 2rem;">
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="overview">إدارة التذاكر</div>
+            <div class="nav-tab" data-tab="users">المستخدمين</div>
             <div class="nav-tab" data-tab="profile">الملف الشخصي</div>
         </div>
 
-        <!-- قسم الإدارة -->
+        <!-- قسم التذاكر -->
         <div id="overviewTab" class="tab-content active">
             <div class="page-header">
                 <h1>إدارة التذاكر</h1>
@@ -223,13 +234,13 @@
                 <div class="stat-card">
                     <div class="stat-content">
                         <p class="stat-label">المفتوحة</p>
-                        <p class="stat-value" id="admOpen" style="color: var(--warning-color);">0</p>
+                        <p class="stat-value" id="admOpen" style="color: var(--color-warning);">0</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-content">
                         <p class="stat-label">المحلولة</p>
-                        <p class="stat-value" id="admResolved" style="color: var(--success-color);">0</p>
+                        <p class="stat-value" id="admResolved" style="color: var(--color-success);">0</p>
                     </div>
                 </div>
             </div>
@@ -240,15 +251,16 @@
                 </div>
                 <div class="filter-group">
                     <select id="statusFilter">
-                        <option value="">كل الحالات</option>
+                        <option value="all">كل الحالات</option>
                         <option value="open">مفتوحة</option>
+                        <option value="in-progress">قيد المعالجة</option>
                         <option value="resolved">محلولة</option>
                         <option value="closed">مغلقة</option>
                     </select>
                 </div>
             </div>
 
-            <div style="overflow-x: auto; background: var(--card-bg); border-radius: 1rem; box-shadow: var(--shadow-sm);">
+            <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
                 <table>
                     <thead>
                         <tr>
@@ -266,32 +278,59 @@
             </div>
         </div>
 
-        <!-- قسم البروفايل -->
-        <div id="profileTab" class="tab-content">
-            <div class="profile-section">
-                <h2>إعدادات المسؤول</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 2rem;">تعديل بيانات الحساب الإداري</p>
-                
-                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 0.5rem;"></div>
+        <!-- قسم المستخدمين -->
+        <div id="usersTab" class="tab-content">
+            <div class="page-header">
+                <h1>إدارة المستخدمين</h1>
+            </div>
+            <div class="admin-controls">
+                <div class="search-box">
+                    <input type="text" id="userSearch" placeholder="بحث عن مستخدم بالاسم أو الإيميل...">
+                </div>
+            </div>
+            <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المستخدم</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>الدور</th>
+                            <th>تاريخ الانضمام</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="5" style="text-align:center; padding: 3rem;">جاري تحميل البيانات...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
+        <!-- قسم الملف الشخصي -->
+        <div id="profileTab" class="tab-content">
+            <div class="page-header">
+                <h1>الملف الشخصي</h1>
+            </div>
+            <div class="profile-section">
+                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 0.5rem;"></div>
                 <form id="profileForm" class="profile-form">
                     <div class="form-group">
-                        <label for="profileFullName">الاسم الكامل</label>
+                        <label>الاسم الكامل</label>
                         <input type="text" id="profileFullName" class="form-control" placeholder="أدخل اسمك الكامل">
                     </div>
                     <div class="form-group">
-                        <label for="profileEmail">البريد الإلكتروني</label>
-                        <input type="email" id="profileEmail" class="form-control" placeholder="أدخل بريدك الإلكتروني">
+                        <label>البريد الإلكتروني</label>
+                        <input type="email" id="profileEmail" class="form-control" disabled>
                     </div>
                     <div class="form-group">
-                        <label for="profilePhone">رقم الهاتف</label>
+                        <label>رقم الهاتف</label>
                         <input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك">
                     </div>
                     <div class="form-group">
-                        <label for="profilePassword">كلمة المرور الجديدة</label>
+                        <label>كلمة المرور الجديدة</label>
                         <input type="password" id="profilePassword" class="form-control" placeholder="اتركها فارغة إذا لا تريد التغيير">
                     </div>
-                    <button type="submit" class="btn btn-primary" id="saveProfileBtn" style="width: fit-content; padding: 0.75rem 2rem;">حفظ التغييرات</button>
+                    <button type="submit" class="btn btn-primary" id="saveProfileBtn">حفظ التغييرات</button>
                 </form>
             </div>
         </div>
@@ -301,11 +340,9 @@
     <div id="replyModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTicketTitle">الرد على التذكرة</h2>
-            <div id="repliesList" style="margin: 1.5rem 0; max-height: 300px; overflow-y: auto;">
-                <!-- الردود ستظهر هنا -->
-            </div>
+            <div id="repliesList" style="margin: 1.5rem 0; max-height: 300px; overflow-y: auto;"></div>
             <form id="replyForm">
-                <textarea id="replyMessage" class="form-control" style="width: 100%; min-height: 100px; margin-bottom: 1rem; padding: 0.75rem;" placeholder="اكتب ردك هنا..." required></textarea>
+                <textarea id="replyMessage" style="width: 100%; min-height: 100px; margin-bottom: 1rem; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; background: var(--input-bg); color: var(--color-text);" placeholder="اكتب ردك هنا..." required></textarea>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                     <button type="button" class="btn btn-secondary" onclick="document.getElementById('replyModal').classList.remove('active')">إلغاء</button>
                     <button type="submit" class="btn btn-primary">إرسال الرد</button>
@@ -315,314 +352,229 @@
     </div>
 
     <script type="module">
-        import { requireAuth, logout, updateProfile } from './auth-client.js';
-        import { fetchUserTickets, fetchTicketStats, updateTicketStatus, deleteTicket, addTicketReply, fetchTicketReplies, subscribeToTickets } from './tickets-service.js';
+        import { requireAuth, logout, updateProfile, adminImpersonateUser } from './auth-client.js';
+        import { 
+            fetchUserTickets, 
+            updateTicketStatus, 
+            deleteTicket, 
+            fetchTicketStats,
+            addTicketReply,
+            fetchTicketReplies,
+            subscribeToTickets
+        } from './tickets-service.js';
+        import { supabase } from './api-config.js';
 
-        // 1. حماية الصفحة (Admin Only)
+        // 1. حماية الصفحة
         let user;
         try {
             user = await requireAuth('admin');
-            if (!user) {
-                window.location.replace('sign-in.html');
-            }
+            if (!user) window.location.replace('sign-in.html');
         } catch (err) {
-            console.error('Auth error:', err);
             window.location.replace('sign-in.html');
         }
 
         // 2. عرض البيانات الأولية
         if (user) {
-            document.getElementById('welcomeAdmin').textContent = `مرحباً، ${user.profile?.full_name || user.email}`;
+            const name = user.profile?.full_name || user.email;
+            document.getElementById('welcomeAdmin').textContent = `مرحباً، ${name}`;
+            document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
             document.getElementById('profileEmail').value = user.email;
             document.getElementById('profileFullName').value = user.profile?.full_name || '';
             document.getElementById('profilePhone').value = user.profile?.phone || '';
         }
 
-        // 3. التبديل بين التبويبات
+        // 3. التنقل بين التبويبات
         function switchTab(tabName) {
-            const tabs = document.querySelectorAll('.nav-tab');
-            const contents = document.querySelectorAll('.tab-content');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `${tabName}Tab`));
             
-            tabs.forEach(t => {
-                t.classList.toggle('active', t.dataset.tab === tabName);
-            });
-            
-            contents.forEach(c => {
-                c.classList.toggle('active', c.id === `${tabName}Tab`);
-            });
+            if (tabName === 'users') loadUsers();
+            if (tabName === 'overview') loadAdminTickets();
 
-            // حفظ التبويب الحالي في URL
             const url = new URL(window.location);
             url.searchParams.set('tab', tabName);
             window.history.pushState({}, '', url);
         }
 
-        // ربط أحداث التبويبات
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', () => switchTab(tab.dataset.tab));
         });
 
-        // ربط زر الملف الشخصي في النافبار
-        document.getElementById('profileLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            switchTab('profile');
-        });
+        document.getElementById('profileNavBtn').onclick = () => switchTab('profile');
 
-        // التحقق من التبويب في URL عند التحميل
         const params = new URLSearchParams(window.location.search);
         const activeTab = params.get('tab');
-        if (activeTab && (activeTab === 'overview' || activeTab === 'profile')) {
-            switchTab(activeTab);
-        }
+        if (activeTab) switchTab(activeTab);
 
-        // 4. تحديث البروفايل
-        const profileForm = document.getElementById('profileForm');
-        const profileMessage = document.getElementById('profileMessage');
-
-        profileForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const saveBtn = document.getElementById('saveProfileBtn');
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'جاري الحفظ...';
-
-            try {
-                const fullName = document.getElementById('profileFullName').value;
-                const phone = document.getElementById('profilePhone').value;
-                const email = document.getElementById('profileEmail').value;
-                const password = document.getElementById('profilePassword').value;
-
-                const { error: profileError } = await updateProfile({
-                    full_name: fullName,
-                    phone: phone,
-                    updated_at: new Date()
-                });
-                if (profileError) throw profileError;
-
-                if (email !== user.email) {
-                    const { error: emailError } = await import('./auth-client.js').then(m => m.updateEmail(email));
-                    if (emailError) throw emailError;
-                }
-
-                if (password) {
-                    const { error: pwdError } = await import('./auth-client.js').then(m => m.updatePassword(password));
-                    if (pwdError) throw pwdError;
-                }
-
-                profileMessage.style.display = 'block';
-                profileMessage.style.background = 'rgba(46, 138, 58, 0.1)';
-                profileMessage.style.color = 'var(--success-color)';
-                profileMessage.textContent = 'تم تحديث البيانات بنجاح.';
-                
-                document.getElementById('welcomeAdmin').textContent = `مرحباً، ${fullName}`;
-                document.getElementById('profilePassword').value = '';
-
-            } catch (err) {
-                profileMessage.style.display = 'block';
-                profileMessage.style.background = 'rgba(217, 83, 79, 0.1)';
-                profileMessage.style.color = 'var(--danger-color)';
-                profileMessage.textContent = err.message || 'فشل التحديث';
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'حفظ التغييرات';
-            }
-        });
-
-        // 5. تسجيل الخروج
-        document.getElementById('signOutLink').addEventListener('click', async (e) => {
-            e.preventDefault();
+        // 4. تسجيل الخروج
+        document.getElementById('signOutBtn').onclick = async () => {
             if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-                try {
-                    await logout();
-                    window.location.href = 'sign-in.html';
-                } catch (err) {
-                    console.error('Logout error:', err);
-                    alert('حدث خطأ أثناء تسجيل الخروج');
-                }
+                await logout();
+                window.location.href = 'sign-in.html';
             }
-        });
+        };
 
-        // 6. تحميل وإدارة التذاكر
+        // 5. إدارة التذاكر
         async function loadAdminTickets() {
             const tbody = document.getElementById('admTicketsBody');
             try {
-                // تحميل الإحصائيات
                 const stats = await fetchTicketStats();
                 document.getElementById('admTotal').textContent = stats.total;
                 document.getElementById('admOpen').textContent = stats.open;
                 document.getElementById('admResolved').textContent = stats.resolved;
 
-                // تحميل التذاكر مع الفلاتر
                 const status = document.getElementById('statusFilter').value;
                 const search = document.getElementById('ticketSearch').value;
-                
                 const tickets = await fetchUserTickets({ status, search });
+                
                 tbody.innerHTML = '';
-
                 if (!tickets || tickets.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 3rem;">لا توجد تذاكر تطابق البحث</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 3rem;">لا توجد تذاكر</td></tr>';
                     return;
                 }
 
                 tickets.forEach(t => {
                     const tr = document.createElement('tr');
-                    // محاولة جلب البيانات من البروفايل المرتبط
                     const profile = t.profiles;
-                    const userIdentifier = profile?.full_name || profile?.email || 'مستخدم مجهول';
-                    const userEmail = profile?.email || '';
+                    const userName = profile?.full_name || profile?.email?.split('@')[0] || 'مستخدم';
                     
                     tr.innerHTML = `
                         <td>
-                            <div style="font-weight: 600;">${userIdentifier}</div>
-                            <div style="font-size: 0.8rem; color: var(--text-secondary);">${userEmail}</div>
+                            <div style="font-weight: 600;">${userName}</div>
+                            <div style="font-size: 0.8rem; color: var(--color-text-secondary);">${profile?.email || ''}</div>
                         </td>
                         <td>${t.title}</td>
-                        <td><span class="status-badge status-${t.status}">${t.status === 'open' ? 'مفتوحة' : t.status === 'resolved' ? 'محلولة' : 'مغلقة'}</span></td>
+                        <td><span class="status-badge status-${t.status}">${t.status}</span></td>
                         <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
                         <td>
                             <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-primary btn-sm" data-id="${t.id}" data-title="${t.title}" data-action="reply">رد</button>
-                                ${t.status !== 'resolved' ? `<button class="btn btn-secondary btn-sm" data-id="${t.id}" data-action="resolve">حل</button>` : ''}
-                                <button class="btn btn-danger btn-sm" data-id="${t.id}" data-action="delete">حذف</button>
+                                <button class="btn btn-primary btn-sm action-btn" data-id="${t.id}" data-title="${t.title}" data-action="reply">رد</button>
+                                ${t.status !== 'resolved' ? `<button class="btn btn-secondary btn-sm action-btn" data-id="${t.id}" data-action="resolve">حل</button>` : ''}
+                                <button class="btn btn-danger btn-sm action-btn" data-id="${t.id}" data-action="delete">حذف</button>
                             </div>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
 
-                // ربط الأحداث بالأزرار
-                tbody.querySelectorAll('button').forEach(btn => {
-                    btn.onclick = async (e) => {
-                        e.preventDefault();
+                tbody.querySelectorAll('.action-btn').forEach(btn => {
+                    btn.onclick = async () => {
                         const id = btn.dataset.id;
                         const action = btn.dataset.action;
-                        const title = btn.dataset.title;
-                        
-                        btn.disabled = true;
-                        if (action === 'reply') {
-                            openReplyModal(id, title);
-                            btn.disabled = false;
-                            return;
-                        } else if (action === 'resolve') {
+                        if (action === 'reply') openReplyModal(id, btn.dataset.title);
+                        else if (action === 'resolve') {
                             await updateTicketStatus(id, 'resolved');
-                        } else if (action === 'delete') {
-                            if (confirm('هل أنت متأكد من حذف هذه التذكرة؟')) {
-                                await deleteTicket(id);
-                            } else {
-                                btn.disabled = false;
-                                return;
-                            }
+                            loadAdminTickets();
+                        } else if (action === 'delete' && confirm('حذف التذكرة؟')) {
+                            await deleteTicket(id);
+                            loadAdminTickets();
                         }
-                        loadAdminTickets();
                     };
                 });
             } catch (err) {
-                console.error('Admin tickets error:', err);
-                let errorMsg = 'حدث خطأ أثناء تحميل البيانات';
-                if (err.message) errorMsg += `: ${err.message}`;
-                if (err.details) errorMsg += ` (${err.details})`;
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--danger-color); padding: 3rem;">${errorMsg}</td></tr>`;
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">خطأ في التحميل</td></tr>';
             }
         }
 
-        // ربط الفلاتر والبحث
-        document.getElementById('statusFilter').addEventListener('change', loadAdminTickets);
-        let searchTimeout;
-        document.getElementById('ticketSearch').addEventListener('input', () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(loadAdminTickets, 500);
-        });
+        // 6. إدارة المستخدمين
+        async function loadUsers(search = '') {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>';
+            try {
+                let query = supabase.from('profiles').select('*').order('created_at', { ascending: false });
+                if (search) query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+                const { data: users, error } = await query;
+                if (error) throw error;
 
-        // إدارة الردود
+                tbody.innerHTML = '';
+                users.forEach(u => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${u.full_name || 'بدون اسم'}</td>
+                        <td>${u.email}</td>
+                        <td>${u.role === 'admin' ? 'مدير' : 'عميل'}</td>
+                        <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm impersonate-btn" data-id="${u.id}">دخول كعميل</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.querySelectorAll('.impersonate-btn').forEach(btn => {
+                    btn.onclick = () => adminImpersonateUser(btn.dataset.id);
+                });
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">خطأ في التحميل</td></tr>';
+            }
+        }
+
+        // 7. إدارة الردود
         let currentTicketId = null;
         async function openReplyModal(ticketId, title) {
             currentTicketId = ticketId;
             document.getElementById('modalTicketTitle').textContent = `الرد على: ${title}`;
             document.getElementById('replyModal').classList.add('active');
-            document.getElementById('repliesList').innerHTML = 'جاري تحميل الردود...';
-            
+            const list = document.getElementById('repliesList');
+            list.innerHTML = 'جاري التحميل...';
             try {
                 const replies = await fetchTicketReplies(ticketId);
-                const list = document.getElementById('repliesList');
-                list.innerHTML = replies.length ? '' : '<p style="text-align:center; color:var(--text-secondary);">لا توجد ردود سابقة</p>';
-                
+                list.innerHTML = replies.length ? '' : '<p style="text-align:center;">لا توجد ردود</p>';
                 replies.forEach(r => {
                     const div = document.createElement('div');
-                    const profile = r.profiles;
-                    div.className = `reply-item ${profile?.role === 'admin' ? 'reply-admin' : 'reply-user'}`;
+                    div.className = `reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'}`;
                     div.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.85rem;">
-                            <span style="font-weight:600;">${profile?.full_name || 'مستخدم'}</span>
-                            <span style="color:var(--text-secondary);">${new Date(r.created_at).toLocaleString('ar-EG')}</span>
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:0.5rem;">
+                            <strong>${r.profiles?.full_name || 'مستخدم'}</strong>
+                            <span>${new Date(r.created_at).toLocaleString('ar-EG')}</span>
                         </div>
                         <div>${r.message}</div>
                     `;
                     list.appendChild(div);
                 });
                 list.scrollTop = list.scrollHeight;
-            } catch (err) {
-                console.error('Fetch replies error:', err);
-                document.getElementById('repliesList').innerHTML = 'خطأ في تحميل الردود';
-            }
+            } catch (err) {}
         }
 
-        document.getElementById('replyForm').addEventListener('submit', async (e) => {
+        document.getElementById('replyForm').onsubmit = async (e) => {
             e.preventDefault();
             const msg = document.getElementById('replyMessage').value;
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            
-            submitBtn.disabled = true;
-            try {
-                await addTicketReply(currentTicketId, msg);
-                document.getElementById('replyMessage').value = '';
-                openReplyModal(currentTicketId, document.getElementById('modalTicketTitle').textContent.replace('الرد على: ', ''));
-                loadAdminTickets();
-            } catch (err) {
-                alert('فشل إرسال الرد: ' + err.message);
-            } finally {
-                submitBtn.disabled = false;
-            }
-        });
+            await addTicketReply(currentTicketId, msg);
+            document.getElementById('replyMessage').value = '';
+            openReplyModal(currentTicketId, '');
+            loadAdminTickets();
+        };
 
-        // إدارة الإشعارات
+        // 8. الإشعارات
         let notifications = [];
         const notificationBtn = document.getElementById('notificationBtn');
         const notificationDropdown = document.getElementById('notificationDropdown');
         const notificationBadge = document.getElementById('notificationBadge');
         const notificationsList = document.getElementById('notificationsList');
-        const clearNotifications = document.getElementById('clearNotifications');
 
         function updateNotificationUI() {
-            if (notifications.length > 0) {
-                notificationBadge.style.display = 'flex';
-                notificationBadge.textContent = notifications.length;
+            notificationBadge.style.display = notifications.length ? 'flex' : 'none';
+            notificationBadge.textContent = notifications.length;
+            if (notifications.length) {
                 notificationsList.innerHTML = '';
-                notifications.forEach((n, index) => {
+                notifications.forEach((n, i) => {
                     const div = document.createElement('div');
                     div.style.padding = '0.75rem';
-                    div.style.borderBottom = '1px solid var(--border-color)';
+                    div.style.borderBottom = '1px solid var(--color-border)';
                     div.style.cursor = 'pointer';
-                    div.style.transition = 'background 0.2s';
-                    div.onmouseover = () => div.style.background = 'var(--hover-bg)';
-                    div.onmouseout = () => div.style.background = 'transparent';
-                    
                     div.innerHTML = `
-                        <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">${n.message}</div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.75rem; color: var(--text-secondary);">${new Date(n.time).toLocaleTimeString('ar-EG')}</span>
-                            <button style="color: var(--primary-color); background: none; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer;">عرض التذكرة</button>
-                        </div>
+                        <div style="font-size:0.9rem;">${n.message}</div>
+                        <div style="font-size:0.7rem; color:var(--color-text-secondary);">${new Date(n.time).toLocaleTimeString('ar-EG')}</div>
                     `;
                     div.onclick = () => {
                         openReplyModal(n.ticketId, n.ticketTitle);
-                        notifications.splice(index, 1);
+                        notifications.splice(i, 1);
                         updateNotificationUI();
-                        notificationDropdown.style.display = 'none';
                     };
                     notificationsList.appendChild(div);
                 });
             } else {
-                notificationBadge.style.display = 'none';
-                notificationsList.innerHTML = '<p style="text-align: center; padding: 1rem; color: var(--text-secondary);">لا توجد إشعارات جديدة</p>';
+                notificationsList.innerHTML = '<p style="text-align:center; padding:1rem;">لا توجد إشعارات</p>';
             }
         }
 
@@ -630,40 +582,37 @@
             e.stopPropagation();
             notificationDropdown.style.display = notificationDropdown.style.display === 'none' ? 'block' : 'none';
         };
-
         document.onclick = () => notificationDropdown.style.display = 'none';
-        notificationDropdown.onclick = (e) => e.stopPropagation();
-
-        clearNotifications.onclick = () => {
+        document.getElementById('clearNotifications').onclick = () => {
             notifications = [];
             updateNotificationUI();
         };
 
-        // التحديث التلقائي والاشتراك في التغييرات
         subscribeToTickets((payload) => {
-            console.log('Realtime update:', payload);
             loadAdminTickets();
-
-            // إذا كان الحدث هو إنشاء تذكرة جديدة (INSERT)
             if (payload.eventType === 'INSERT') {
-                const newTicket = payload.new;
                 notifications.unshift({
-                    ticketId: newTicket.id,
-                    ticketTitle: newTicket.title,
-                    message: `أنشأ مستخدم تذكرة جديدة: "${newTicket.title}"`,
-                    time: newTicket.created_at
+                    ticketId: payload.new.id,
+                    ticketTitle: payload.new.title,
+                    message: `تذكرة جديدة: ${payload.new.title}`,
+                    time: payload.new.created_at
                 });
                 updateNotificationUI();
-                
-                // تشغيل صوت تنبيه بسيط (اختياري)
-                try {
-                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
-                    audio.play();
-                } catch (e) {}
             }
         });
 
-        // التحميل الأولي
+        // الفلاتر والبحث
+        document.getElementById('statusFilter').onchange = loadAdminTickets;
+        let searchTimeout;
+        document.getElementById('ticketSearch').oninput = () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadAdminTickets, 500);
+        };
+        document.getElementById('userSearch').oninput = (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => loadUsers(e.target.value), 500);
+        };
+
         loadAdminTickets();
     </script>
 </body>

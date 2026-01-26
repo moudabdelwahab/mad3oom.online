@@ -95,6 +95,10 @@
         }
     </style>
     <script src="api-config.js"></script>
+    <script type="module">
+        import { autoRedirect } from './auth-client.js';
+        autoRedirect();
+    </script>
     <script src="theme-manager.js" defer></script>
 </head>
 <body>

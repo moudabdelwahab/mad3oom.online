@@ -16,7 +16,7 @@ export async function fetchUserTickets(filters = {}) {
 
     let query = supabase
         .from('tickets')
-        .select('*, profiles(full_name, email)')
+        .select('*, profiles(full_name, email, role)')
         .order('created_at', { ascending: false });
 
     // إذا كان المستخدم عميلاً (أو لا يوجد بروفايل بعد)، نفلتر التذاكر الخاصة به فقط
@@ -48,6 +48,16 @@ export async function createTicket({ title, description, priority, image_url = n
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
+    // جلب آخر رقم تذكرة لإنشاء رقم جديد
+    const { data: lastTicket } = await supabase
+        .from('tickets')
+        .select('ticket_number')
+        .order('ticket_number', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    const nextNumber = (lastTicket?.ticket_number || 0) + 1;
+
     const { data, error } = await supabase
         .from('tickets')
         .insert({
@@ -56,7 +66,8 @@ export async function createTicket({ title, description, priority, image_url = n
             description,
             priority,
             status: 'open',
-            image_url
+            image_url,
+            ticket_number: nextNumber
         })
         .select();
 

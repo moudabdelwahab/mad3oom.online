@@ -50,6 +50,11 @@
         })();
     </script>
 
+    <script src="api-config.js"></script>
+    <script type="module">
+        import { autoRedirect } from './auth-client.js';
+        autoRedirect();
+    </script>
     <script src="theme-manager.js" defer></script>
 </head>
 
@@ -218,16 +223,7 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
-// Redirect لو مسجل دخول مسبقًا
-(async () => {
-    if (isLoggingIn) return;
-    const user = await getCurrentUser();
-    if (user) {
-        const userRole = user.profile?.role || 'customer';
-        const targetPage = userRole === 'admin' ? 'admin-dashboard.html' : 'customer-dashboard.html';
-        window.location.replace(targetPage);
-    }
-})();
+// التوجيه التلقائي يتم الآن عبر الـ script في الـ head
 </script>
 
 </body>

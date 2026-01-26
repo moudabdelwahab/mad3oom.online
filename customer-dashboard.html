@@ -19,7 +19,7 @@
     <script src="theme-manager.js" defer></script>
     <style>
         .profile-section {
-            background: var(--card-bg);
+            background: var(--color-surface);
             padding: 2rem;
             border-radius: 1rem;
             box-shadow: var(--shadow-sm);
@@ -34,8 +34,9 @@
             display: flex;
             gap: 1rem;
             margin-bottom: 2rem;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--color-border);
             padding-bottom: 0.5rem;
+            overflow-x: auto;
         }
         .nav-tab {
             padding: 0.5rem 1rem;
@@ -43,14 +44,15 @@
             border-radius: 0.5rem;
             transition: all 0.3s;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: var(--color-text-secondary);
+            white-space: nowrap;
         }
         .nav-tab:hover {
             background: var(--hover-bg);
-            color: var(--primary-color);
+            color: var(--color-accent);
         }
         .nav-tab.active {
-            background: var(--primary-color);
+            background: var(--color-accent);
             color: white;
         }
         .tab-content {
@@ -63,28 +65,6 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .dashboard-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            position: relative;
-        }
-        .search-box input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
-            background: var(--input-bg);
-            color: var(--text-primary);
         }
         
         .modal {
@@ -104,7 +84,6 @@
         .modal.active { display: flex; }
         .modal-content {
             background: var(--color-surface);
-            color: var(--color-text);
             padding: 2.5rem;
             border-radius: 1.25rem;
             width: 100%;
@@ -112,7 +91,7 @@
             max-height: 90vh;
             overflow-y: auto;
             position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            box-shadow: var(--shadow);
             border: 1px solid var(--color-border);
         }
         .close {
@@ -123,95 +102,61 @@
             cursor: pointer;
             color: var(--color-text-secondary);
             line-height: 1;
-            transition: color 0.2s;
         }
-        .close:hover {
-            color: var(--color-danger);
+        
+        .wallet-info {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--color-muted);
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .form-group {
-            margin-bottom: 1.25rem;
+        .wallet-info:hover {
+            background: var(--color-accent);
+            color: white;
         }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
+        .wallet-tooltip {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--color-surface);
             color: var(--color-text);
-        }
-        .form-control {
-            width: 100%;
             padding: 0.75rem 1rem;
             border-radius: 0.5rem;
+            box-shadow: var(--shadow);
             border: 1px solid var(--color-border);
-            background: var(--input-bg);
-            color: var(--input-text);
-            font-family: inherit;
-            font-size: 1rem;
+            margin-top: 0.5rem;
+            white-space: nowrap;
+            z-index: 100;
         }
-        
-        .ticket-item {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 1rem;
-            border: 1px solid var(--border-color);
-            margin-bottom: 1rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-        }
-        .ticket-item:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-sm);
-            border-color: var(--primary-color);
-        }
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        .status-open { background: rgba(224, 168, 0, 0.15); color: var(--warning-color); }
-        .status-in-progress { background: rgba(0, 119, 204, 0.15); color: var(--primary-color); }
-        .status-resolved { background: rgba(46, 138, 58, 0.15); color: var(--success-color); }
-        
-        .image-preview {
-            width: 100%;
-            max-height: 200px;
-            object-fit: contain;
-            margin-top: 1rem;
-            border-radius: 0.5rem;
-            display: none;
-            border: 1px solid var(--border-color);
+        .wallet-info:hover .wallet-tooltip {
+            display: block;
         }
 
-        /* تحسينات الردود */
-        .replies-container {
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid var(--border-color);
-        }
-        .reply-item {
-            padding: 1rem;
-            border-radius: 0.75rem;
-            margin-bottom: 1rem;
-            background: var(--hover-bg);
-        }
-        .reply-item.admin {
-            background: rgba(0, 119, 204, 0.05);
-            border-right: 4px solid var(--primary-color);
-        }
-        .reply-meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.5rem;
+        .impersonation-banner {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #f87171;
         }
     </style>
 </head>
 <body>
+    <div id="impersonationBanner" class="impersonation-banner" style="display: none;">
+        أنت تتصفح الآن كعميل (وضع التمثيل للمسؤولين)
+    </div>
+
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
-                <img src="logo.svg" alt="Logo" class="logo-image">
+                <img src="/assets/images/logo.png" alt="Logo" class="logo-image">
                 <span>لوحة العميل</span>
             </div>
             <div style="display: flex; align-items: center; gap: 1rem;">
@@ -219,16 +164,45 @@
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                     <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                 </button>
-                <ul class="nav-menu">
-                    <li id="welcomeUser" style="color: var(--color-nav-text); font-weight: 500;"></li>
-                    <li><a href="#" id="profileLink">الملف الشخصي</a></li>
-                    <li><a href="#" id="signOutLink">تسجيل الخروج</a></li>
-                </ul>
+
+                <div class="wallet-info" id="walletBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <path d="M12 12h.01"></path>
+                    </svg>
+                    <span id="pointsCount">0</span>
+                    <div class="wallet-tooltip">رصيدك الحالي: <strong id="pointsTooltip">0</strong> نقطة</div>
+                </div>
+
+                <div class="notification-wrapper" style="position: relative; display: flex; align-items: center;">
+                    <button id="notificationBtn" class="notification-btn" style="background: none; border: 1px solid var(--color-border); border-radius: 0.5rem; padding: 0.5rem; cursor: pointer; color: var(--color-text); display: flex; align-items: center; justify-content: center;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span id="notificationBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--color-danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-surface);">0</span>
+                    </button>
+                    <div id="notificationDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 300px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.5rem; box-shadow: var(--shadow); z-index: 1001; margin-top: 0.5rem; max-height: 400px; overflow-y: auto;">
+                        <div style="padding: 1rem; border-bottom: 1px solid var(--color-border); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+                            <span>الإشعارات</span>
+                            <button id="clearNotifications" style="font-size: 0.8rem; color: var(--color-accent); background: none; border: none; cursor: pointer;">مسح الكل</button>
+                        </div>
+                        <div id="notificationsList" style="padding: 0.5rem;">
+                            <p style="text-align: center; padding: 1rem; color: var(--color-text-secondary);">لا توجد إشعارات جديدة</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-nav-item" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" id="profileNavBtn">
+                    <div style="width: 32px; height: 32px; background: var(--color-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;" id="userInitial">U</div>
+                </div>
+                
+                <button id="signOutBtn" class="btn btn-secondary btn-sm">خروج</button>
             </div>
         </div>
     </nav>
 
-    <main class="container" style="margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem;">
+    <main class="dashboard-container" style="margin-top: 2rem;">
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="tickets">تذاكري</div>
             <div class="nav-tab" data-tab="profile">الملف الشخصي</div>
@@ -251,124 +225,86 @@
                 <div class="stat-card">
                     <div class="stat-content">
                         <p class="stat-label">قيد المعالجة</p>
-                        <p class="stat-value" id="userInProgressTickets" style="color: var(--primary-color);">0</p>
+                        <p class="stat-value" id="userInProgressTickets" style="color: var(--color-accent);">0</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-content">
                         <p class="stat-label">المحلولة</p>
-                        <p class="stat-value" id="userResolvedTickets" style="color: var(--success-color);">0</p>
+                        <p class="stat-value" id="userResolvedTickets" style="color: var(--color-success);">0</p>
                     </div>
                 </div>
             </div>
 
-            <div class="dashboard-controls">
-                <div class="search-box">
-                    <input type="text" id="ticketSearch" placeholder="بحث في تذاكري...">
-                </div>
-                <div class="filter-group" style="display: flex; gap: 0.5rem;">
-                    <select id="statusFilter" class="form-control" style="width: auto;">
-                        <option value="all">كل الحالات</option>
-                        <option value="open">مفتوحة</option>
-                        <option value="in-progress">قيد المعالجة</option>
-                        <option value="resolved">محلولة</option>
-                    </select>
-                </div>
+            <div class="filter-section">
+                <input type="text" id="ticketSearch" placeholder="بحث في تذاكري...">
+                <select id="statusFilter">
+                    <option value="all">كل الحالات</option>
+                    <option value="open">مفتوحة</option>
+                    <option value="in-progress">قيد المعالجة</option>
+                    <option value="resolved">محلولة</option>
+                </select>
             </div>
 
-            <div id="userTicketsList" class="tickets-list" style="margin-top: 1rem;">
-                <div style="text-align:center; padding: 3rem; color: var(--text-secondary);">جاري تحميل التذاكر...</div>
+            <div id="userTicketsList" class="tickets-grid">
+                <!-- التذاكر ستظهر هنا كبطاقات -->
             </div>
         </div>
 
-        <!-- قسم البروفايل -->
+        <!-- قسم الملف الشخصي -->
         <div id="profileTab" class="tab-content">
+            <div class="page-header">
+                <h1>الملف الشخصي</h1>
+            </div>
             <div class="profile-section">
-                <h2>إعدادات الملف الشخصي</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 2rem;">تعديل بياناتك الشخصية</p>
-                
                 <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 0.5rem;"></div>
-
                 <form id="profileForm" class="profile-form">
                     <div class="form-group">
-                        <label for="profileFullName">الاسم الكامل</label>
+                        <label>الاسم الكامل</label>
                         <input type="text" id="profileFullName" class="form-control" placeholder="أدخل اسمك الكامل">
                     </div>
                     <div class="form-group">
-                        <label for="profileEmail">البريد الإلكتروني</label>
-                        <input type="email" id="profileEmail" class="form-control" readonly disabled>
-                        <small style="color: var(--text-secondary);">لا يمكن تغيير البريد الإلكتروني حالياً</small>
+                        <label>البريد الإلكتروني</label>
+                        <input type="email" id="profileEmail" class="form-control" disabled>
                     </div>
                     <div class="form-group">
-                        <label for="profilePhone">رقم الهاتف</label>
+                        <label>رقم الهاتف</label>
                         <input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك">
                     </div>
                     <div class="form-group">
-                        <label for="profilePassword">كلمة المرور الجديدة</label>
+                        <label>كلمة المرور الجديدة</label>
                         <input type="password" id="profilePassword" class="form-control" placeholder="اتركها فارغة إذا لا تريد التغيير">
                     </div>
-                    <button type="submit" class="btn btn-primary" id="saveProfileBtn" style="width: fit-content; padding: 0.75rem 2rem;">حفظ التغييرات</button>
+                    <button type="submit" class="btn btn-primary" id="saveProfileBtn">حفظ التغييرات</button>
                 </form>
             </div>
         </div>
     </main>
 
-    <!-- Create Ticket Modal -->
-    <div id="userTicketModal" class="modal">
+    <!-- Modal إنشاء تذكرة -->
+    <div id="createTicketModal" class="modal">
         <div class="modal-content">
-            <span class="close" id="closeUserTicketModal">&times;</span>
+            <span class="close" id="closeModal">&times;</span>
             <h2>إنشاء تذكرة جديدة</h2>
             <form id="userCreateTicketForm" style="margin-top: 1.5rem;">
                 <div class="form-group">
-                    <label for="userTicketTitle">العنوان</label>
-                    <input type="text" id="userTicketTitle" class="form-control" required placeholder="عنوان المشكلة">
+                    <label>عنوان المشكلة</label>
+                    <input type="text" id="userTicketTitle" class="form-control" required placeholder="مثال: مشكلة في تسجيل الدخول">
                 </div>
                 <div class="form-group">
-                    <label for="userTicketDescription">الوصف</label>
-                    <textarea id="userTicketDescription" class="form-control" rows="4" required placeholder="اشرح المشكلة بالتفصيل"></textarea>
+                    <label>وصف المشكلة</label>
+                    <textarea id="userTicketDescription" class="form-control" style="min-height: 120px;" required placeholder="اشرح المشكلة بالتفصيل..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="userTicketPriority">الأولوية</label>
-                    <select id="userTicketPriority" class="form-control" required>
+                    <label>الأولوية</label>
+                    <select id="userTicketPriority" class="form-control">
                         <option value="low">منخفضة</option>
                         <option value="medium" selected>متوسطة</option>
                         <option value="high">عالية</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="userTicketImage">إرفاق صورة (اختياري)</label>
-                    <input type="file" id="userTicketImage" class="form-control" accept="image/*">
-                    <img id="imagePreview" class="image-preview">
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('userTicketModal').classList.remove('active')">إلغاء</button>
-                    <button type="submit" class="btn btn-primary" id="submitTicketBtn">إنشاء التذكرة</button>
-                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">إرسال التذكرة</button>
             </form>
-        </div>
-    </div>
-
-    <!-- Ticket Details Modal -->
-    <div id="ticketDetailsModal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="closeDetailsModal">&times;</span>
-            <div id="ticketDetailsContent">
-                <!-- سيتم ملؤه برمجياً -->
-            </div>
-            
-            <div class="replies-container">
-                <h3>الردود</h3>
-                <div id="repliesList" style="margin-top: 1rem;">
-                    <!-- سيتم ملؤه برمجياً -->
-                </div>
-                
-                <form id="addReplyForm" style="margin-top: 1.5rem;">
-                    <div class="form-group">
-                        <textarea id="replyMessage" class="form-control" rows="3" required placeholder="اكتب ردك هنا..."></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary" id="submitReplyBtn">إرسال الرد</button>
-                </form>
-            </div>
         </div>
     </div>
 
@@ -377,290 +313,186 @@
         import { 
             fetchUserTickets, 
             createTicket, 
-            fetchTicketStats, 
-            uploadTicketImage, 
-            subscribeToTickets,
-            fetchTicketReplies,
-            addTicketReply
+            fetchTicketStats,
+            subscribeToTickets
         } from './tickets-service.js';
+        import { supabase } from './api-config.js';
 
-        let currentUser;
-        let activeTicketId = null;
-
-        // 1. حماية الصفحة وتحميل البيانات
-        async function init() {
-            try {
-                currentUser = await requireAuth('customer');
-                if (!currentUser) {
-                    window.location.replace('sign-in.html');
-                    return;
-                }
-
-                document.getElementById('welcomeUser').textContent = `مرحباً، ${currentUser.profile?.full_name || currentUser.email}`;
-                document.getElementById('profileEmail').value = currentUser.email;
-                document.getElementById('profileFullName').value = currentUser.profile?.full_name || '';
-                document.getElementById('profilePhone').value = currentUser.profile?.phone || '';
-
-                await loadDashboardData();
-            } catch (err) {
-                console.error('Init error:', err);
-                window.location.replace('sign-in.html');
+        // 1. حماية الصفحة
+        let user;
+        try {
+            user = await requireAuth('customer');
+            if (!user) window.location.replace('sign-in.html');
+            if (user.isImpersonated) {
+                document.getElementById('impersonationBanner').style.display = 'block';
+                document.getElementById('signOutBtn').style.display = 'none';
             }
+        } catch (err) {
+            window.location.replace('sign-in.html');
         }
 
-        // 2. تحميل البيانات
-        async function loadDashboardData() {
-            const list = document.getElementById('userTicketsList');
-            try {
-                const stats = await fetchTicketStats();
-                document.getElementById('userTotalTickets').textContent = stats.total || 0;
-                document.getElementById('userInProgressTickets').textContent = stats.inProgress || 0;
-                document.getElementById('userResolvedTickets').textContent = stats.resolved || 0;
-
-                const search = document.getElementById('ticketSearch').value;
-                const status = document.getElementById('statusFilter').value;
-                
-                const tickets = await fetchUserTickets({ search, status });
-                list.innerHTML = '';
-
-                if (!tickets || tickets.length === 0) {
-                    list.innerHTML = '<div style="text-align:center; padding: 3rem; color: var(--text-secondary);">لا توجد تذاكر حالياً</div>';
-                } else {
-                    tickets.forEach(t => {
-                        const div = document.createElement('div');
-                        div.className = 'ticket-item';
-                        div.onclick = () => openTicketDetails(t);
-                        div.innerHTML = `
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
-                                <h3 style="margin:0;">${t.title}</h3>
-                                <span class="status-badge status-${t.status}">${getStatusLabel(t.status)}</span>
-                            </div>
-                            <p style="color: var(--text-secondary); margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${t.description}</p>
-                            <div style="font-size: 0.85rem; color: var(--text-secondary); display: flex; gap: 1rem;">
-                                <span>الأولوية: ${getPriorityLabel(t.priority)}</span>
-                                <span>التاريخ: ${new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
-                            </div>
-                        `;
-                        list.appendChild(div);
-                    });
-                }
-            } catch (err) {
-                list.innerHTML = '<div style="text-align:center; padding: 3rem; color: var(--danger-color);">حدث خطأ أثناء تحميل التذاكر</div>';
-            }
+        // 2. عرض البيانات الأولية
+        if (user) {
+            const name = user.profile?.full_name || user.email;
+            document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
+            document.getElementById('profileEmail').value = user.profile?.email || user.email;
+            document.getElementById('profileFullName').value = user.profile?.full_name || '';
+            document.getElementById('profilePhone').value = user.profile?.phone || '';
+            document.getElementById('pointsCount').textContent = user.profile?.points || 0;
+            document.getElementById('pointsTooltip').textContent = user.profile?.points || 0;
         }
 
-        function getStatusLabel(status) {
-            const labels = { 'open': 'مفتوحة', 'in-progress': 'قيد المعالجة', 'resolved': 'محلولة' };
-            return labels[status] || status;
+        // 3. التنقل بين التبويبات
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `${tabName}Tab`));
+            if (tabName === 'tickets') renderTickets();
         }
 
-        function getPriorityLabel(priority) {
-            const labels = { 'high': 'عالية', 'medium': 'متوسطة', 'low': 'منخفضة' };
-            return labels[priority] || priority;
-        }
-
-        // 3. تفاصيل التذكرة والردود
-        async function openTicketDetails(ticket) {
-            activeTicketId = ticket.id;
-            const modal = document.getElementById('ticketDetailsModal');
-            const content = document.getElementById('ticketDetailsContent');
-            
-            content.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
-                    <h2 style="margin:0;">${ticket.title}</h2>
-                    <span class="status-badge status-${ticket.status}">${getStatusLabel(ticket.status)}</span>
-                </div>
-                <div style="background: var(--hover-bg); padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
-                    <p style="white-space: pre-wrap; margin-bottom: 1.5rem;">${ticket.description}</p>
-                    ${ticket.image_url ? `<a href="${ticket.image_url}" target="_blank"><img src="${ticket.image_url}" style="max-width:100%; border-radius:0.5rem; border: 1px solid var(--border-color);"></a>` : ''}
-                </div>
-                <div style="font-size: 0.9rem; color: var(--text-secondary); display: flex; gap: 1.5rem;">
-                    <span><strong>الأولوية:</strong> ${getPriorityLabel(ticket.priority)}</span>
-                    <span><strong>التاريخ:</strong> ${new Date(ticket.created_at).toLocaleString('ar-EG')}</span>
-                </div>
-            `;
-
-            modal.classList.add('active');
-            await loadReplies(ticket.id);
-        }
-
-        async function loadReplies(ticketId) {
-            const list = document.getElementById('repliesList');
-            list.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">جاري تحميل الردود...</p>';
-            
-            try {
-                const replies = await fetchTicketReplies(ticketId);
-                list.innerHTML = '';
-                
-                if (!replies || replies.length === 0) {
-                    list.innerHTML = '<p style="text-align:center; color: var(--text-secondary); padding: 1rem;">لا توجد ردود بعد</p>';
-                } else {
-                    replies.forEach(r => {
-                        const profile = r.profiles;
-                        const isAdmin = profile?.role === 'admin';
-                        const div = document.createElement('div');
-                        div.className = `reply-item ${isAdmin ? 'admin' : ''}`;
-                        div.innerHTML = `
-                            <div class="reply-meta">
-                                <strong>${profile?.full_name || 'مستخدم'} ${isAdmin ? '(الدعم الفني)' : ''}</strong>
-                                <span>${new Date(r.created_at).toLocaleString('ar-EG')}</span>
-                            </div>
-                            <div class="reply-text" style="white-space: pre-wrap;">${r.message}</div>
-                        `;
-                        list.appendChild(div);
-                    });
-                }
-                list.scrollTop = list.scrollHeight;
-            } catch (err) {
-                list.innerHTML = '<p style="color: var(--danger-color);">فشل تحميل الردود</p>';
-            }
-        }
-
-        // 4. الأحداث (Events)
-        document.getElementById('addReplyForm').onsubmit = async (e) => {
-            e.preventDefault();
-            if (!activeTicketId) return;
-
-            const btn = document.getElementById('submitReplyBtn');
-            const msgInput = document.getElementById('replyMessage');
-            
-            btn.disabled = true;
-            btn.textContent = 'جاري الإرسال...';
-
-            try {
-                await addTicketReply(activeTicketId, msgInput.value);
-                msgInput.value = '';
-                await loadReplies(activeTicketId);
-            } catch (err) {
-                alert('فشل إرسال الرد: ' + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'إرسال الرد';
-            }
-        };
-
-        document.getElementById('userCreateTicketForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const submitBtn = document.getElementById('submitTicketBtn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'جاري الإنشاء...';
-
-            try {
-                let image_url = null;
-                const imageFile = document.getElementById('userTicketImage').files[0];
-                
-                if (imageFile) {
-                    try {
-                        image_url = await uploadTicketImage(imageFile);
-                    } catch (uploadErr) {
-                        if (!confirm('فشل رفع الصورة. هل تريد الاستمرار بدون صورة؟\nالسبب: ' + uploadErr.message)) {
-                            throw new Error('تم إلغاء العملية');
-                        }
-                    }
-                }
-
-                await createTicket({
-                    title: document.getElementById('userTicketTitle').value,
-                    description: document.getElementById('userTicketDescription').value,
-                    priority: document.getElementById('userTicketPriority').value,
-                    image_url
-                });
-
-                document.getElementById('userTicketModal').classList.remove('active');
-                document.getElementById('userCreateTicketForm').reset();
-                document.getElementById('imagePreview').style.display = 'none';
-                await loadDashboardData();
-            } catch (err) {
-                if (err.message !== 'تم إلغاء العملية') alert('خطأ: ' + err.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'إنشاء التذكرة';
-            }
-        };
-
-        // تبديل التبويبات
         document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById(`${tab.dataset.tab}Tab`).classList.add('active');
-            });
+            tab.addEventListener('click', () => switchTab(tab.dataset.tab));
         });
 
-        // إغلاق المودال
-        document.getElementById('closeDetailsModal').onclick = () => document.getElementById('ticketDetailsModal').classList.remove('active');
-        document.getElementById('closeUserTicketModal').onclick = () => document.getElementById('userTicketModal').classList.remove('active');
-        document.getElementById('openCreateTicket').onclick = () => document.getElementById('userTicketModal').classList.add('active');
+        document.getElementById('profileNavBtn').onclick = () => switchTab('profile');
 
-        // البحث والفلترة
-        document.getElementById('ticketSearch').oninput = () => loadDashboardData();
-        document.getElementById('statusFilter').onchange = () => loadDashboardData();
-
-        // معاينة الصورة
-        document.getElementById('userTicketImage').onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    const preview = document.getElementById('imagePreview');
-                    preview.src = ev.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        };
-
-        // تسجيل الخروج
-        document.getElementById('signOutLink').onclick = async (e) => {
-            e.preventDefault();
+        // 4. تسجيل الخروج
+        document.getElementById('signOutBtn').onclick = async () => {
             if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
                 await logout();
                 window.location.href = 'sign-in.html';
             }
         };
 
-        // تحديث البروفايل
-        document.getElementById('profileForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('saveProfileBtn');
-            const msg = document.getElementById('profileMessage');
-            btn.disabled = true;
+        // 5. إدارة التذاكر
+        async function renderStats() {
+            const stats = await fetchTicketStats();
+            document.getElementById('userTotalTickets').textContent = stats.total;
+            document.getElementById('userInProgressTickets').textContent = stats.inProgress;
+            document.getElementById('userResolvedTickets').textContent = stats.resolved;
+        }
+
+        async function renderTickets(filters = {}) {
+            const list = document.getElementById('userTicketsList');
+            list.innerHTML = '<p style="text-align:center; padding: 2rem;">جاري التحميل...</p>';
             
-            try {
-                const updates = {
-                    full_name: document.getElementById('profileFullName').value,
-                    phone: document.getElementById('profilePhone').value,
-                    updated_at: new Date()
-                };
-                
-                const { error } = await updateProfile(updates);
-                if (error) throw error;
+            const tickets = await fetchUserTickets(filters);
+            list.innerHTML = '';
 
-                const password = document.getElementById('profilePassword').value;
-                if (password) {
-                    const { error: pError } = await import('./auth-client.js').then(m => m.updatePassword(password));
-                    if (pError) throw pError;
-                }
-
-                msg.style.display = 'block';
-                msg.style.background = 'rgba(46, 138, 58, 0.1)';
-                msg.style.color = 'var(--success-color)';
-                msg.textContent = 'تم تحديث البيانات بنجاح';
-                document.getElementById('welcomeUser').textContent = `مرحباً، ${updates.full_name}`;
-            } catch (err) {
-                msg.style.display = 'block';
-                msg.style.background = 'rgba(217, 83, 79, 0.1)';
-                msg.style.color = 'var(--danger-color)';
-                msg.textContent = err.message;
-            } finally {
-                btn.disabled = false;
+            if (!tickets.length) {
+                list.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--color-text-secondary);">لا توجد تذاكر</p>';
+                return;
             }
+
+            tickets.forEach(t => {
+                const el = document.createElement('div');
+                el.className = 'ticket-card';
+                const statusLabels = { 'open': 'مفتوحة', 'in-progress': 'قيد المعالجة', 'resolved': 'تم الحل', 'closed': 'مغلقة' };
+                const priorityLabels = { 'low': 'منخفضة', 'medium': 'متوسطة', 'high': 'عالية' };
+                const userName = t.profiles?.full_name || t.profiles?.email?.split('@')[0] || 'مستخدم';
+
+                el.innerHTML = `
+                    <div class="ticket-card-header">
+                        <span class="ticket-number">#${t.ticket_number || '---'}</span>
+                        <span class="ticket-status status-${t.status}">${statusLabels[t.status] || t.status}</span>
+                    </div>
+                    <div class="ticket-card-body">
+                        <h3 class="ticket-title">${t.title}</h3>
+                        <p class="ticket-user">بواسطة: <strong>${userName}</strong></p>
+                        <p class="ticket-description">${t.description.substring(0, 100)}${t.description.length > 100 ? '...' : ''}</p>
+                    </div>
+                    <div class="ticket-card-footer">
+                        <span class="ticket-priority priority-${t.priority}">${priorityLabels[t.priority] || t.priority}</span>
+                        <span class="ticket-date">${new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
+                    </div>
+                `;
+                list.appendChild(el);
+            });
+        }
+
+        // 6. إنشاء تذكرة
+        const modal = document.getElementById('createTicketModal');
+        document.getElementById('openCreateTicket').onclick = () => modal.classList.add('active');
+        document.getElementById('closeModal').onclick = () => modal.classList.remove('active');
+        
+        document.getElementById('userCreateTicketForm').onsubmit = async (e) => {
+            e.preventDefault();
+            await createTicket({
+                title: document.getElementById('userTicketTitle').value,
+                description: document.getElementById('userTicketDescription').value,
+                priority: document.getElementById('userTicketPriority').value
+            });
+            modal.classList.remove('active');
+            e.target.reset();
+            renderStats();
+            renderTickets();
         };
 
-        // تشغيل
-        init();
-        subscribeToTickets(() => loadDashboardData());
+        // 7. الإشعارات
+        let notifications = [];
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationBadge = document.getElementById('notificationBadge');
+        const notificationsList = document.getElementById('notificationsList');
+
+        function updateNotificationUI() {
+            notificationBadge.style.display = notifications.length ? 'flex' : 'none';
+            notificationBadge.textContent = notifications.length;
+            if (notifications.length) {
+                notificationsList.innerHTML = '';
+                notifications.forEach((n, i) => {
+                    const div = document.createElement('div');
+                    div.style.padding = '0.75rem';
+                    div.style.borderBottom = '1px solid var(--color-border)';
+                    div.style.cursor = 'pointer';
+                    div.innerHTML = `
+                        <div style="font-size:0.9rem;">${n.message}</div>
+                        <div style="font-size:0.7rem; color:var(--color-text-secondary);">${new Date(n.time).toLocaleTimeString('ar-EG')}</div>
+                    `;
+                    div.onclick = () => {
+                        switchTab('tickets');
+                        notifications.splice(i, 1);
+                        updateNotificationUI();
+                    };
+                    notificationsList.appendChild(div);
+                });
+            } else {
+                notificationsList.innerHTML = '<p style="text-align:center; padding:1rem;">لا توجد إشعارات</p>';
+            }
+        }
+
+        notificationBtn.onclick = (e) => {
+            e.stopPropagation();
+            notificationDropdown.style.display = notificationDropdown.style.display === 'none' ? 'block' : 'none';
+        };
+        document.onclick = () => notificationDropdown.style.display = 'none';
+        document.getElementById('clearNotifications').onclick = () => {
+            notifications = [];
+            updateNotificationUI();
+        };
+
+        subscribeToTickets((payload) => {
+            renderTickets();
+            renderStats();
+            if (payload.eventType === 'UPDATE' && payload.new.user_id === user.id) {
+                notifications.unshift({
+                    ticketId: payload.new.id,
+                    message: `تم تحديث حالة تذكرتك #${payload.new.ticket_number} إلى ${payload.new.status}`,
+                    time: new Date()
+                });
+                updateNotificationUI();
+            }
+        });
+
+        // الفلاتر والبحث
+        document.getElementById('statusFilter').onchange = (e) => renderTickets({ status: e.target.value });
+        let searchTimeout;
+        document.getElementById('ticketSearch').oninput = (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => renderTickets({ search: e.target.value }), 500);
+        };
+
+        renderStats();
+        renderTickets();
     </script>
 </body>
 </html>

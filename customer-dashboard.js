@@ -62,11 +62,37 @@ async function renderTickets(filters = {}) {
 
     tickets.forEach(t => {
         const el = document.createElement('div');
-        el.className = 'ticket-item';
+        el.className = 'ticket-card';
+        
+        const statusLabels = {
+            'open': 'مفتوحة',
+            'in-progress': 'قيد المعالجة',
+            'resolved': 'تم الحل',
+            'closed': 'مغلقة'
+        };
+
+        const priorityLabels = {
+            'low': 'منخفضة',
+            'medium': 'متوسطة',
+            'high': 'عالية'
+        };
+
+        const userName = t.profiles?.full_name || t.profiles?.email?.split('@')[0] || 'مستخدم';
+
         el.innerHTML = `
-            <div class="ticket-title">${t.title}</div>
-            <div class="ticket-description">${t.description}</div>
-            <small>الحالة: ${t.status} | الأولوية: ${t.priority}</small>
+            <div class="ticket-card-header">
+                <span class="ticket-number">#${t.ticket_number || '---'}</span>
+                <span class="ticket-status status-${t.status}">${statusLabels[t.status] || t.status}</span>
+            </div>
+            <div class="ticket-card-body">
+                <h3 class="ticket-title">${t.title}</h3>
+                <p class="ticket-user">بواسطة: <strong>${userName}</strong></p>
+                <p class="ticket-description">${t.description.substring(0, 100)}${t.description.length > 100 ? '...' : ''}</p>
+            </div>
+            <div class="ticket-card-footer">
+                <span class="ticket-priority priority-${t.priority}">${priorityLabels[t.priority] || t.priority}</span>
+                <span class="ticket-date">${new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
+            </div>
         `;
         list.appendChild(el);
     });
