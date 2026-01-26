@@ -16,7 +16,7 @@ export async function fetchUserTickets(filters = {}) {
 
     let query = supabase
         .from('tickets')
-        .select('*, profiles!tickets_user_id_fkey(full_name, email)')
+        .select('*, profiles(full_name, email)')
         .order('created_at', { ascending: false });
 
     // إذا كان المستخدم عميلاً (أو لا يوجد بروفايل بعد)، نفلتر التذاكر الخاصة به فقط
@@ -198,7 +198,7 @@ export async function addTicketReply(ticketId, message) {
 export async function fetchTicketReplies(ticketId) {
     const { data, error } = await supabase
         .from('ticket_replies')
-        .select('*, profiles!ticket_replies_user_id_fkey(full_name, role)')
+        .select('*, profiles(full_name, role)')
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true });
 
