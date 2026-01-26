@@ -1,4 +1,6 @@
 import { supabase } from './api-config.js';
+import { logActivity } from './activity-service.js';
+import { createNotification } from './notifications-service.js';
 
 /**
  * جلب التذاكر
@@ -72,7 +74,26 @@ export async function createTicket({ title, description, priority, image_url = n
         .select();
 
     if (error) throw error;
-    return (data && data.length > 0) ? data[0] : null;
+    const ticket = (data && data.length > 0) ? data[0] : null;
+
+    if (ticket) {
+        // إشعار للأدمن عند إنشاء تذكرة جديدة
+        const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+        if (admins) {
+            for (const admin of admins) {
+                await createNotification({
+                    userId: admin.id,
+                    title: 'تذكرة جديدة',
+                    message: `تم إنشاء تذكرة جديدة #${ticket.ticket_number}: ${ticket.title}`,
+                    type: 'info',
+                    link: `admin-dashboard.html?ticket=${ticket.id}`
+                });
+            }
+        }
+        await logActivity('ticket_created', { ticket_id: ticket.id, ticket_number: ticket.ticket_number });
+    }
+
+    return ticket;
 }
 
 /**
@@ -158,12 +179,26 @@ export async function fetchTicketStats() {
  * تحديث حالة التذكرة
  */
 export async function updateTicketStatus(ticketId, status) {
+    const { data: ticket } = await supabase.from('tickets').select('*, profiles(id)').eq('id', ticketId).single();
+    
     const { error } = await supabase
         .from('tickets')
         .update({ status })
         .eq('id', ticketId);
 
     if (error) throw error;
+
+    // إشعار للعميل عند تغيير حالة تذكرته
+    if (ticket) {
+        await createNotification({
+            userId: ticket.user_id,
+            title: 'تحديث حالة التذكرة',
+            message: `تم تغيير حالة تذكرتك #${ticket.ticket_number} إلى: ${status}`,
+            type: 'info',
+            link: `customer-dashboard.html?ticket=${ticket.id}`
+        });
+        await logActivity('status_change', { ticket_id: ticketId, new_status: status });
+    }
 }
 
 /**
@@ -181,7 +216,7 @@ export async function deleteTicket(ticketId) {
 /**
  * إضافة رد على تذكرة
  */
-export async function addTicketReply(ticketId, message) {
+export async function addTicketReply(ticketId, message, isInternal = false) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -190,10 +225,24 @@ export async function addTicketReply(ticketId, message) {
         .insert({
             ticket_id: ticketId,
             user_id: user.id,
-            message: message
+            message: message,
+            is_internal: isInternal
         });
 
     if (error) throw error;
+
+    const { data: ticket } = await supabase.from('tickets').select('*').eq('id', ticketId).single();
+
+    // إشعار للعميل إذا كان الرد من الأدمن وليس ملاحظة داخلية
+    if (!isInternal && ticket && ticket.user_id !== user.id) {
+        await createNotification({
+            userId: ticket.user_id,
+            title: 'رد جديد على تذكرتك',
+            message: `هناك رد جديد على تذكرتك #${ticket.ticket_number}`,
+            type: 'success',
+            link: `customer-dashboard.html?ticket=${ticket.id}`
+        });
+    }
 
     // تحديث حالة التذكرة إلى 'in-progress' إذا كانت 'open'
     await supabase
@@ -201,6 +250,8 @@ export async function addTicketReply(ticketId, message) {
         .update({ status: 'in-progress' })
         .eq('id', ticketId)
         .eq('status', 'open');
+    
+    await logActivity('ticket_reply', { ticket_id: ticketId, is_internal: isInternal });
 }
 
 /**

@@ -18,155 +18,36 @@
     </script>
     <script src="theme-manager.js" defer></script>
     <style>
-        .profile-section {
-            background: var(--color-surface);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: var(--shadow-sm);
-            margin-top: 2rem;
-        }
-        .profile-form {
-            display: grid;
-            gap: 1.5rem;
-            max-width: 600px;
-        }
-        .nav-tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--color-border);
-            padding-bottom: 0.5rem;
-            overflow-x: auto;
-        }
-        .nav-tab {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border-radius: 0.5rem;
-            transition: all 0.3s;
-            font-weight: 600;
-            color: var(--color-text-secondary);
-            white-space: nowrap;
-        }
-        .nav-tab:hover {
-            background: var(--hover-bg);
-            color: var(--color-accent);
-        }
-        .nav-tab.active {
-            background: var(--color-accent);
-            color: white;
-        }
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-            background: var(--color-surface);
-            border-radius: 0.5rem;
-            overflow: hidden;
-        }
-        th, td {
-            padding: 1rem;
-            text-align: right;
-            border-bottom: 1px solid var(--color-border);
-        }
-        th {
-            background: var(--color-muted);
-            color: var(--color-text-secondary);
-            font-weight: 600;
-        }
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
+        .profile-section { background: var(--color-surface); padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-sm); margin-top: 2rem; }
+        .profile-form { display: grid; gap: 1.5rem; max-width: 600px; }
+        .nav-tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem; overflow-x: auto; }
+        .nav-tab { padding: 0.5rem 1rem; cursor: pointer; border-radius: 0.5rem; transition: all 0.3s; font-weight: 600; color: var(--color-text-secondary); white-space: nowrap; }
+        .nav-tab:hover { background: var(--hover-bg); color: var(--color-accent); }
+        .nav-tab.active { background: var(--color-accent); color: white; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: var(--color-surface); border-radius: 0.5rem; overflow: hidden; }
+        th, td { padding: 1rem; text-align: right; border-bottom: 1px solid var(--color-border); }
+        th { background: var(--color-muted); color: var(--color-text-secondary); font-weight: 600; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.85rem; font-weight: 600; }
         .status-open { background: rgba(224, 168, 0, 0.15); color: var(--color-warning); }
         .status-resolved { background: rgba(46, 138, 58, 0.15); color: var(--color-success); }
         .status-closed { background: var(--color-muted); color: var(--color-text-secondary); }
-        
-        .admin-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            position: relative;
-        }
-        .search-box input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid var(--color-border);
-            background: var(--input-bg);
-            color: var(--color-text);
-        }
-        .filter-group {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .filter-group select {
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            border: 1px solid var(--color-border);
-            background: var(--input-bg);
-            color: var(--color-text);
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
+        .admin-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
+        .search-box { flex: 1; min-width: 250px; position: relative; }
+        .search-box input { width: 100%; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--color-border); background: var(--input-bg); color: var(--color-text); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
-        .modal-content {
-            background: var(--color-surface);
-            padding: 2rem;
-            border-radius: 1rem;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-            position: relative;
-        }
-        .reply-item {
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            background: var(--color-muted);
-        }
+        .modal-content { background: var(--color-surface); padding: 2rem; border-radius: 1rem; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; position: relative; }
+        .reply-item { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; background: var(--color-muted); }
         .reply-admin { border-right: 4px solid var(--color-accent); }
         .reply-user { border-right: 4px solid var(--color-success); }
-
-        .btn-danger {
-            background: var(--color-danger);
-            color: white;
-        }
-        .btn-sm {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.85rem;
-        }
+        .reply-internal { background: #fffbeb; border-right: 4px solid #f59e0b; }
+        .btn-danger { background: var(--color-danger); color: white; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+        .log-item { padding: 0.75rem; border-bottom: 1px solid var(--color-border); font-size: 0.9rem; }
+        .log-time { color: var(--color-text-secondary); font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -195,17 +76,13 @@
                             <span>الإشعارات</span>
                             <button id="clearNotifications" style="font-size: 0.8rem; color: var(--color-accent); background: none; border: none; cursor: pointer;">مسح الكل</button>
                         </div>
-                        <div id="notificationsList" style="padding: 0.5rem;">
-                            <p style="text-align: center; padding: 1rem; color: var(--color-text-secondary);">لا توجد إشعارات جديدة</p>
-                        </div>
+                        <div id="notificationsList" style="padding: 0.5rem;"></div>
                     </div>
                 </div>
 
                 <div class="profile-nav-item" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" id="profileNavBtn">
                     <div style="width: 32px; height: 32px; background: var(--color-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;" id="adminInitial">A</div>
-                    <span id="welcomeAdmin" style="color: var(--color-nav-text); font-weight: 500; display: none;"></span>
                 </div>
-                
                 <button id="signOutBtn" class="btn btn-secondary btn-sm">خروج</button>
             </div>
         </div>
@@ -215,137 +92,64 @@
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="overview">إدارة التذاكر</div>
             <div class="nav-tab" data-tab="users">المستخدمين</div>
+            <div class="nav-tab" data-tab="logs">سجل النشاطات</div>
             <div class="nav-tab" data-tab="profile">الملف الشخصي</div>
         </div>
 
-        <!-- قسم التذاكر -->
         <div id="overviewTab" class="tab-content active">
-            <div class="page-header">
-                <h1>إدارة التذاكر</h1>
-            </div>
-            
+            <div class="page-header"><h1>إدارة التذاكر</h1></div>
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">إجمالي التذاكر</p>
-                        <p class="stat-value" id="admTotal">0</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">المفتوحة</p>
-                        <p class="stat-value" id="admOpen" style="color: var(--color-warning);">0</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">المحلولة</p>
-                        <p class="stat-value" id="admResolved" style="color: var(--color-success);">0</p>
-                    </div>
-                </div>
+                <div class="stat-card"><div class="stat-content"><p class="stat-label">إجمالي التذاكر</p><p class="stat-value" id="admTotal">0</p></div></div>
+                <div class="stat-card"><div class="stat-content"><p class="stat-label">المفتوحة</p><p class="stat-value" id="admOpen" style="color: var(--color-warning);">0</p></div></div>
+                <div class="stat-card"><div class="stat-content"><p class="stat-label">المحلولة</p><p class="stat-value" id="admResolved" style="color: var(--color-success);">0</p></div></div>
             </div>
-
             <div class="admin-controls">
-                <div class="search-box">
-                    <input type="text" id="ticketSearch" placeholder="بحث في التذاكر...">
-                </div>
-                <div class="filter-group">
-                    <select id="statusFilter">
-                        <option value="all">كل الحالات</option>
-                        <option value="open">مفتوحة</option>
-                        <option value="in-progress">قيد المعالجة</option>
-                        <option value="resolved">محلولة</option>
-                        <option value="closed">مغلقة</option>
-                    </select>
-                </div>
+                <div class="search-box"><input type="text" id="ticketSearch" placeholder="بحث في التذاكر..."></div>
+                <select id="statusFilter"><option value="all">كل الحالات</option><option value="open">مفتوحة</option><option value="in-progress">قيد المعالجة</option><option value="resolved">محلولة</option></select>
             </div>
-
             <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>المستخدم</th>
-                            <th>العنوان</th>
-                            <th>الحالة</th>
-                            <th>التاريخ</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admTicketsBody">
-                        <tr><td colspan="5" style="text-align:center; padding: 3rem;">جاري تحميل البيانات...</td></tr>
-                    </tbody>
-                </table>
+                <table><thead><tr><th>المستخدم</th><th>العنوان</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody id="admTicketsBody"></tbody></table>
             </div>
         </div>
 
-        <!-- قسم المستخدمين -->
         <div id="usersTab" class="tab-content">
-            <div class="page-header">
-                <h1>إدارة المستخدمين</h1>
-            </div>
-            <div class="admin-controls">
-                <div class="search-box">
-                    <input type="text" id="userSearch" placeholder="بحث عن مستخدم بالاسم أو الإيميل...">
-                </div>
-            </div>
+            <div class="page-header"><h1>إدارة المستخدمين</h1></div>
+            <div class="admin-controls"><div class="search-box"><input type="text" id="userSearch" placeholder="بحث عن مستخدم..."></div></div>
             <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>المستخدم</th>
-                            <th>البريد الإلكتروني</th>
-                            <th>الدور</th>
-                            <th>تاريخ الانضمام</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <tr><td colspan="5" style="text-align:center; padding: 3rem;">جاري تحميل البيانات...</td></tr>
-                    </tbody>
-                </table>
+                <table><thead><tr><th>المستخدم</th><th>البريد الإلكتروني</th><th>الدور</th><th>تاريخ الانضمام</th><th>الإجراءات</th></tr></thead><tbody id="usersTableBody"></tbody></table>
             </div>
         </div>
 
-        <!-- قسم الملف الشخصي -->
+        <div id="logsTab" class="tab-content">
+            <div class="page-header"><h1>سجل النشاطات</h1></div>
+            <div id="logsList" style="background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm); padding: 1rem;"></div>
+        </div>
+
         <div id="profileTab" class="tab-content">
-            <div class="page-header">
-                <h1>الملف الشخصي</h1>
-            </div>
+            <div class="page-header"><h1>الملف الشخصي</h1></div>
             <div class="profile-section">
                 <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 0.5rem;"></div>
                 <form id="profileForm" class="profile-form">
-                    <div class="form-group">
-                        <label>الاسم الكامل</label>
-                        <input type="text" id="profileFullName" class="form-control" placeholder="أدخل اسمك الكامل">
-                    </div>
-                    <div class="form-group">
-                        <label>البريد الإلكتروني</label>
-                        <input type="email" id="profileEmail" class="form-control" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label>رقم الهاتف</label>
-                        <input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك">
-                    </div>
-                    <div class="form-group">
-                        <label>كلمة المرور الجديدة</label>
-                        <input type="password" id="profilePassword" class="form-control" placeholder="اتركها فارغة إذا لا تريد التغيير">
-                    </div>
+                    <div class="form-group"><label>الاسم الكامل</label><input type="text" id="profileFullName" class="form-control"></div>
+                    <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="profileEmail" class="form-control" disabled></div>
                     <button type="submit" class="btn btn-primary" id="saveProfileBtn">حفظ التغييرات</button>
                 </form>
             </div>
         </div>
     </main>
 
-    <!-- Modal الرد على التذكرة -->
     <div id="replyModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTicketTitle">الرد على التذكرة</h2>
             <div id="repliesList" style="margin: 1.5rem 0; max-height: 300px; overflow-y: auto;"></div>
             <form id="replyForm">
-                <textarea id="replyMessage" style="width: 100%; min-height: 100px; margin-bottom: 1rem; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; background: var(--input-bg); color: var(--color-text);" placeholder="اكتب ردك هنا..." required></textarea>
+                <textarea id="replyMessage" style="width: 100%; min-height: 100px; margin-bottom: 1rem; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;" placeholder="اكتب ردك هنا..." required></textarea>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <input type="checkbox" id="isInternal"> <label for="isInternal">ملاحظة داخلية (للأدمن فقط)</label>
+                </div>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                     <button type="button" class="btn btn-secondary" onclick="document.getElementById('replyModal').classList.remove('active')">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">إرسال الرد</button>
+                    <button type="submit" class="btn btn-primary">إرسال</button>
                 </div>
             </form>
         </div>
@@ -353,267 +157,126 @@
 
     <script type="module">
         import { requireAuth, logout, updateProfile, adminImpersonateUser } from './auth-client.js';
-        import { 
-            fetchUserTickets, 
-            updateTicketStatus, 
-            deleteTicket, 
-            fetchTicketStats,
-            addTicketReply,
-            fetchTicketReplies,
-            subscribeToTickets
-        } from './tickets-service.js';
+        import { fetchUserTickets, updateTicketStatus, deleteTicket, fetchTicketStats, addTicketReply, fetchTicketReplies, subscribeToTickets } from './tickets-service.js';
+        import { fetchNotifications, markAllAsRead, subscribeToNotifications } from './notifications-service.js';
+        import { fetchActivityLogs } from './activity-service.js';
         import { supabase } from './api-config.js';
 
-        // 1. حماية الصفحة
         let user;
         try {
             user = await requireAuth('admin');
             if (!user) window.location.replace('sign-in.html');
-        } catch (err) {
-            window.location.replace('sign-in.html');
-        }
+        } catch (err) { window.location.replace('sign-in.html'); }
 
-        // 2. عرض البيانات الأولية
         if (user) {
             const name = user.profile?.full_name || user.email;
-            document.getElementById('welcomeAdmin').textContent = `مرحباً، ${name}`;
             document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
             document.getElementById('profileEmail').value = user.email;
             document.getElementById('profileFullName').value = user.profile?.full_name || '';
-            document.getElementById('profilePhone').value = user.profile?.phone || '';
         }
 
-        // 3. التنقل بين التبويبات
         function switchTab(tabName) {
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `${tabName}Tab`));
-            
             if (tabName === 'users') loadUsers();
             if (tabName === 'overview') loadAdminTickets();
-
-            const url = new URL(window.location);
-            url.searchParams.set('tab', tabName);
-            window.history.pushState({}, '', url);
+            if (tabName === 'logs') loadLogs();
         }
 
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-        });
+        document.querySelectorAll('.nav-tab').forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
+        document.getElementById('signOutBtn').onclick = async () => { if (confirm('خروج؟')) { await logout(); window.location.href = 'sign-in.html'; } };
 
-        document.getElementById('profileNavBtn').onclick = () => switchTab('profile');
-
-        const params = new URLSearchParams(window.location.search);
-        const activeTab = params.get('tab');
-        if (activeTab) switchTab(activeTab);
-
-        // 4. تسجيل الخروج
-        document.getElementById('signOutBtn').onclick = async () => {
-            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-                await logout();
-                window.location.href = 'sign-in.html';
-            }
-        };
-
-        // 5. إدارة التذاكر
         async function loadAdminTickets() {
             const tbody = document.getElementById('admTicketsBody');
-            try {
-                const stats = await fetchTicketStats();
-                document.getElementById('admTotal').textContent = stats.total;
-                document.getElementById('admOpen').textContent = stats.open;
-                document.getElementById('admResolved').textContent = stats.resolved;
-
-                const status = document.getElementById('statusFilter').value;
-                const search = document.getElementById('ticketSearch').value;
-                const tickets = await fetchUserTickets({ status, search });
-                
-                tbody.innerHTML = '';
-                if (!tickets || tickets.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 3rem;">لا توجد تذاكر</td></tr>';
-                    return;
-                }
-
-                tickets.forEach(t => {
-                    const tr = document.createElement('tr');
-                    const profile = t.profiles;
-                    const userName = profile?.full_name || profile?.email?.split('@')[0] || 'مستخدم';
-                    
-                    tr.innerHTML = `
-                        <td>
-                            <div style="font-weight: 600;">${userName}</div>
-                            <div style="font-size: 0.8rem; color: var(--color-text-secondary);">${profile?.email || ''}</div>
-                        </td>
-                        <td>${t.title}</td>
-                        <td><span class="status-badge status-${t.status}">${t.status}</span></td>
-                        <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
-                        <td>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-primary btn-sm action-btn" data-id="${t.id}" data-title="${t.title}" data-action="reply">رد</button>
-                                ${t.status !== 'resolved' ? `<button class="btn btn-secondary btn-sm action-btn" data-id="${t.id}" data-action="resolve">حل</button>` : ''}
-                                <button class="btn btn-danger btn-sm action-btn" data-id="${t.id}" data-action="delete">حذف</button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-                tbody.querySelectorAll('.action-btn').forEach(btn => {
-                    btn.onclick = async () => {
-                        const id = btn.dataset.id;
-                        const action = btn.dataset.action;
-                        if (action === 'reply') openReplyModal(id, btn.dataset.title);
-                        else if (action === 'resolve') {
-                            await updateTicketStatus(id, 'resolved');
-                            loadAdminTickets();
-                        } else if (action === 'delete' && confirm('حذف التذكرة؟')) {
-                            await deleteTicket(id);
-                            loadAdminTickets();
-                        }
-                    };
-                });
-            } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">خطأ في التحميل</td></tr>';
-            }
+            const stats = await fetchTicketStats();
+            document.getElementById('admTotal').textContent = stats.total;
+            document.getElementById('admOpen').textContent = stats.open;
+            document.getElementById('admResolved').textContent = stats.resolved;
+            const tickets = await fetchUserTickets({ status: document.getElementById('statusFilter').value, search: document.getElementById('ticketSearch').value });
+            tbody.innerHTML = tickets.length ? '' : '<tr><td colspan="5" style="text-align:center;">لا توجد تذاكر</td></tr>';
+            tickets.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${t.profiles?.full_name || t.profiles?.email}</td><td>${t.title}</td><td><span class="status-badge status-${t.status}">${t.status}</span></td><td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td><td><div style="display:flex;gap:0.5rem;"><button class="btn btn-primary btn-sm" onclick="window.openReply('${t.id}', '${t.title}')">رد</button><button class="btn btn-secondary btn-sm" onclick="window.updateStatus('${t.id}', 'resolved')">حل</button></div></td>`;
+                tbody.appendChild(tr);
+            });
         }
 
-        // 6. إدارة المستخدمين
-        async function loadUsers(search = '') {
+        async function loadUsers() {
             const tbody = document.getElementById('usersTableBody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>';
-            try {
-                let query = supabase.from('profiles').select('*').order('created_at', { ascending: false });
-                if (search) query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
-                const { data: users, error } = await query;
-                if (error) throw error;
-
-                tbody.innerHTML = '';
-                users.forEach(u => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${u.full_name || 'بدون اسم'}</td>
-                        <td>${u.email}</td>
-                        <td>${u.role === 'admin' ? 'مدير' : 'عميل'}</td>
-                        <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
-                        <td>
-                            <button class="btn btn-secondary btn-sm impersonate-btn" data-id="${u.id}">دخول كعميل</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-                document.querySelectorAll('.impersonate-btn').forEach(btn => {
-                    btn.onclick = () => adminImpersonateUser(btn.dataset.id);
-                });
-            } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">خطأ في التحميل</td></tr>';
-            }
+            const { data: users } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${u.full_name || 'بدون اسم'}</td><td>${u.email}</td><td>${u.role}</td><td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td><td><button class="btn btn-secondary btn-sm" onclick="window.impersonate('${u.id}')">دخول</button></td>`;
+                tbody.appendChild(tr);
+            });
         }
 
-        // 7. إدارة الردود
+        async function loadLogs() {
+            const list = document.getElementById('logsList');
+            const logs = await fetchActivityLogs();
+            list.innerHTML = logs.length ? '' : '<p>لا توجد سجلات</p>';
+            logs.forEach(l => {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                div.innerHTML = `<span class="log-time">${new Date(l.created_at).toLocaleString('ar-EG')}</span> | <strong>${l.profiles?.full_name || 'System'}</strong>: ${l.action} (${JSON.stringify(l.details)})`;
+                list.appendChild(div);
+            });
+        }
+
         let currentTicketId = null;
-        async function openReplyModal(ticketId, title) {
-            currentTicketId = ticketId;
-            document.getElementById('modalTicketTitle').textContent = `الرد على: ${title}`;
+        window.openReply = async (id, title) => {
+            currentTicketId = id;
+            document.getElementById('modalTicketTitle').textContent = title;
             document.getElementById('replyModal').classList.add('active');
             const list = document.getElementById('repliesList');
-            list.innerHTML = 'جاري التحميل...';
-            try {
-                const replies = await fetchTicketReplies(ticketId);
-                list.innerHTML = replies.length ? '' : '<p style="text-align:center;">لا توجد ردود</p>';
-                replies.forEach(r => {
-                    const div = document.createElement('div');
-                    div.className = `reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'}`;
-                    div.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:0.5rem;">
-                            <strong>${r.profiles?.full_name || 'مستخدم'}</strong>
-                            <span>${new Date(r.created_at).toLocaleString('ar-EG')}</span>
-                        </div>
-                        <div>${r.message}</div>
-                    `;
-                    list.appendChild(div);
-                });
-                list.scrollTop = list.scrollHeight;
-            } catch (err) {}
-        }
+            const replies = await fetchTicketReplies(id);
+            list.innerHTML = '';
+            replies.forEach(r => {
+                const div = document.createElement('div');
+                div.className = `reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'} ${r.is_internal ? 'reply-internal' : ''}`;
+                div.innerHTML = `<div style="font-size:0.8rem;margin-bottom:0.5rem;"><strong>${r.profiles?.full_name}</strong> ${r.is_internal ? '(ملاحظة داخلية)' : ''}</div><div>${r.message}</div>`;
+                list.appendChild(div);
+            });
+        };
 
         document.getElementById('replyForm').onsubmit = async (e) => {
             e.preventDefault();
-            const msg = document.getElementById('replyMessage').value;
-            await addTicketReply(currentTicketId, msg);
+            await addTicketReply(currentTicketId, document.getElementById('replyMessage').value, document.getElementById('isInternal').checked);
             document.getElementById('replyMessage').value = '';
-            openReplyModal(currentTicketId, '');
-            loadAdminTickets();
+            window.openReply(currentTicketId, document.getElementById('modalTicketTitle').textContent);
         };
 
-        // 8. الإشعارات
-        let notifications = [];
-        const notificationBtn = document.getElementById('notificationBtn');
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        const notificationBadge = document.getElementById('notificationBadge');
-        const notificationsList = document.getElementById('notificationsList');
+        window.updateStatus = async (id, status) => { await updateTicketStatus(id, status); loadAdminTickets(); };
+        window.impersonate = (id) => adminImpersonateUser(id);
 
-        function updateNotificationUI() {
-            notificationBadge.style.display = notifications.length ? 'flex' : 'none';
-            notificationBadge.textContent = notifications.length;
-            if (notifications.length) {
-                notificationsList.innerHTML = '';
-                notifications.forEach((n, i) => {
-                    const div = document.createElement('div');
-                    div.style.padding = '0.75rem';
-                    div.style.borderBottom = '1px solid var(--color-border)';
-                    div.style.cursor = 'pointer';
-                    div.innerHTML = `
-                        <div style="font-size:0.9rem;">${n.message}</div>
-                        <div style="font-size:0.7rem; color:var(--color-text-secondary);">${new Date(n.time).toLocaleTimeString('ar-EG')}</div>
-                    `;
-                    div.onclick = () => {
-                        openReplyModal(n.ticketId, n.ticketTitle);
-                        notifications.splice(i, 1);
-                        updateNotificationUI();
-                    };
-                    notificationsList.appendChild(div);
-                });
-            } else {
-                notificationsList.innerHTML = '<p style="text-align:center; padding:1rem;">لا توجد إشعارات</p>';
-            }
+        async function loadNotifications() {
+            const list = document.getElementById('notificationsList');
+            const badge = document.getElementById('notificationBadge');
+            const notes = await fetchNotifications();
+            const unread = notes.filter(n => !n.is_read).length;
+            badge.style.display = unread ? 'flex' : 'none';
+            badge.textContent = unread;
+            list.innerHTML = notes.length ? '' : '<p style="text-align:center;padding:1rem;">لا توجد إشعارات</p>';
+            notes.forEach(n => {
+                const div = document.createElement('div');
+                div.style.padding = '0.75rem'; div.style.borderBottom = '1px solid var(--color-border)';
+                div.innerHTML = `<div style="font-size:0.9rem; font-weight:${n.is_read ? 'normal' : 'bold'}">${n.message}</div>`;
+                list.appendChild(div);
+            });
         }
 
-        notificationBtn.onclick = (e) => {
+        document.getElementById('notificationBtn').onclick = (e) => {
             e.stopPropagation();
-            notificationDropdown.style.display = notificationDropdown.style.display === 'none' ? 'block' : 'none';
-        };
-        document.onclick = () => notificationDropdown.style.display = 'none';
-        document.getElementById('clearNotifications').onclick = () => {
-            notifications = [];
-            updateNotificationUI();
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            if (dropdown.style.display === 'block') markAllAsRead().then(loadNotifications);
         };
 
-        subscribeToTickets((payload) => {
-            loadAdminTickets();
-            if (payload.eventType === 'INSERT') {
-                notifications.unshift({
-                    ticketId: payload.new.id,
-                    ticketTitle: payload.new.title,
-                    message: `تذكرة جديدة: ${payload.new.title}`,
-                    time: payload.new.created_at
-                });
-                updateNotificationUI();
-            }
-        });
-
-        // الفلاتر والبحث
-        document.getElementById('statusFilter').onchange = loadAdminTickets;
-        let searchTimeout;
-        document.getElementById('ticketSearch').oninput = () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(loadAdminTickets, 500);
-        };
-        document.getElementById('userSearch').oninput = (e) => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => loadUsers(e.target.value), 500);
-        };
-
+        subscribeToNotifications(user.id, loadNotifications);
+        subscribeToTickets(loadAdminTickets);
         loadAdminTickets();
+        loadNotifications();
     </script>
 </body>
 </html>

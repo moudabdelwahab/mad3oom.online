@@ -1,4 +1,5 @@
 import { supabase } from './api-config.js';
+import { logActivity } from './activity-service.js';
 
 /**
  * تسجيل الدخول باستخدام البريد الإلكتروني وكلمة المرور
@@ -27,6 +28,9 @@ export async function signIn(email, password) {
         document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=31536000; SameSite=Lax`;
     }
 
+    // تسجيل نشاط الدخول
+    await logActivity('login', { email });
+
     return result;
 }
 
@@ -49,6 +53,9 @@ export async function signUp(email, password) {
  * تسجيل الخروج
  */
 export async function logout() {
+    // تسجيل نشاط الخروج قبل مسح الجلسة
+    await logActivity('logout');
+    
     // مسح الكوكيز عند تسجيل الخروج
     document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
     document.cookie = "sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
@@ -117,6 +124,9 @@ export async function adminImpersonateUser(userId) {
         throw new Error('Unauthorized');
     }
 
+    // تسجيل نشاط التمثيل
+    await logActivity('impersonate', { target_user_id: userId });
+
     // فتح نافذة جديدة مع بارامتر خاص للتمثيل
     const impersonateUrl = `${window.location.origin}/customer-dashboard.html?impersonate=${userId}`;
     window.open(impersonateUrl, '_blank');
@@ -126,7 +136,6 @@ export async function requireAuth(requiredRole = 'user') {
     const user = await getCurrentUser();
 
     if (!user) {
-        // إذا لم يكن هناك مستخدم، نوجهه لصفحة تسجيل الدخول
         if (!window.location.pathname.endsWith('sign-in.html')) {
             window.location.replace('sign-in.html');
         }
@@ -139,22 +148,25 @@ export async function requireAuth(requiredRole = 'user') {
     const urlParams = new URLSearchParams(window.location.search);
     const impersonateId = urlParams.get('impersonate');
     
-    if (impersonateId && userRole === 'admin') {
-        // إذا كان إدمن ويقوم بالتمثيل، نجلب بيانات العميل المستهدف
+    if (impersonateId && (userRole === 'admin' || userRole === 'support')) {
         const { data: targetProfile } = await supabase.from('profiles').select('*').eq('id', impersonateId).single();
         if (targetProfile) {
             return { id: impersonateId, profile: targetProfile, isImpersonated: true };
         }
     }
 
-    // إذا كان المطلوب 'admin' والمستخدم ليس 'admin'
+    // حماية المسارات بناءً على الأدوار
     if (requiredRole === 'admin' && userRole !== 'admin') {
         window.location.replace('customer-dashboard.html');
         return null;
     }
 
-    // إذا كان المستخدم 'admin' يحاول دخول صفحة 'customer' بدون تمثيل، نوجهه للوحة الإدارة
-    if (requiredRole === 'customer' && userRole === 'admin' && !impersonateId) {
+    if (requiredRole === 'support' && userRole !== 'admin' && userRole !== 'support') {
+        window.location.replace('customer-dashboard.html');
+        return null;
+    }
+
+    if (requiredRole === 'customer' && (userRole === 'admin' || userRole === 'support') && !impersonateId) {
         window.location.replace('admin-dashboard.html');
         return null;
     }
