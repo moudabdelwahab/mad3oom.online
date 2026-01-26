@@ -153,8 +153,8 @@
          * Setup theme toggle button
          */
         setupToggleButton() {
-            // Find all theme toggle buttons
-            const toggleButtons = document.querySelectorAll('.theme-toggle');
+            // Find theme toggle buttons (by ID or class)
+            const toggleButtons = document.querySelectorAll('#themeToggleBtn, .theme-toggle:not(.notification-btn)');
             
             if (toggleButtons.length === 0) {
                 // Button might not be loaded yet, try again after a delay
@@ -164,23 +164,23 @@
 
             // Add click handlers to all toggle buttons
             toggleButtons.forEach(button => {
-                // Remove any existing listeners to prevent duplicates
-                const newButton = button.cloneNode(true);
-                button.parentNode.replaceChild(newButton, button);
+                // Check if we already initialized this button to avoid infinite loops with cloneNode
+                if (button.dataset.themeInitialized) return;
                 
-                newButton.addEventListener('click', (e) => {
+                button.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     this.toggleTheme();
                 });
 
+                button.dataset.themeInitialized = 'true';
                 // Set initial state
-                this.updateToggleButton(newButton);
+                this.updateToggleButton(button);
             });
 
             // Watch for theme changes and update all buttons
             const observer = new MutationObserver(() => {
-                const buttons = document.querySelectorAll('.theme-toggle');
+                const buttons = document.querySelectorAll('#themeToggleBtn, .theme-toggle:not(.notification-btn)');
                 buttons.forEach(button => this.updateToggleButton(button));
             });
 
