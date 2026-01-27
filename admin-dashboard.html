@@ -197,7 +197,9 @@
         import { fetchUserTickets, createTicket, fetchTicketStats, subscribeToTickets, fetchTicketReplies, addTicketReply } from './tickets-service.js';
         import { fetchNotifications, markAllAsRead, subscribeToNotifications } from './notifications-service.js';
         import { initAdminRewards } from './admin-rewards.js';
-        import { addProBadgeToElement, injectProBadgeStyles } from './pro-badge.js';
+        // استيراد دوال شارة Pro مع معالجة الخطأ في حال فشل التصدير المسمى
+        import * as ProBadgeModule from './pro-badge.js';
+        const { addProBadgeToElement, injectProBadgeStyles } = ProBadgeModule.default || ProBadgeModule;
 
         let user;
 
