@@ -281,6 +281,7 @@
         import { fetchUserTickets, createTicket, fetchTicketStats, subscribeToTickets, fetchTicketReplies, addTicketReply } from './tickets-service.js';
         import { fetchNotifications, markAllAsRead, subscribeToNotifications } from './notifications-service.js';
         import { initRewardsDashboard } from './rewards-dashboard.js';
+        import { supabase } from './api-config.js';
         // استيراد دوال شارة Pro
         import * as ProBadge from './pro-badge.js';
         const { addProBadgeToElement, injectProBadgeStyles } = ProBadge;
