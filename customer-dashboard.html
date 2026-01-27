@@ -282,7 +282,8 @@
         import { fetchNotifications, markAllAsRead, subscribeToNotifications } from './notifications-service.js';
         import { initRewardsDashboard } from './rewards-dashboard.js';
         // استيراد دوال شارة Pro
-        import { addProBadgeToElement, injectProBadgeStyles } from './pro-badge.js';
+        import * as ProBadge from './pro-badge.js';
+        const { addProBadgeToElement, injectProBadgeStyles } = ProBadge;
 
         let user;
         try {

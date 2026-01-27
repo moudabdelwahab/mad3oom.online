@@ -272,3 +272,16 @@ export function injectProBadgeStyles() {
         document.head.appendChild(style);
     }
 }
+
+// ==================== التصدير الافتراضي لزيادة التوافقية ====================
+export default {
+    addProBadgeToElement,
+    updateProBadgeInProfile,
+    updateProBadgeInCards,
+    showProBadgeNotification,
+    updateProStatusInProfile,
+    addProBadgeToComments,
+    addProBadgeToPublicProfile,
+    subscribeToProBadgeUpdates,
+    injectProBadgeStyles
+};
