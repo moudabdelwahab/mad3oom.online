@@ -218,7 +218,9 @@ form.addEventListener('submit', async (e) => {
         } else if (err.message === 'Invalid login credentials') {
             errorText.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
         } else {
-            errorText.textContent = 'فشل تسجيل الدخول. حاول مرة أخرى.';
+            // عرض الرسالة القادمة من auth-client.js (مثل رسائل الحظر المفصلة)
+            errorText.style.whiteSpace = 'pre-line';
+            errorText.textContent = err.message || 'فشل تسجيل الدخول. حاول مرة أخرى.';
         }
     }
 });

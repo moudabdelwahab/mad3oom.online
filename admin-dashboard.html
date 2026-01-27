@@ -45,12 +45,17 @@
         .reply-user { border-right: 4px solid var(--color-success); }
         .reply-internal { background: #fffbeb; border-right: 4px solid #f59e0b; }
         .btn-danger { background: var(--color-danger); color: white; }
+        .btn-warning { background: var(--color-warning); color: white; }
         .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
         .log-item { padding: 0.75rem; border-bottom: 1px solid var(--color-border); font-size: 0.9rem; }
         .log-time { color: var(--color-text-secondary); font-size: 0.8rem; }
         .avatar-upload { position: relative; width: 100px; height: 100px; margin: 0 auto 2rem; }
         .avatar-preview { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-accent); }
         .avatar-edit-btn { position: absolute; bottom: 0; right: 0; background: var(--color-accent); color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--color-surface); }
+        .ban-badge { padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold; }
+        .ban-none { display: none; }
+        .ban-temporary { background: #fef3c7; color: #92400e; }
+        .ban-permanent { background: #fee2e2; color: #991b1b; }
     </style>
 </head>
 <body>
@@ -96,6 +101,7 @@
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="overview">إدارة التذاكر</div>
             <div class="nav-tab" data-tab="users">المستخدمين</div>
+            <div class="nav-tab" data-tab="banned">المحظورين</div>
             <div class="nav-tab" data-tab="logs">سجل النشاطات</div>
             <div class="nav-tab" data-tab="profile">الملف الشخصي</div>
         </div>
@@ -120,7 +126,14 @@
             <div class="page-header"><h1>إدارة المستخدمين</h1></div>
             <div class="admin-controls"><div class="search-box"><input type="text" id="userSearch" placeholder="بحث عن مستخدم..."></div></div>
             <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
-                <table><thead><tr><th>المستخدم</th><th>البريد الإلكتروني</th><th>الدور</th><th>تاريخ الانضمام</th><th>الإجراءات</th></tr></thead><tbody id="usersTableBody"></tbody></table>
+                <table><thead><tr><th>المستخدم</th><th>البريد الإلكتروني</th><th>الدور</th><th>النقاط</th><th>الإجراءات</th></tr></thead><tbody id="usersTableBody"></tbody></table>
+            </div>
+        </div>
+
+        <div id="bannedTab" class="tab-content">
+            <div class="page-header"><h1>قائمة المحظورين</h1></div>
+            <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
+                <table><thead><tr><th>المستخدم</th><th>نوع الحظر</th><th>ينتهي في</th><th>السبب</th><th>إجراءات</th></tr></thead><tbody id="bannedTableBody"></tbody></table>
             </div>
         </div>
 
@@ -139,7 +152,6 @@
                     </label>
                     <input type="file" id="avatarInput" style="display: none;" accept="image/*">
                 </div>
-                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 0.5rem;"></div>
                 <form id="profileForm" class="profile-form">
                     <div class="form-group"><label>الاسم الكامل</label><input type="text" id="profileFullName" class="form-control" required></div>
                     <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="profileEmail" class="form-control" disabled></div>
@@ -157,6 +169,7 @@
         </div>
     </main>
 
+    <!-- Modal الرد على التذكرة -->
     <div id="replyModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTicketTitle">الرد على التذكرة</h2>
@@ -174,8 +187,61 @@
         </div>
     </div>
 
+    <!-- Modal إدارة الحظر -->
+    <div id="banModal" class="modal">
+        <div class="modal-content">
+            <h2 id="banModalTitle">إدارة حظر المستخدم</h2>
+            <form id="banForm" style="margin-top: 1.5rem;">
+                <input type="hidden" id="banUserId">
+                <div class="form-group">
+                    <label>نوع الحظر</label>
+                    <select id="banStatus" class="form-control">
+                        <option value="none">بدون حظر (رفع الحظر)</option>
+                        <option value="temporary">حظر مؤقت</option>
+                        <option value="permanent">حظر دائم</option>
+                    </select>
+                </div>
+                <div class="form-group" id="banUntilGroup" style="display: none;">
+                    <label>حظر حتى تاريخ</label>
+                    <input type="datetime-local" id="banUntil" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>السبب</label>
+                    <textarea id="banReason" class="form-control" placeholder="اذكر سبب الحظر..."></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('banModal').classList.remove('active')">إلغاء</button>
+                    <button type="submit" class="btn btn-danger">تحديث حالة الحظر</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal تعديل النقاط -->
+    <div id="pointsModal" class="modal">
+        <div class="modal-content">
+            <h2>تعديل نقاط المستخدم</h2>
+            <form id="pointsForm" style="margin-top: 1.5rem;">
+                <input type="hidden" id="pointsUserId">
+                <div class="form-group">
+                    <label>النقاط الحالية</label>
+                    <input type="number" id="currentPoints" class="form-control" disabled>
+                </div>
+                <div class="form-group">
+                    <label>النقاط الجديدة</label>
+                    <input type="number" id="newPoints" class="form-control" required>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('pointsModal').classList.remove('active')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
-        import { requireAuth, logout, updateProfile, adminImpersonateUser, uploadAvatar, updatePassword } from './auth-client.js';
+        import { supabase } from './api-config.js';
+        import { requireAuth, logout, updateProfile, adminImpersonateUser, uploadAvatar, updatePassword, adminUpdateUserProfile } from './auth-client.js';
         import { fetchUserTickets, updateTicketStatus, deleteTicket, fetchTicketStats, addTicketReply, fetchTicketReplies, subscribeToTickets } from './tickets-service.js';
         import { fetchNotifications, markAllAsRead, subscribeToNotifications } from './notifications-service.js';
 
@@ -210,8 +276,121 @@
                 document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
                 tab.classList.add('active');
                 document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+                if (tab.dataset.tab === 'users') renderUsers();
+                if (tab.dataset.tab === 'banned') renderBannedUsers();
+                if (tab.dataset.tab === 'logs') renderLogs();
             };
         });
+
+        // إدارة المستخدمين
+        async function renderUsers() {
+            const body = document.getElementById('usersTableBody');
+            const search = document.getElementById('userSearch').value;
+            let query = supabase.from('profiles').select('*');
+            if (search) query = query.ilike('full_name', `%${search}%`);
+            const { data: users, error } = await query;
+            
+            body.innerHTML = users?.length ? '' : '<tr><td colspan="5" style="text-align:center;padding:2rem;">لا يوجد مستخدمين</td></tr>';
+            users?.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${u.full_name || '---'} <span class="ban-badge ban-${u.ban_status}">${u.ban_status === 'temporary' ? 'محظور مؤقت' : 'محظور دائم'}</span></td>
+                    <td>${u.email}</td>
+                    <td>${u.role}</td>
+                    <td>${u.points || 0}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="openPointsModal('${u.id}', ${u.points || 0})">نقاط</button>
+                        <button class="btn btn-warning btn-sm" onclick="openBanModal('${u.id}', '${u.full_name}', '${u.ban_status}', '${u.ban_until || ''}', '${u.ban_reason || ''}')">حظر</button>
+                        <button class="btn btn-primary btn-sm" onclick="impersonateUser('${u.id}')">دخول</button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // إدارة المحظورين
+        async function renderBannedUsers() {
+            const body = document.getElementById('bannedTableBody');
+            const { data: users } = await supabase.from('profiles').select('*').neq('ban_status', 'none');
+            
+            body.innerHTML = users?.length ? '' : '<tr><td colspan="5" style="text-align:center;padding:2rem;">لا يوجد محظورين</td></tr>';
+            users?.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${u.full_name || u.email}</td>
+                    <td><span class="ban-badge ban-${u.ban_status}">${u.ban_status === 'temporary' ? 'مؤقت' : 'دائم'}</span></td>
+                    <td>${u.ban_until ? new Date(u.ban_until).toLocaleString('ar-EG') : '---'}</td>
+                    <td>${u.ban_reason || '---'}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="openBanModal('${u.id}', '${u.full_name}', '${u.ban_status}', '${u.ban_until || ''}', '${u.ban_reason || ''}')">تعديل/رفع</button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // مودال الحظر
+        window.openBanModal = (id, name, status, until, reason) => {
+            document.getElementById('banUserId').value = id;
+            document.getElementById('banModalTitle').textContent = `إدارة حظر: ${name}`;
+            document.getElementById('banStatus').value = status || 'none';
+            document.getElementById('banReason').value = reason || '';
+            if (until) {
+                const date = new Date(until);
+                date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+                document.getElementById('banUntil').value = date.toISOString().slice(0, 16);
+            } else {
+                document.getElementById('banUntil').value = '';
+            }
+            toggleBanUntil();
+            document.getElementById('banModal').classList.add('active');
+        };
+
+        function toggleBanUntil() {
+            const status = document.getElementById('banStatus').value;
+            document.getElementById('banUntilGroup').style.display = status === 'temporary' ? 'block' : 'none';
+        }
+        document.getElementById('banStatus').onchange = toggleBanUntil;
+
+        document.getElementById('banForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('banUserId').value;
+            const status = document.getElementById('banStatus').value;
+            const until = document.getElementById('banUntil').value;
+            const reason = document.getElementById('banReason').value;
+            
+            try {
+                await adminUpdateUserProfile(id, {
+                    ban_status: status,
+                    ban_until: status === 'temporary' ? until : null,
+                    ban_reason: reason
+                });
+                alert('تم تحديث حالة الحظر بنجاح');
+                document.getElementById('banModal').classList.remove('active');
+                renderUsers();
+                renderBannedUsers();
+            } catch (err) { alert('خطأ في التحديث'); }
+        };
+
+        // مودال النقاط
+        window.openPointsModal = (id, points) => {
+            document.getElementById('pointsUserId').value = id;
+            document.getElementById('currentPoints').value = points;
+            document.getElementById('newPoints').value = points;
+            document.getElementById('pointsModal').classList.add('active');
+        };
+
+        document.getElementById('pointsForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('pointsUserId').value;
+            const points = document.getElementById('newPoints').value;
+            try {
+                await adminUpdateUserProfile(id, { points: parseInt(points) });
+                alert('تم تحديث النقاط بنجاح');
+                document.getElementById('pointsModal').classList.remove('active');
+                renderUsers();
+            } catch (err) { alert('خطأ في التحديث'); }
+        };
 
         // تحديث البروفايل
         document.getElementById('profileForm').onsubmit = async (e) => {
@@ -254,6 +433,27 @@
             } catch (err) { alert('خطأ في رفع الصورة'); }
         };
 
+        // جلب وعرض سجل النشاطات
+        async function renderLogs() {
+            const list = document.getElementById('logsList');
+            try {
+                const { fetchActivityLogs, formatActivityMessage } = await import('./activity-service.js');
+                const logs = await fetchActivityLogs(50);
+                list.innerHTML = logs.length ? '' : '<p style="text-align:center;padding:1rem;">لا توجد نشاطات مسجلة</p>';
+                logs.forEach(log => {
+                    const div = document.createElement('div');
+                    div.className = 'log-item';
+                    div.innerHTML = `
+                        <div class="log-message">${formatActivityMessage(log)}</div>
+                        <div class="log-time">${new Date(log.created_at).toLocaleString('ar-EG')}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                list.innerHTML = '<p style="text-align:center;color:var(--color-danger);">خطأ في تحميل السجل</p>';
+            }
+        }
+
         // إدارة التذاكر (الأدمن)
         async function renderAdminTickets() {
             const body = document.getElementById('admTicketsBody');
@@ -261,8 +461,8 @@
                 status: document.getElementById('statusFilter').value,
                 search: document.getElementById('ticketSearch').value
             });
-            body.innerHTML = tickets.length ? '' : '<tr><td colspan="5" style="text-align:center;padding:2rem;">لا توجد تذاكر</td></tr>';
-            tickets.forEach(t => {
+            body.innerHTML = tickets?.length ? '' : '<tr><td colspan="5" style="text-align:center;padding:2rem;">لا توجد تذاكر</td></tr>';
+            tickets?.forEach(t => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${t.profiles?.full_name || t.profiles?.email}</td>
@@ -271,7 +471,7 @@
                     <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
                     <td>
                         <button class="btn btn-secondary btn-sm" onclick="openReplyModal('${t.id}', '${t.title}')">رد</button>
-                        <button class="btn btn-primary btn-sm" onclick="impersonateUser('${t.user_id}')">دخول كعميل</button>
+                        <button class="btn btn-primary btn-sm" onclick="impersonateUser('${t.user_id}')">دخول</button>
                     </td>
                 `;
                 body.appendChild(tr);
@@ -310,6 +510,7 @@
 
         document.getElementById('statusFilter').onchange = renderAdminTickets;
         document.getElementById('ticketSearch').oninput = renderAdminTickets;
+        document.getElementById('userSearch').oninput = renderUsers;
         document.getElementById('signOutBtn').onclick = async () => { await logout(); window.location.href = 'sign-in.html'; };
 
         renderAdminTickets();

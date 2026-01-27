@@ -2,6 +2,19 @@ import { supabase } from './api-config.js';
 import { logActivity } from './activity-service.js';
 
 /**
+ * التحقق مما إذا كان المستخدم محظوراً
+ */
+export function isUserBanned(profile) {
+    if (!profile) return false;
+    if (profile.ban_status === 'permanent') return true;
+    if (profile.ban_status === 'temporary' && profile.ban_until) {
+        const banUntil = new Date(profile.ban_until);
+        if (banUntil > new Date()) return true;
+    }
+    return false;
+}
+
+/**
  * تسجيل الدخول باستخدام البريد الإلكتروني وكلمة المرور
  */
 export async function signIn(email, password) {
@@ -17,7 +30,43 @@ export async function signIn(email, password) {
         await supabase.auth.signOut();
         return {
             data: null,
-            error: { message: 'Email not confirmed' }
+            error: { message: 'يرجى تأكيد بريدك الإلكتروني أولاً لتتمكن من تسجيل الدخول.' }
+        };
+    }
+
+    // جلب البروفايل للتحقق من الحظر
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', result.data.user.id)
+        .single();
+
+    if (isUserBanned(profile)) {
+        await supabase.auth.signOut();
+        let message = '';
+        
+        if (profile.ban_status === 'permanent') {
+            message = 'تم حظر حسابك بشكل دائم.';
+        } else if (profile.ban_status === 'temporary') {
+            const banDate = new Date(profile.ban_until).toLocaleString('ar-EG', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            message = `تم حظر حسابك مؤقتاً حتى تاريخ: ${banDate}.`;
+        }
+
+        if (profile.ban_reason) {
+            message += `\nالسبب: ${profile.ban_reason}`;
+        }
+        
+        message += '\nيرجى التواصل مع الإدارة لفك الحظر.';
+        
+        return {
+            data: null,
+            error: { message }
         };
     }
 
@@ -37,7 +86,6 @@ export async function signIn(email, password) {
 
 /**
  * إنشاء حساب جديد
- * ملاحظة: يتم إنشاء البروفايل تلقائياً عبر Trigger في Supabase
  */
 export async function signUp(email, password) {
     console.log('Attempting sign up for:', email);
@@ -53,10 +101,7 @@ export async function signUp(email, password) {
  * تسجيل الخروج
  */
 export async function logout() {
-    // تسجيل نشاط الخروج قبل مسح الجلسة
     await logActivity('logout');
-    
-    // مسح الكوكيز عند تسجيل الخروج
     document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
     document.cookie = "sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
     return await supabase.auth.signOut();
@@ -64,7 +109,7 @@ export async function logout() {
 
 
 /**
- * الحصول على المستخدم الحالي مع البروفايل الخاص به من جدول profiles
+ * الحصول على المستخدم الحالي مع البروفايل الخاص به
  */
 export async function getCurrentUser() {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -81,6 +126,13 @@ export async function getCurrentUser() {
         return { ...user, profile: null };
     }
 
+    // إذا كان المستخدم محظوراً أثناء الجلسة، قم بتسجيل خروجه
+    if (isUserBanned(profile)) {
+        await logout();
+        window.location.replace('sign-in.html?error=banned');
+        return null;
+    }
+
     return { ...user, profile };
 }
 
@@ -91,9 +143,6 @@ export async function currentSession() {
     return await getCurrentUser();
 }
 
-/**
- * حماية الصفحات بناءً على الدور (Role) المسترجع من قاعدة البيانات
- */
 /**
  * التوجيه التلقائي بناءً على حالة الجلسة والدور
  */
@@ -114,7 +163,7 @@ export async function autoRedirect() {
 }
 
 /**
- * ميزة دخول الإدمن على حساب العميل في جلسة منفصلة
+ * ميزة دخول الإدمن على حساب العميل
  */
 export async function adminImpersonateUser(userId) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -124,10 +173,7 @@ export async function adminImpersonateUser(userId) {
         throw new Error('Unauthorized');
     }
 
-    // تسجيل نشاط التمثيل
     await logActivity('impersonate', { target_user_id: userId });
-
-    // فتح نافذة جديدة مع بارامتر خاص للتمثيل
     const impersonateUrl = `${window.location.origin}/customer-dashboard.html?impersonate=${userId}`;
     window.open(impersonateUrl, '_blank');
 }
@@ -144,7 +190,6 @@ export async function requireAuth(requiredRole = 'user') {
 
     const userRole = user.profile?.role || 'customer';
 
-    // التحقق من وجود بارامتر التمثيل (Impersonation)
     const urlParams = new URLSearchParams(window.location.search);
     const impersonateId = urlParams.get('impersonate');
     
@@ -155,7 +200,6 @@ export async function requireAuth(requiredRole = 'user') {
         }
     }
 
-    // حماية المسارات بناءً على الأدوار
     if (requiredRole === 'admin' && userRole !== 'admin') {
         window.location.replace('customer-dashboard.html');
         return null;
@@ -176,7 +220,6 @@ export async function requireAuth(requiredRole = 'user') {
 
 /**
  * تحديث بيانات البروفايل
- * مسموح فقط للحقول التي تسمح بها سياسات RLS (مثل full_name, phone, avatar_url)
  */
 export async function updateProfile(updates) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -189,6 +232,22 @@ export async function updateProfile(updates) {
 
     if (!error) {
         await logActivity('profile_updated', updates);
+    }
+
+    return { data, error };
+}
+
+/**
+ * تحديث بروفايل مستخدم آخر (للأدمن فقط)
+ */
+export async function adminUpdateUserProfile(userId, updates) {
+    const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+
+    if (!error) {
+        await logActivity('admin_updated_user', { target_user_id: userId, updates });
     }
 
     return { data, error };
@@ -225,17 +284,14 @@ export async function uploadAvatar(file) {
  * إرسال بريد إعادة تعيين كلمة المرور
  */
 export async function resetPasswordEmail(email) {
-    console.log('Attempting to send reset email to:', email);
-    // تأكد من توجيه المستخدم لصفحة reset-password.html بعد النقر على الرابط في البريد
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + '/reset-password.html',
     });
-    if (error) console.error('Reset email error:', error);
     return { data, error };
 }
 
 /**
- * تحديث كلمة المرور (تستخدم بعد النقر على رابط الإيميل أو من داخل البروفايل)
+ * تحديث كلمة المرور
  */
 export async function updatePassword(newPassword) {
     const { data, error } = await supabase.auth.updateUser({
@@ -249,7 +305,6 @@ export async function updatePassword(newPassword) {
 
 /**
  * تحديث البريد الإلكتروني
- * ملاحظة: سيتطلب تأكيد البريد الجديد عبر رابط يصل إليه
  */
 export async function updateEmail(newEmail) {
     const { data, error } = await supabase.auth.updateUser({
