@@ -254,6 +254,33 @@ export async function adminUpdateUserProfile(userId, updates) {
 }
 
 /**
+ * تحديث رتبة المستخدم (للأدمن فقط)
+ */
+export async function adminUpdateUserRole(userId, newRole) {
+    // 1. تحديث جدول Profiles
+    const { data, error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+    if (error) return { data, error };
+
+    // 2. تحديث Auth Metadata لضمان عمل السياسات الأمنية
+    // ملاحظة: يتطلب هذا صلاحيات أدمن في Supabase (Service Role) أو استخدام Edge Function
+    // بما أننا نستخدم Client SDK، سنعتمد على تحديث الـ Metadata إذا كان متاحاً
+    const { error: authError } = await supabase.auth.admin.updateUserById(
+        userId,
+        { user_metadata: { role: newRole } }
+    );
+
+    if (!error) {
+        await logActivity('admin_updated_role', { target_user_id: userId, new_role: newRole });
+    }
+
+    return { data, error: error || authError };
+}
+
+/**
  * رفع صورة البروفايل
  */
 export async function uploadAvatar(file) {
