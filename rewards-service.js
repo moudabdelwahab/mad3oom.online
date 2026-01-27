@@ -1,5 +1,5 @@
 // rewards-service.js - نظام المكافآت والنقاط المتكامل
-import { supabase } from './firebase-config.js';
+import { supabase } from './api-config.js';
 
 // ==================== نقاط الخطورة ====================
 const SEVERITY_POINTS = {
