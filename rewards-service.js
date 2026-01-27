@@ -92,15 +92,30 @@ export async function submitReport(userId, reportData) {
         if (reportError) throw reportError;
 
         // تحديث المحفظة - إضافة النقاط المعلقة
-        const wallet = await getUserWallet(userId);
-        const { error: walletError } = await supabase
-            .from('user_wallets')
-            .update({
-                pending_points: wallet.pending_points + estimatedPoints
-            })
-            .eq('user_id', userId);
+        let wallet;
+        try {
+            wallet = await getUserWallet(userId);
+        } catch (e) {
+            // إذا لم تكن هناك محفظة، نقوم بإنشائها
+            const { data: newWallet, error: createError } = await supabase
+                .from('user_wallets')
+                .insert([{ user_id: userId, pending_points: estimatedPoints }])
+                .select()
+                .single();
+            if (createError) console.error('Error creating wallet:', createError);
+            wallet = newWallet;
+        }
 
-        if (walletError) throw walletError;
+        if (wallet && wallet.id) {
+            const { error: walletError } = await supabase
+                .from('user_wallets')
+                .update({
+                    pending_points: (wallet.pending_points || 0) + estimatedPoints
+                })
+                .eq('user_id', userId);
+
+            if (walletError) console.error('Error updating wallet:', walletError);
+        }
 
         // إشعار للمسؤولين عند تقديم بلاغ جديد
         const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
