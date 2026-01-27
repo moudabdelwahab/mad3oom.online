@@ -38,8 +38,8 @@ async function loadWalletData(userId) {
         // تحديث معلومات Pro
         updateProBadgeInfo(wallet);
 
-        // تحديث شريط التقدم
-        updateProProgressBar(wallet.total_points);
+        // تحديث شريط التقدم (يشمل النقاط الكلية + المعلقة لبيان التقدم)
+        updateProProgressBar(wallet.total_points + (wallet.pending_points || 0));
 
     } catch (error) {
         console.error('خطأ في تحميل بيانات المحفظة:', error);
