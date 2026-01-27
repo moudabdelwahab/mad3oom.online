@@ -204,24 +204,34 @@
         // دالة التهيئة الرئيسية
         async function init() {
             console.log('Initializing Admin Dashboard...');
+            
+            // 1. ربط الأحداث فوراً لضمان استجابة الواجهة (Tabs, Buttons)
+            setupEventListeners();
+
             try {
-                user = await requireAuth('admin');
+                // 2. محاولة المصادقة مع مهلة زمنية وتجنب حظر الواجهة
+                const authPromise = requireAuth('admin');
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Auth Timeout')), 5000)
+                );
+
+                user = await Promise.race([authPromise, timeoutPromise]);
+                
                 if (!user) {
+                    console.warn('No user found, redirecting...');
                     window.location.replace('sign-in.html');
                     return;
                 }
+
                 console.log('Auth successful:', user.email);
-                
                 updateUIWithUserData();
-                setupEventListeners();
                 
-                // تحميل البيانات الأولية
+                // 3. تحميل البيانات بعد نجاح المصادقة
                 renderAdminTickets();
                 subscribeToTickets(renderAdminTickets);
                 loadNotifications();
                 subscribeToNotifications(loadNotifications);
                 
-                // تهيئة نظام المكافآت
                 try {
                     await initAdminRewards();
                     injectProBadgeStyles();
@@ -229,8 +239,11 @@
                 } catch (e) { console.error('Rewards init error:', e); }
 
             } catch (err) {
-                console.error('Init error:', err);
-                window.location.replace('sign-in.html');
+                console.error('Authentication failed or timed out:', err);
+                // التوجيه فقط في حالة الفشل الفعلي للمصادقة وليس مجرد تأخرها
+                if (err.message !== 'Auth Timeout') {
+                    window.location.replace('sign-in.html');
+                }
             }
         }
 
