@@ -2,7 +2,7 @@
 import { supabase } from './api-config.js';
 
 // ==================== نقاط الخطورة ====================
-const SEVERITY_POINTS = {
+export const SEVERITY_POINTS = {
     low: 10,
     medium: 25,
     high: 50,
@@ -10,7 +10,7 @@ const SEVERITY_POINTS = {
 };
 
 // ==================== مستويات العضوية ====================
-const MEMBERSHIP_LEVELS = [
+export const MEMBERSHIP_LEVELS = [
     { name: 'عضو جديد', minPoints: 0, maxPoints: 100 },
     { name: 'عضو نشط', minPoints: 100, maxPoints: 250 },
     { name: 'عضو ذهبي', minPoints: 250, maxPoints: 500 },
