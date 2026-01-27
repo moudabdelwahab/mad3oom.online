@@ -112,7 +112,6 @@
         }
 
         .nav-btn {
-            position: relative;
             background: transparent;
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #FFFFFF;
@@ -123,11 +122,30 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            position: relative;
         }
 
         .nav-btn:hover {
             background: rgba(255, 255, 255, 0.1);
             border-color: #FFFFFF;
+        }
+
+        .notif-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--color-danger);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--color-primary);
+            font-weight: bold;
+            z-index: 10;
         }
 
         .avatar-circle {
@@ -158,46 +176,21 @@
             cursor: pointer;
             font-family: 'Cairo', sans-serif;
             transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
-        .btn-primary {
-            background: var(--color-accent);
-            color: #FFFFFF;
-        }
-
-        .btn-primary:hover {
-            background: var(--color-accent-hover);
-            box-shadow: var(--shadow-glow);
-        }
-
-        .btn-secondary {
-            background: var(--color-muted);
-            color: var(--color-text);
-            border: 1px solid var(--color-border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--color-border);
-        }
-
-        .btn-danger {
-            background: var(--color-danger);
-            color: #FFFFFF;
-        }
-
-        .btn-danger:hover {
-            background: #c9302c;
-        }
-
-        .btn-warning {
-            background: var(--color-warning);
-            color: #FFFFFF;
-        }
-
-        .btn-sm {
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-        }
+        .btn-primary { background: var(--color-accent); color: #FFFFFF; }
+        .btn-primary:hover { background: var(--color-accent-hover); box-shadow: var(--shadow-glow); }
+        .btn-secondary { background: var(--color-muted); color: var(--color-text); border: 1px solid var(--color-border); }
+        .btn-secondary:hover { background: var(--color-border); }
+        .btn-danger { background: var(--color-danger); color: #FFFFFF; }
+        .btn-danger:hover { background: #c9302c; }
+        .btn-warning { background: var(--color-warning); color: #FFFFFF; }
+        .btn-success { background: var(--color-success); color: #FFFFFF; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 0.4rem; }
 
         /* ==================== Tabs ==================== */
         .admin-tabs {
@@ -231,9 +224,7 @@
             box-shadow: 0 4px 12px rgba(0, 119, 204, 0.3);
         }
 
-        .tab-btn:hover:not(.active) {
-            background: var(--color-muted);
-        }
+        .tab-btn:hover:not(.active) { background: var(--color-muted); }
 
         /* ==================== Tables ==================== */
         .table-container {
@@ -245,149 +236,45 @@
             box-shadow: var(--shadow-sm);
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: var(--color-muted);
-            padding: 1rem;
-            text-align: right;
-            font-weight: 700;
-            color: var(--color-text);
-            border-bottom: 1px solid var(--color-border);
-        }
-
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--color-border);
-        }
-
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--color-muted); padding: 1rem; text-align: right; font-weight: 700; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
+        td { padding: 1rem; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
-
-        tr:hover {
-            background: var(--color-muted);
-        }
+        tr:hover { background: var(--color-muted); }
 
         /* ==================== Stats Grid ==================== */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: var(--color-surface);
-            padding: 1.5rem;
-            border-radius: 1rem;
-            border: 1px solid var(--color-border);
-            box-shadow: var(--shadow-sm);
-            transition: all 0.3s;
-        }
-
-        .stat-card:hover {
-            box-shadow: var(--shadow);
-            border-color: var(--color-accent);
-        }
-
-        .stat-label {
-            color: var(--color-text-secondary);
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--color-accent);
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); transition: all 0.3s; }
+        .stat-card:hover { box-shadow: var(--shadow); border-color: var(--color-accent); }
+        .stat-label { color: var(--color-text-secondary); margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; }
+        .stat-value { font-size: 2rem; font-weight: 800; color: var(--color-accent); }
 
         /* ==================== Modals ==================== */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(4px);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
         .modal.active { display: flex; }
-
-        .modal-content {
-            background: var(--color-surface);
-            padding: 2rem;
-            border-radius: 1.5rem;
-            width: 100%;
-            max-width: 500px;
-            border: 1px solid var(--color-border);
-            box-shadow: var(--shadow-lg);
-        }
+        .modal-content { background: var(--color-surface); padding: 2rem; border-radius: 1.5rem; width: 100%; max-width: 500px; border: 1px solid var(--color-border); box-shadow: var(--shadow-lg); }
 
         /* ==================== Forms ==================== */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--color-text);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--color-border);
-            border-radius: 0.5rem;
-            font-family: 'Cairo', sans-serif;
-            background: var(--color-surface);
-            color: var(--color-text);
-            font-size: 1rem;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--color-accent);
-            box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1);
-        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--color-text); }
+        .form-control { width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; font-family: 'Cairo', sans-serif; background: var(--color-surface); color: var(--color-text); font-size: 1rem; }
+        .form-control:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1); }
 
         /* ==================== Status Badges ==================== */
-        .status-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 2rem;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
+        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
         .status-open { background: var(--color-warning); color: white; }
         .status-resolved { background: var(--color-success); color: white; }
         .status-in-progress { background: var(--color-accent); color: white; }
+        .status-pending { background: var(--color-warning); color: white; }
+        .status-approved { background: var(--color-success); color: white; }
+        .status-rejected { background: var(--color-danger); color: white; }
 
         /* ==================== Main Container ==================== */
-        .admin-main {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-        }
+        .admin-main { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .tab-content {
         .action-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
     </style>
 </head>
 <body class="admin-body">
@@ -411,7 +298,7 @@
                     <div class="notifications-dropdown">
                         <button id="notifBtn" class="nav-btn" title="الإشعارات">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                            <span class="notif-badge" id="notifCount" style="display:none; position: absolute; top: -5px; right: -5px; background: var(--color-danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center;">0</span>
+                            <span class="notif-badge" id="notifCount" style="display:none;">0</span>
                         </button>
                     </div>
                     <div class="user-profile-dropdown">
@@ -472,9 +359,53 @@
 
         <!-- Rewards Tab -->
         <div id="rewardsTab" class="tab-content" style="display: none;">
-            <div id="adminRewardsContainer">
-                <!-- Content will be injected by initAdminRewards() -->
-                <div style="text-align: center; padding: 2rem;">جاري تحميل نظام المكافآت...</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <p class="stat-label">بلاغات معلقة</p>
+                    <h2 id="admPendingReports" class="stat-value">0</h2>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">بلاغات مقبولة</p>
+                    <h2 id="admApprovedReports" class="stat-value" style="color: var(--color-success);">0</h2>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">بلاغات مرفوضة</p>
+                    <h2 id="admRejectedReports" class="stat-value" style="color: var(--color-danger);">0</h2>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">أعضاء Pro</p>
+                    <h2 id="admProUsers" class="stat-value" style="color: var(--color-accent);">0</h2>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <input type="text" id="reportsSearch" class="form-control" placeholder="بحث في البلاغات..." style="flex: 1;">
+                <select id="reportsStatusFilter" class="form-control" style="width: 200px;">
+                    <option value="all">جميع الحالات</option>
+                    <option value="pending">معلقة</option>
+                    <option value="approved">مقبولة</option>
+                    <option value="rejected">مرفوضة</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المستخدم</th>
+                            <th>العنوان</th>
+                            <th>النوع</th>
+                            <th>الخطورة</th>
+                            <th>الحالة</th>
+                            <th>النقاط</th>
+                            <th>التاريخ</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody">
+                        <tr><td colspan="8" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -630,7 +561,7 @@
                     <td>${t.title}</td>
                     <td><span class="status-badge status-${t.status}">${t.status}</span></td>
                     <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
-                    <td><button class="btn btn-primary btn-sm" onclick="impersonateUser('${t.user_id}')">دخول</button></div></td>
+                    <td><button class="btn btn-primary btn-sm" onclick="impersonateUser('${t.user_id}')">دخول</button></td>
                 </tr>
             `).join('') || '<tr><td colspan="5">لا توجد تذاكر</td></tr>';
             
@@ -651,8 +582,15 @@
                     <td>${u.role === 'admin' ? 'إدارة' : 'عضو'}</td>
                     <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
                     <td>
-                        <button class="btn btn-warning btn-sm" onclick="openPointsModal('${u.id}', ${u.points || 0})">نقاط</button>
-                        <button class="btn btn-primary btn-sm" onclick="openRoleModal('${u.id}', '${u.role || 'user'}')">رتبة</button><button class="btn btn-success btn-sm" onclick="impersonateUser('${u.id}')">دخول</button>${u.ban_status === 'none' || !u.ban_status ? `<button class="btn btn-danger btn-sm" onclick="banUser('${u.id}')">حظر</button>` : `<button class="btn btn-secondary btn-sm" onclick="unbanUser('${u.id}')">فك الحظر</button>`}
+                        <div class="action-btns">
+                            <button class="btn btn-warning btn-sm" onclick="openPointsModal('${u.id}', ${u.points || 0})">نقاط</button>
+                            <button class="btn btn-primary btn-sm" onclick="openRoleModal('${u.id}', '${u.role || 'user'}')">رتبة</button>
+                            <button class="btn btn-success btn-sm" onclick="impersonateUser('${u.id}')">دخول</button>
+                            ${u.ban_status === 'none' || !u.ban_status ? 
+                                `<button class="btn btn-danger btn-sm" onclick="banUser('${u.id}')">حظر</button>` : 
+                                `<button class="btn btn-secondary btn-sm" onclick="unbanUser('${u.id}')">فك الحظر</button>`
+                            }
+                        </div>
                     </td>
                 </tr>
             `).join('') || '<tr><td colspan="6">لا يوجد مستخدمين</td></tr>';
@@ -662,7 +600,12 @@
             const body = document.getElementById('bannedUsersBody');
             const { data: users } = await supabase.from('profiles').select('*').neq('ban_status', 'none');
             body.innerHTML = users?.map(u => `
-                <tr><td>${u.full_name}</td><td>${u.email}</td><td>${u.ban_status}</td><td>-</td></tr>
+                <tr>
+                    <td>${u.full_name}</td>
+                    <td>${u.email}</td>
+                    <td>${u.ban_status}</td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="unbanUser('${u.id}')">فك الحظر</button></td>
+                </tr>
             `).join('') || '<tr><td colspan="4">لا يوجد محظورين</td></tr>';
         }
 
@@ -724,10 +667,37 @@
             document.getElementById('roleModal').classList.add('active');
         };
 
+        window.banUser = async (id) => {
+            if (confirm('هل أنت متأكد من حظر هذا المستخدم؟')) {
+                const { error } = await supabase.from('profiles').update({ ban_status: 'permanent' }).eq('id', id);
+                if (error) alert('خطأ في الحظر: ' + error.message);
+                else {
+                    alert('تم حظر المستخدم');
+                    renderUsers();
+                    renderBannedUsers();
+                }
+            }
+        };
+
+        window.unbanUser = async (id) => {
+            if (confirm('هل تريد فك الحظر عن هذا المستخدم؟')) {
+                const { error } = await supabase.from('profiles').update({ ban_status: 'none' }).eq('id', id);
+                if (error) alert('خطأ في فك الحظر: ' + error.message);
+                else {
+                    alert('تم فك الحظر');
+                    renderUsers();
+                    renderBannedUsers();
+                }
+            }
+        };
+
         window.impersonateUser = async (id) => { await adminImpersonateUser(id); };
-        window.banUser = async (id) => { if (confirm('هل أنت متأكد من حظر هذا المستخدم؟')) { const { error } = await supabase.from('profiles').update({ ban_status: 'permanent' }).eq('id', id); if (error) alert('خطأ في الحظر: ' + error.message); else { alert('تم حظر المستخدم'); renderUsers(); renderBannedUsers(); } } };
-        window.unbanUser = async (id) => { if (confirm('هل تريد فك الحظر عن هذا المستخدم؟')) { const { error } = await supabase.from('profiles').update({ ban_status: 'none' }).eq('id', id); if (error) alert('خطأ في فك الحظر: ' + error.message); else { alert('تم فك الحظر'); renderUsers(); renderBannedUsers(); } } };
         window.logout = async () => { await logout(); window.location.replace('sign-in.html'); };
+
+        // Helper for notifications used in admin-rewards.js
+        window.showNotification = (message, type = 'info') => {
+            alert(message); // Simple alert for now, can be improved to a toast
+        };
 
         init();
     </script>
