@@ -59,5 +59,273 @@ async function loadPendingReports() {
                     <td><span style="padding: 0.25rem 0.75rem; background: var(--color-muted); border-radius: 0.25rem; font-size: 0.85rem;">${report.problem_type}</span></td>
                     <td><span style="padding: 0.25rem 0.75rem; background: ${getSeverityColor(report.severity)}; border-radius: 0.25rem; font-size: 0.85rem; color: white;">${report.severity}</span></td>
                     <td><span class="status-badge status-${report.status}">${getStatusText(report.status)}</span></td>
-                    <td style="font-weight: 600; color: var(--color-accent);">${report.estimated_points}</td>\n                    <td style="font-size: 0.85rem; color: var(--color-text-secondary);">${createdDate}</td>\n                    <td>\n                        <div style=\"display: flex; gap: 0.5rem;\">\n                            <button class=\"btn btn-sm\" style=\"background: var(--color-success); color: white; border: none; cursor: pointer;\" onclick=\"openApproveModal(${report.id}, ${report.estimated_points})\">موافقة</button>\n                            <button class=\"btn btn-sm\" style=\"background: var(--color-danger); color: white; border: none; cursor: pointer;\" onclick=\"openRejectModal(${report.id})\">رفض</button>\n                            <button class=\"btn btn-sm\" style=\"background: var(--color-accent); color: white; border: none; cursor: pointer;\" onclick=\"viewReportDetails(${report.id})\">عرض</button>\n                        </div>\n                    </td>\n                </tr>\n            `;\n        }).join('');\n\n    } catch (error) {
-        console.error('خطأ في تحميل البلاغات:', error);\n    }\n}\n\n// ==================== ربط البحث والفلاتر ====================\nfunction bindSearchAndFilters() {\n    const searchInput = document.getElementById('reportsSearch');\n    const statusFilter = document.getElementById('reportsStatusFilter');\n\n    if (searchInput) {\n        searchInput.addEventListener('input', async (e) => {\n            const query = e.target.value;\n            if (query.length < 2) {\n                await loadPendingReports();\n                return;\n            }\n\n            try {\n                const results = await searchReports(query);\n                displaySearchResults(results);\n            } catch (error) {\n                console.error('خطأ في البحث:', error);\n            }\n        });\n    }\n\n    if (statusFilter) {\n        statusFilter.addEventListener('change', async (e) => {\n            const status = e.target.value;\n            try {\n                let results;\n                if (status === 'all') {\n                    results = await getPendingReports();\n                } else {\n                    results = await searchReports('', status);\n                }\n                displaySearchResults(results);\n            } catch (error) {\n                console.error('خطأ في الفلترة:', error);\n            }\n        });\n    }\n}\n\n// ==================== عرض نتائج البحث ====================\nfunction displaySearchResults(reports) {\n    const tbody = document.getElementById('reportsTableBody');\n\n    if (reports.length === 0) {\n        tbody.innerHTML = '<tr><td colspan=\"8\" style=\"text-align: center; padding: 2rem;\">لا توجد نتائج</td></tr>';\n        return;\n    }\n\n    tbody.innerHTML = reports.map(report => {\n        const createdDate = new Date(report.created_at).toLocaleDateString('ar-EG');\n        const userName = report.profiles?.full_name || report.profiles?.email?.split('@')[0] || 'مستخدم';\n        const userEmail = report.profiles?.email || '-';\n\n        return `\n            <tr>\n                <td>\n                    <div style=\"font-weight: 600;\">${userName}</div>\n                    <div style=\"font-size: 0.85rem; color: var(--color-text-secondary);\">${userEmail}</div>\n                </td>\n                <td style=\"max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\">${report.title}</td>\n                <td><span style=\"padding: 0.25rem 0.75rem; background: var(--color-muted); border-radius: 0.25rem; font-size: 0.85rem;\">${report.problem_type}</span></td>\n                <td><span style=\"padding: 0.25rem 0.75rem; background: ${getSeverityColor(report.severity)}; border-radius: 0.25rem; font-size: 0.85rem; color: white;\">${report.severity}</span></td>\n                <td><span class=\"status-badge status-${report.status}\">${getStatusText(report.status)}</span></td>\n                <td style=\"font-weight: 600; color: var(--color-accent);\">${report.actual_points || report.estimated_points}</td>\n                <td style=\"font-size: 0.85rem; color: var(--color-text-secondary);\">${createdDate}</td>\n                <td>\n                    <div style=\"display: flex; gap: 0.5rem;\">\n                        ${report.status === 'pending' ? `\n                            <button class=\"btn btn-sm\" style=\"background: var(--color-success); color: white; border: none; cursor: pointer;\" onclick=\"openApproveModal(${report.id}, ${report.estimated_points})\">موافقة</button>\n                            <button class=\"btn btn-sm\" style=\"background: var(--color-danger); color: white; border: none; cursor: pointer;\" onclick=\"openRejectModal(${report.id})\">رفض</button>\n                        ` : ''}\n                        <button class=\"btn btn-sm\" style=\"background: var(--color-accent); color: white; border: none; cursor: pointer;\" onclick=\"viewReportDetails(${report.id})\">عرض</button>\n                    </div>\n                </td>\n            </tr>\n        `;\n    }).join('');\n}\n\n// ==================== دوال مساعدة ====================\nfunction getSeverityColor(severity) {\n    const colors = {\n        'low': '#10b981',\n        'medium': '#f59e0b',\n        'high': '#ef4444',\n        'critical': '#7c2d12'\n    };\n    return colors[severity] || '#6b7280';\n}\n\nfunction getStatusText(status) {\n    const texts = {\n        'pending': 'معلقة',\n        'approved': 'موافق عليها',\n        'rejected': 'مرفوضة'\n    };\n    return texts[status] || status;\n}\n\n// ==================== فتح مودال الموافقة ====================\nwindow.openApproveModal = function(reportId, estimatedPoints) {\n    const modal = document.createElement('div');\n    modal.className = 'modal active';\n    modal.id = 'approveReportModal';\n    modal.style.cssText = `\n        position: fixed; top: 0; left: 0; width: 100%; height: 100%; \n        background: rgba(0,0,0,0.5); z-index: 1000; display: flex; \n        align-items: center; justify-content: center;\n    `;\n\n    modal.innerHTML = `\n        <div class=\"modal-content\" style=\"background: var(--color-surface); padding: 2rem; border-radius: 1rem; width: 90%; max-width: 500px;\">\n            <h2>الموافقة على البلاغ</h2>\n            <form id=\"approveForm\" style=\"margin-top: 1.5rem;\">\n                <div class=\"form-group\">\n                    <label>النقاط المتوقعة: <strong>${estimatedPoints}</strong></label>\n                </div>\n                <div class=\"form-group\">\n                    <label>النقاط الفعلية (يمكنك تعديلها)</label>\n                    <input type=\"number\" id=\"actualPoints\" class=\"form-control\" value=\"${estimatedPoints}\" min=\"0\" required>\n                </div>\n                <div style=\"display: flex; gap: 1rem; margin-top: 2rem;\">\n                    <button type=\"button\" class=\"btn btn-secondary\" style=\"flex: 1;\" onclick=\"document.getElementById('approveReportModal').remove()\">إلغاء</button>\n                    <button type=\"submit\" class=\"btn btn-primary\" style=\"flex: 1;\">الموافقة</button>\n                </div>\n            </form>\n        </div>\n    `;\n\n    document.body.appendChild(modal);\n\n    document.getElementById('approveForm').addEventListener('submit', async (e) => {\n        e.preventDefault();\n        const actualPoints = parseInt(document.getElementById('actualPoints').value);\n\n        try {\n            await approveReport(reportId, actualPoints);\n            modal.remove();\n            await loadRewardsStats();\n            await loadPendingReports();\n            showNotification('تم الموافقة على البلاغ بنجاح!', 'success');\n        } catch (error) {\n            console.error('خطأ في الموافقة:', error);\n            showNotification('حدث خطأ في الموافقة على البلاغ', 'error');\n        }\n    });\n};\n\n// ==================== فتح مودال الرفض ====================\nwindow.openRejectModal = function(reportId) {\n    const modal = document.createElement('div');\n    modal.className = 'modal active';\n    modal.id = 'rejectReportModal';\n    modal.style.cssText = `\n        position: fixed; top: 0; left: 0; width: 100%; height: 100%; \n        background: rgba(0,0,0,0.5); z-index: 1000; display: flex; \n        align-items: center; justify-content: center;\n    `;\n\n    modal.innerHTML = `\n        <div class=\"modal-content\" style=\"background: var(--color-surface); padding: 2rem; border-radius: 1rem; width: 90%; max-width: 500px;\">\n            <h2>رفض البلاغ</h2>\n            <form id=\"rejectForm\" style=\"margin-top: 1.5rem;\">\n                <div class=\"form-group\">\n                    <label>سبب الرفض</label>\n                    <textarea id=\"rejectionReason\" class=\"form-control\" style=\"min-height: 100px;\" placeholder=\"اشرح سبب رفض البلاغ...\" required></textarea>\n                </div>\n                <div style=\"display: flex; gap: 1rem; margin-top: 2rem;\">\n                    <button type=\"button\" class=\"btn btn-secondary\" style=\"flex: 1;\" onclick=\"document.getElementById('rejectReportModal').remove()\">إلغاء</button>\n                    <button type=\"submit\" class=\"btn btn-danger\" style=\"flex: 1; background: var(--color-danger);\">رفض</button>\n                </div>\n            </form>\n        </div>\n    `;\n\n    document.body.appendChild(modal);\n\n    document.getElementById('rejectForm').addEventListener('submit', async (e) => {\n        e.preventDefault();\n        const reason = document.getElementById('rejectionReason').value;\n\n        try {\n            await rejectReport(reportId, reason);\n            modal.remove();\n            await loadRewardsStats();\n            await loadPendingReports();\n            showNotification('تم رفض البلاغ بنجاح!', 'success');\n        } catch (error) {\n            console.error('خطأ في الرفض:', error);\n            showNotification('حدث خطأ في رفض البلاغ', 'error');\n        }\n    });\n};\n\n// ==================== عرض تفاصيل البلاغ ====================\nwindow.viewReportDetails = function(reportId) {\n    // سيتم تنفيذه لاحقاً\n    console.log('عرض تفاصيل البلاغ:', reportId);\n};\n\n// ==================== دالة الإشعار ====================\nfunction showNotification(message, type = 'info') {\n    const notification = document.createElement('div');\n    \n    const colors = {\n        success: '#4ade80',\n        error: '#f87171',\n        warning: '#fbbf24',\n        info: '#CFE8FF'\n    };\n    \n    const textColors = {\n        success: '#1C2333',\n        error: '#ffffff',\n        warning: '#1C2333',\n        info: '#1C2333'\n    };\n    \n    const color = colors[type] || colors.info;\n    const textColor = textColors[type] || textColors.info;\n    \n    notification.style.cssText = `\n        position: fixed;\n        top: 20px;\n        right: 20px;\n        padding: 1rem 1.5rem;\n        background: ${color};\n        color: ${textColor};\n        border-radius: 8px;\n        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n        z-index: 10000;\n        animation: slideInNotification 0.3s ease;\n        max-width: 400px;\n        font-weight: 600;\n    `;\n    \n    notification.textContent = message;\n    document.body.appendChild(notification);\n    \n    setTimeout(() => {\n        notification.style.animation = 'slideOutNotification 0.3s ease';\n        setTimeout(() => notification.remove(), 300);\n    }, 3000);\n}\n\nexport default {\n    initAdminRewards,\n    loadRewardsStats,\n    loadPendingReports,\n    bindSearchAndFilters\n};\n
+                    <td style="font-weight: 600; color: var(--color-accent);">${report.estimated_points}</td>
+                    <td style="font-size: 0.85rem; color: var(--color-text-secondary);">${createdDate}</td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-sm" style="background: var(--color-success); color: white; border: none; cursor: pointer;" onclick="openApproveModal(${report.id}, ${report.estimated_points})">موافقة</button>
+                            <button class="btn btn-sm" style="background: var(--color-danger); color: white; border: none; cursor: pointer;" onclick="openRejectModal(${report.id})">رفض</button>
+                            <button class="btn btn-sm" style="background: var(--color-accent); color: white; border: none; cursor: pointer;" onclick="viewReportDetails(${report.id})">عرض</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('خطأ في تحميل البلاغات:', error);
+    }
+}
+
+// ==================== ربط البحث والفلاتر ====================
+function bindSearchAndFilters() {
+    const searchInput = document.getElementById('reportsSearch');
+    const statusFilter = document.getElementById('reportsStatusFilter');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', async (e) => {
+            const query = e.target.value;
+            if (query.length < 2) {
+                await loadPendingReports();
+                return;
+            }
+
+            try {
+                const results = await searchReports(query);
+                displaySearchResults(results);
+            } catch (error) {
+                console.error('خطأ في البحث:', error);
+            }
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', async (e) => {
+            const status = e.target.value;
+            try {
+                let results;
+                if (status === 'all') {
+                    results = await getPendingReports();
+                } else {
+                    results = await searchReports('', status);
+                }
+                displaySearchResults(results);
+            } catch (error) {
+                console.error('خطأ في الفلترة:', error);
+            }
+        });
+    }
+}
+
+// ==================== عرض نتائج البحث ====================
+function displaySearchResults(reports) {
+    const tbody = document.getElementById('reportsTableBody');
+
+    if (reports.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">لا توجد نتائج</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = reports.map(report => {
+        const createdDate = new Date(report.created_at).toLocaleDateString('ar-EG');
+        const userName = report.profiles?.full_name || report.profiles?.email?.split('@')[0] || 'مستخدم';
+        const userEmail = report.profiles?.email || '-';
+
+        return `
+            <tr>
+                <td>
+                    <div style="font-weight: 600;">${userName}</div>
+                    <div style="font-size: 0.85rem; color: var(--color-text-secondary);">${userEmail}</div>
+                </td>
+                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${report.title}</td>
+                <td><span style="padding: 0.25rem 0.75rem; background: var(--color-muted); border-radius: 0.25rem; font-size: 0.85rem;">${report.problem_type}</span></td>
+                <td><span style="padding: 0.25rem 0.75rem; background: ${getSeverityColor(report.severity)}; border-radius: 0.25rem; font-size: 0.85rem; color: white;">${report.severity}</span></td>
+                <td><span class="status-badge status-${report.status}">${getStatusText(report.status)}</span></td>
+                <td style="font-weight: 600; color: var(--color-accent);">${report.actual_points || report.estimated_points}</td>
+                <td style="font-size: 0.85rem; color: var(--color-text-secondary);">${createdDate}</td>
+                <td>
+                    <div style="display: flex; gap: 0.5rem;">
+                        ${report.status === 'pending' ? `
+                            <button class="btn btn-sm" style="background: var(--color-success); color: white; border: none; cursor: pointer;" onclick="openApproveModal(${report.id}, ${report.estimated_points})">موافقة</button>
+                            <button class="btn btn-sm" style="background: var(--color-danger); color: white; border: none; cursor: pointer;" onclick="openRejectModal(${report.id})">رفض</button>
+                        ` : ''}
+                        <button class="btn btn-sm" style="background: var(--color-accent); color: white; border: none; cursor: pointer;" onclick="viewReportDetails(${report.id})">عرض</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// ==================== دوال مساعدة ====================
+function getSeverityColor(severity) {
+    const colors = {
+        'low': '#10b981',
+        'medium': '#f59e0b',
+        'high': '#ef4444',
+        'critical': '#7c2d12'
+    };
+    return colors[severity] || '#6b7280';
+}
+
+function getStatusText(status) {
+    const texts = {
+        'pending': 'معلقة',
+        'approved': 'موافق عليها',
+        'rejected': 'مرفوضة'
+    };
+    return texts[status] || status;
+}
+
+// ==================== فتح مودال الموافقة ====================
+window.openApproveModal = function(reportId, estimatedPoints) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'approveReportModal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.5); z-index: 1000; display: flex; 
+        align-items: center; justify-content: center;
+    `;
+
+    modal.innerHTML = `
+        <div class="modal-content" style="background: var(--color-surface); padding: 2rem; border-radius: 1rem; width: 90%; max-width: 500px;">
+            <h2>الموافقة على البلاغ</h2>
+            <form id="approveForm" style="margin-top: 1.5rem;">
+                <div class="form-group">
+                    <label>النقاط المتوقعة: <strong>${estimatedPoints}</strong></label>
+                </div>
+                <div class="form-group">
+                    <label>النقاط الفعلية (يمكنك تعديلها)</label>
+                    <input type="number" id="actualPoints" class="form-control" value="${estimatedPoints}" min="0" required>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('approveReportModal').remove()">إلغاء</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">الموافقة</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('approveForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const actualPoints = parseInt(document.getElementById('actualPoints').value);
+
+        try {
+            await approveReport(reportId, actualPoints);
+            modal.remove();
+            await loadRewardsStats();
+            await loadPendingReports();
+            showNotification('تم الموافقة على البلاغ بنجاح!', 'success');
+        } catch (error) {
+            console.error('خطأ في الموافقة:', error);
+            showNotification('حدث خطأ في الموافقة على البلاغ', 'error');
+        }
+    });
+};
+
+// ==================== فتح مودال الرفض ====================
+window.openRejectModal = function(reportId) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'rejectReportModal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.5); z-index: 1000; display: flex; 
+        align-items: center; justify-content: center;
+    `;
+
+    modal.innerHTML = `
+        <div class="modal-content" style="background: var(--color-surface); padding: 2rem; border-radius: 1rem; width: 90%; max-width: 500px;">
+            <h2>رفض البلاغ</h2>
+            <form id="rejectForm" style="margin-top: 1.5rem;">
+                <div class="form-group">
+                    <label>سبب الرفض</label>
+                    <textarea id="rejectionReason" class="form-control" style="min-height: 100px;" placeholder="اشرح سبب رفض البلاغ..." required></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('rejectReportModal').remove()">إلغاء</button>
+                    <button type="submit" class="btn btn-danger" style="flex: 1; background: var(--color-danger);">رفض</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('rejectForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const reason = document.getElementById('rejectionReason').value;
+
+        try {
+            await rejectReport(reportId, reason);
+            modal.remove();
+            await loadRewardsStats();
+            await loadPendingReports();
+            showNotification('تم رفض البلاغ بنجاح!', 'success');
+        } catch (error) {
+            console.error('خطأ في الرفض:', error);
+            showNotification('حدث خطأ في رفض البلاغ', 'error');
+        }
+    });
+};
+
+// ==================== عرض تفاصيل البلاغ ====================
+window.viewReportDetails = function(reportId) {
+    // سيتم تنفيذه لاحقاً
+    console.log('عرض تفاصيل البلاغ:', reportId);
+};
+
+// ==================== دالة الإشعار ====================
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    
+    const colors = {
+        success: '#4ade80',
+        error: '#f87171',
+        warning: '#fbbf24',
+        info: '#CFE8FF'
+    };
+    
+    const textColors = {
+        success: '#1C2333',
+        error: '#ffffff',
+        warning: '#1C2333',
+        info: '#1C2333'
+    };
+    
+    const color = colors[type] || colors.info;
+    const textColor = textColors[type] || textColors.info;
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        background: ${color};
+        color: ${textColor};
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        animation: slideInNotification 0.3s ease;
+        max-width: 400px;
+        font-weight: 600;
+    `;
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutNotification 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+export default {
+    initAdminRewards,
+    loadRewardsStats,
+    loadPendingReports,
+    bindSearchAndFilters
+};

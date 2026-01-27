@@ -551,7 +551,13 @@
         };
 
         window.impersonateUser = async (id) => {
-            try { await adminImpersonateUser(id); } catch (err) { alert('خطأ في الدخول كعميل'); }
+            try { 
+                await adminImpersonateUser(id); 
+                window.location.href = 'customer-dashboard.html';
+            } catch (err) { 
+                console.error('Impersonate error:', err);
+                alert('خطأ في الدخول كعميل'); 
+            }
         };
 
         document.getElementById('statusFilter').onchange = renderAdminTickets;
@@ -563,8 +569,15 @@
         subscribeToTickets(renderAdminTickets);
         
         // تهيئة نظام إدارة المكافآت
-        initAdminRewards();
+        await initAdminRewards();
         injectProBadgeStyles();
+        
+        // تحميل الدوال من admin-rewards.js وتحويلها إلى window object
+        const adminRewardsModule = await import('./admin-rewards.js');
+        if (typeof window.openApproveModal === 'undefined') {
+            // الدوال معرفة بالفعل في admin-rewards.js
+            console.log('Admin rewards functions loaded');
+        }
     </script>
 </body>
 </html>
