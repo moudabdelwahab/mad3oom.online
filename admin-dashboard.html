@@ -20,10 +20,10 @@
     <style>
         .profile-section { background: var(--color-surface); padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-sm); margin-top: 2rem; }
         .profile-form { display: grid; gap: 1.5rem; max-width: 600px; }
-        .nav-tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem; overflow-x: auto; }
-        .nav-tab { padding: 0.5rem 1rem; cursor: pointer; border-radius: 0.5rem; transition: all 0.3s; font-weight: 600; color: var(--color-text-secondary); white-space: nowrap; }
-        .nav-tab:hover { background: var(--hover-bg); color: var(--color-accent); }
-        .nav-tab.active { background: var(--color-accent); color: white; }
+        .nav-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; padding: 0.5rem; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm); overflow-x: auto; }
+        .nav-tab { padding: 0.75rem 1.5rem; cursor: pointer; border-radius: 0.75rem; transition: all 0.3s ease; font-weight: 600; color: var(--color-text-secondary); white-space: nowrap; position: relative; border: 2px solid transparent; }
+        .nav-tab:hover { background: var(--hover-bg); color: var(--color-accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .nav-tab.active { background: linear-gradient(135deg, var(--color-accent) 0%, #0ea5e9 100%); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); border-color: var(--color-accent); }
         .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -115,7 +115,7 @@
             </div>
             <div class="admin-controls">
                 <div class="search-box"><input type="text" id="ticketSearch" placeholder="بحث في التذاكر..."></div>
-                <select id="statusFilter"><option value="all">كل الحالات</option><option value="open">مفتوحة</option><option value="in-progress">قيد المعالجة</option><option value="resolved">محلولة</option></select>
+                <select id="statusFilter" style="padding: 0.75rem 2.5rem 0.75rem 1rem; border-radius: 0.75rem; border: 2px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: left 0.75rem center; background-size: 1.25rem;" onmouseover="this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.2)';" onmouseout="this.style.borderColor='var(--color-border)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.05)';"><option value="all">كل الحالات</option><option value="open">مفتوحة</option><option value="in-progress">قيد المعالجة</option><option value="resolved">محلولة</option></select>
             </div>
             <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
                 <table><thead><tr><th>المستخدم</th><th>العنوان</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody id="admTicketsBody"></tbody></table>
@@ -132,7 +132,7 @@
             </div>
             <div class="admin-controls">
                 <div class="search-box"><input type="text" id="reportsSearch" placeholder="بحث عن بلاغ..." ></div>
-                <select id="reportsStatusFilter"><option value="all">كل الحالات</option><option value="pending">معلقة</option><option value="approved">موافق عليها</option><option value="rejected">مرفوضة</option></select>
+                <select id="reportsStatusFilter" style="padding: 0.75rem 2.5rem 0.75rem 1rem; border-radius: 0.75rem; border: 2px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27currentColor%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: left 0.75rem center; background-size: 1.25rem;" onmouseover="this.style.borderColor='var(--color-accent)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.2)';" onmouseout="this.style.borderColor='var(--color-border)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.05)';"><option value="all">كل الحالات</option><option value="pending">معلقة</option><option value="approved">موافق عليها</option><option value="rejected">مرفوضة</option></select>
             </div>
             <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
                 <table><thead><tr><th>المستخدم</th><th>العنوان</th><th>النوع</th><th>درجة الخطورة</th><th>الحالة</th><th>النقاط</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody id="reportsTableBody"></tbody></table>
