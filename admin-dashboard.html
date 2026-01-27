@@ -188,13 +188,9 @@
             background: #c9302c;
         }
 
-        .btn-success {
-            background: var(--color-success);
+        .btn-warning {
+            background: var(--color-warning);
             color: #FFFFFF;
-        }
-
-        .btn-success:hover {
-            background: #1e7e34;
         }
 
         .btn-sm {
@@ -332,24 +328,6 @@
             box-shadow: var(--shadow-lg);
         }
 
-        .modal-header {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--color-text);
-            margin-bottom: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--color-text-secondary);
-        }
-
         /* ==================== Forms ==================== */
         .form-group {
             margin-bottom: 1.5rem;
@@ -362,7 +340,7 @@
             color: var(--color-text);
         }
 
-        input, textarea, select {
+        .form-control {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid var(--color-border);
@@ -373,26 +351,24 @@
             font-size: 1rem;
         }
 
-        input:focus, textarea:focus, select:focus {
+        .form-control:focus {
             outline: none;
             border-color: var(--color-accent);
             box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1);
         }
 
-        /* ==================== Badges ==================== */
-        .badge {
+        /* ==================== Status Badges ==================== */
+        .status-badge {
             display: inline-block;
-            padding: 0.35rem 0.75rem;
+            padding: 0.25rem 0.75rem;
             border-radius: 2rem;
             font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
         }
-
-        .badge-success { background: var(--color-success); color: #FFFFFF; }
-        .badge-warning { background: var(--color-warning); color: #FFFFFF; }
-        .badge-danger { background: var(--color-danger); color: #FFFFFF; }
-        .badge-primary { background: var(--color-accent); color: #FFFFFF; }
+        .status-open { background: var(--color-warning); color: white; }
+        .status-resolved { background: var(--color-success); color: white; }
+        .status-in-progress { background: var(--color-accent); color: white; }
 
         /* ==================== Main Container ==================== */
         .admin-main {
@@ -406,33 +382,9 @@
             animation: fadeIn 0.3s ease-in-out;
         }
 
-        .tab-content.active {
-            display: block;
-        }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ==================== Responsive Design ==================== */
-        @media (max-width: 768px) {
-            .nav-container {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .admin-tabs {
-                flex-wrap: wrap;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .modal-content {
-                max-width: 90%;
-            }
         }
     </style>
 </head>
@@ -483,214 +435,297 @@
         </div>
 
         <!-- Tickets Tab -->
-        <div id="ticketsTab" class="tab-content active">
-            <h2 style="margin-bottom: 2rem; color: var(--color-text);">إدارة التذاكر</h2>
+        <div id="ticketsTab" class="tab-content" style="display: block;">
             <div class="stats-grid">
                 <div class="stat-card">
                     <p class="stat-label">إجمالي التذاكر</p>
-                    <p class="stat-value" id="admTotal">0</p>
+                    <h2 id="admTotal" class="stat-value">0</h2>
                 </div>
                 <div class="stat-card">
                     <p class="stat-label">المفتوحة</p>
-                    <p class="stat-value" id="admOpen" style="color: var(--color-warning);">0</p>
+                    <h2 id="admOpen" class="stat-value" style="color: var(--color-warning);">0</h2>
                 </div>
                 <div class="stat-card">
                     <p class="stat-label">المحلولة</p>
-                    <p class="stat-value" id="admResolved" style="color: var(--color-success);">0</p>
-                </div>
-                <div class="stat-card">
-                    <p class="stat-label">قيد المعالجة</p>
-                    <p class="stat-value" id="admInProgress" style="color: var(--color-accent);">0</p>
+                    <h2 id="admResolved" class="stat-value" style="color: var(--color-success);">0</h2>
                 </div>
             </div>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>رقم التذكرة</th>
                             <th>العميل</th>
                             <th>الموضوع</th>
                             <th>الحالة</th>
-                            <th>تاريخ الإنشاء</th>
+                            <th>التاريخ</th>
                             <th>الإجراء</th>
                         </tr>
                     </thead>
-                    <tbody id="ticketsTableBody">
-                        <tr>
-                            <td colspan="6" style="text-align: center; color: var(--color-text-secondary);">لا توجد تذاكر</td>
-                        </tr>
+                    <tbody id="admTicketsBody">
+                        <tr><td colspan="5" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
         <!-- Rewards Tab -->
-        <div id="rewardsTab" class="tab-content">
-            <h2 style="margin-bottom: 2rem; color: var(--color-text);">إدارة المكافآت</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <p class="stat-label">إجمالي النقاط الموزعة</p>
-                    <p class="stat-value" id="totalPointsDistributed">0</p>
-                </div>
-                <div class="stat-card">
-                    <p class="stat-label">النقاط المعلقة</p>
-                    <p class="stat-value" id="pendingPoints" style="color: var(--color-warning);">0</p>
-                </div>
-                <div class="stat-card">
-                    <p class="stat-label">النقاط المستخدمة</p>
-                    <p class="stat-value" id="usedPoints" style="color: var(--color-success);">0</p>
-                </div>
-            </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>العميل</th>
-                            <th>النقاط</th>
-                            <th>النوع</th>
-                            <th>التاريخ</th>
-                            <th>الحالة</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rewardsTableBody">
-                        <tr>
-                            <td colspan="5" style="text-align: center; color: var(--color-text-secondary);">لا توجد مكافآت</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div id="rewardsTab" class="tab-content" style="display: none;">
+            <div id="adminRewardsContainer">
+                <!-- Content will be injected by initAdminRewards() -->
+                <div style="text-align: center; padding: 2rem;">جاري تحميل نظام المكافآت...</div>
             </div>
         </div>
 
         <!-- Users Tab -->
-        <div id="usersTab" class="tab-content">
-            <h2 style="margin-bottom: 2rem; color: var(--color-text);">إدارة المستخدمين</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <p class="stat-label">إجمالي المستخدمين</p>
-                    <p class="stat-value" id="totalUsers">0</p>
-                </div>
-                <div class="stat-card">
-                    <p class="stat-label">المستخدمون النشطون</p>
-                    <p class="stat-value" id="activeUsers" style="color: var(--color-success);">0</p>
-                </div>
-                <div class="stat-card">
-                    <p class="stat-label">المستخدمون الجدد</p>
-                    <p class="stat-value" id="newUsers" style="color: var(--color-accent);">0</p>
-                </div>
-            </div>
+        <div id="usersTab" class="tab-content" style="display: none;">
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>المستخدم</th>
-                            <th>البريد الإلكتروني</th>
-                            <th>تاريخ الانضمام</th>
-                            <th>الحالة</th>
+                            <th>الاسم</th>
+                            <th>البريد</th>
+                            <th>النقاط</th>
+                            <th>الرتبة</th>
+                            <th>التاريخ</th>
                             <th>الإجراء</th>
                         </tr>
                     </thead>
                     <tbody id="usersTableBody">
-                        <tr>
-                            <td colspan="5" style="text-align: center; color: var(--color-text-secondary);">لا يوجد مستخدمون</td>
-                        </tr>
+                        <tr><td colspan="6" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Banned Users Tab -->
-        <div id="bannedTab" class="tab-content">
-            <h2 style="margin-bottom: 2rem; color: var(--color-text);">المستخدمون المحظورون</h2>
+        <!-- Banned Tab -->
+        <div id="bannedTab" class="tab-content" style="display: none;">
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>المستخدم</th>
-                            <th>سبب الحظر</th>
-                            <th>تاريخ الحظر</th>
+                            <th>الاسم</th>
+                            <th>البريد</th>
+                            <th>الحالة</th>
                             <th>الإجراء</th>
                         </tr>
                     </thead>
-                    <tbody id="bannedTableBody">
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: var(--color-text-secondary);">لا يوجد مستخدمون محظورون</td>
-                        </tr>
+                    <tbody id="bannedUsersBody">
+                        <tr><td colspan="4" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
         <!-- Logs Tab -->
-        <div id="logsTab" class="tab-content">
-            <h2 style="margin-bottom: 2rem; color: var(--color-text);">سجل النشاطات</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>الوقت</th>
-                            <th>المستخدم</th>
-                            <th>الإجراء</th>
-                            <th>التفاصيل</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logsTableBody">
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: var(--color-text-secondary);">لا توجد سجلات</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div id="logsTab" class="tab-content" style="display: none;">
+            <div id="logsList" class="stat-card">
+                جاري تحميل السجلات...
             </div>
         </div>
 
         <!-- Profile Tab -->
-        <div id="profileTab" class="tab-content">
-            <h2 style="margin-bottom: 2rem; color: var(--color-text);">الملف الشخصي</h2>
-            <div class="stat-card" style="max-width: 600px;">
-                <div class="form-group">
-                    <label class="form-label">الاسم</label>
-                    <input type="text" id="adminName" placeholder="أدخل اسمك">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">البريد الإلكتروني</label>
-                    <input type="email" id="adminEmail" placeholder="أدخل بريدك الإلكتروني">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">كلمة المرور</label>
-                    <input type="password" id="adminPassword" placeholder="أدخل كلمة مرور جديدة">
-                </div>
-                <button class="btn btn-primary">حفظ التغييرات</button>
+        <div id="profileTab" class="tab-content" style="display: none;">
+            <div class="stat-card" style="max-width: 600px; margin: 0 auto;">
+                <h3>تعديل الملف الشخصي</h3>
+                <form id="profileForm" style="margin-top: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">الاسم الكامل</label>
+                        <input type="text" id="profileFullName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">رقم الهاتف</label>
+                        <input type="tel" id="profilePhone" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">حفظ التغييرات</button>
+                </form>
             </div>
         </div>
     </main>
 
-    <script>
-        // Tab switching functionality
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const tabName = this.getAttribute('data-tab');
-                
-                // Remove active class from all tabs and buttons
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                
-                // Add active class to clicked button and corresponding tab
-                this.classList.add('active');
-                document.getElementById(tabName).classList.add('active');
-            });
-        });
+    <!-- Modals -->
+    <div id="pointsModal" class="modal">
+        <div class="modal-content">
+            <h3>تعديل النقاط</h3>
+            <form id="pointsForm">
+                <input type="hidden" id="pointsUserId">
+                <div class="form-group">
+                    <label class="form-label">النقاط الجديدة</label>
+                    <input type="number" id="newPoints" class="form-control">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('pointsModal').classList.remove('active')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">تحديث</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        // Logout function
-        function logout() {
-            if (confirm('هل تريد تسجيل الخروج؟')) {
-                // Add your logout logic here
-                console.log('Logging out...');
+    <div id="roleModal" class="modal">
+        <div class="modal-content">
+            <h3>تعديل الرتبة</h3>
+            <form id="roleForm">
+                <input type="hidden" id="roleUserId">
+                <div class="form-group">
+                    <label class="form-label">الرتبة الجديدة</label>
+                    <select id="newRole" class="form-control">
+                        <option value="user">عضو (User)</option>
+                        <option value="admin">إدارة (Admin)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('roleModal').classList.remove('active')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">تحديث</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './api-config.js';
+        import { requireAuth, logout, updateProfile, adminImpersonateUser, adminUpdateUserRole } from './auth-client.js';
+        import { fetchTicketStats, subscribeToTickets } from './tickets-service.js';
+        import { initAdminRewards } from './admin-rewards.js';
+        
+        let user = null;
+
+        async function init() {
+            setupEventListeners();
+            try {
+                user = await requireAuth('admin');
+                if (!user) return window.location.replace('sign-in.html');
+                updateUIWithUserData();
+                renderTickets();
+                renderUsers();
+                renderBannedUsers();
+                renderLogs();
+                await initAdminRewards();
+                subscribeToTickets(() => renderTickets());
+            } catch (err) { 
+                console.error('Init error:', err);
+                window.location.replace('sign-in.html'); 
             }
         }
 
-        // Initialize dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Admin Dashboard loaded with Professional Blue Palette');
-        });
+        function updateUIWithUserData() {
+            if (user) {
+                const profile = user.profile || {};
+                document.getElementById('adminInitial').textContent = (profile.full_name || user.email).charAt(0).toUpperCase();
+                if (profile.role === 'admin') document.getElementById('adminBadgeContainer').style.display = 'block';
+                if (profile.avatar_url) {
+                    document.getElementById('navAvatar').src = profile.avatar_url;
+                    document.getElementById('navAvatar').style.display = 'block';
+                    document.getElementById('adminInitial').style.display = 'none';
+                }
+            }
+        }
+
+        async function renderTickets() {
+            const body = document.getElementById('admTicketsBody');
+            const { data: tickets } = await supabase.from('tickets').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+            body.innerHTML = tickets?.map(t => `
+                <tr>
+                    <td>${t.profiles?.full_name || 'مستخدم'}</td>
+                    <td>${t.title}</td>
+                    <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+                    <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
+                    <td><button class="btn btn-primary btn-sm" onclick="impersonateUser('${t.user_id}')">دخول</button></td>
+                </tr>
+            `).join('') || '<tr><td colspan="5">لا توجد تذاكر</td></tr>';
+            
+            const stats = await fetchTicketStats();
+            document.getElementById('admTotal').textContent = stats.total;
+            document.getElementById('admOpen').textContent = stats.open;
+            document.getElementById('admResolved').textContent = stats.resolved;
+        }
+
+        async function renderUsers() {
+            const body = document.getElementById('usersTableBody');
+            const { data: users } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+            body.innerHTML = users?.map(u => `
+                <tr>
+                    <td>${u.full_name || 'بدون اسم'}</td>
+                    <td>${u.email}</td>
+                    <td>${u.points || 0}</td>
+                    <td>${u.role === 'admin' ? 'إدارة' : 'عضو'}</td>
+                    <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="openPointsModal('${u.id}', ${u.points || 0})">نقاط</button>
+                        <button class="btn btn-primary btn-sm" onclick="openRoleModal('${u.id}', '${u.role || 'user'}')">رتبة</button>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="6">لا يوجد مستخدمين</td></tr>';
+        }
+
+        async function renderBannedUsers() {
+            const body = document.getElementById('bannedUsersBody');
+            const { data: users } = await supabase.from('profiles').select('*').neq('ban_status', 'none');
+            body.innerHTML = users?.map(u => `
+                <tr><td>${u.full_name}</td><td>${u.email}</td><td>${u.ban_status}</td><td>-</td></tr>
+            `).join('') || '<tr><td colspan="4">لا يوجد محظورين</td></tr>';
+        }
+
+        async function renderLogs() {
+            const list = document.getElementById('logsList');
+            const { data: logs } = await supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(10);
+            list.innerHTML = logs?.map(l => `<div style="padding:0.5rem; border-bottom:1px solid var(--color-border)"><strong>${l.action}</strong> - <small>${new Date(l.created_at).toLocaleString()}</small></div>`).join('') || 'لا توجد نشاطات';
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+                    btn.classList.add('active');
+                    document.getElementById(btn.dataset.tab).style.display = 'block';
+                };
+            });
+
+            document.getElementById('pointsForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('pointsUserId').value;
+                const points = parseInt(document.getElementById('newPoints').value);
+                await supabase.from('profiles').update({ points }).eq('id', id);
+                await supabase.from('user_wallets').upsert({ user_id: id, total_points: points, available_points: points });
+                alert('تم التحديث');
+                document.getElementById('pointsModal').classList.remove('active');
+                renderUsers();
+            };
+
+            document.getElementById('roleForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('roleUserId').value;
+                const role = document.getElementById('newRole').value;
+                await adminUpdateUserRole(id, role);
+                alert('تم التحديث');
+                document.getElementById('roleModal').classList.remove('active');
+                renderUsers();
+            };
+
+            document.getElementById('profileForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const fullName = document.getElementById('profileFullName').value;
+                const phone = document.getElementById('profilePhone').value;
+                await updateProfile({ full_name: fullName, phone });
+                alert('تم حفظ التغييرات');
+            };
+        }
+
+        window.openPointsModal = (id, points) => {
+            document.getElementById('pointsUserId').value = id;
+            document.getElementById('newPoints').value = points;
+            document.getElementById('pointsModal').classList.add('active');
+        };
+
+        window.openRoleModal = (id, role) => {
+            document.getElementById('roleUserId').value = id;
+            document.getElementById('newRole').value = role;
+            document.getElementById('roleModal').classList.add('active');
+        };
+
+        window.impersonateUser = async (id) => { await adminImpersonateUser(id); };
+        window.logout = async () => { await logout(); window.location.replace('sign-in.html'); };
+
+        init();
     </script>
 </body>
 </html>
