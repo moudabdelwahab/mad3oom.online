@@ -112,6 +112,7 @@
         }
 
         .nav-btn {
+            position: relative;
             background: transparent;
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #FFFFFF;
@@ -378,6 +379,7 @@
         }
 
         .tab-content {
+        .action-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
             display: none;
             animation: fadeIn 0.3s ease-in-out;
         }
@@ -628,7 +630,7 @@
                     <td>${t.title}</td>
                     <td><span class="status-badge status-${t.status}">${t.status}</span></td>
                     <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
-                    <td><button class="btn btn-primary btn-sm" onclick="impersonateUser('${t.user_id}')">دخول</button></td>
+                    <td><button class="btn btn-primary btn-sm" onclick="impersonateUser('${t.user_id}')">دخول</button></div></td>
                 </tr>
             `).join('') || '<tr><td colspan="5">لا توجد تذاكر</td></tr>';
             
@@ -650,7 +652,7 @@
                     <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
                     <td>
                         <button class="btn btn-warning btn-sm" onclick="openPointsModal('${u.id}', ${u.points || 0})">نقاط</button>
-                        <button class="btn btn-primary btn-sm" onclick="openRoleModal('${u.id}', '${u.role || 'user'}')">رتبة</button>
+                        <button class="btn btn-primary btn-sm" onclick="openRoleModal('${u.id}', '${u.role || 'user'}')">رتبة</button><button class="btn btn-success btn-sm" onclick="impersonateUser('${u.id}')">دخول</button>${u.ban_status === 'none' || !u.ban_status ? `<button class="btn btn-danger btn-sm" onclick="banUser('${u.id}')">حظر</button>` : `<button class="btn btn-secondary btn-sm" onclick="unbanUser('${u.id}')">فك الحظر</button>`}
                     </td>
                 </tr>
             `).join('') || '<tr><td colspan="6">لا يوجد مستخدمين</td></tr>';
@@ -723,6 +725,8 @@
         };
 
         window.impersonateUser = async (id) => { await adminImpersonateUser(id); };
+        window.banUser = async (id) => { if (confirm('هل أنت متأكد من حظر هذا المستخدم؟')) { const { error } = await supabase.from('profiles').update({ ban_status: 'permanent' }).eq('id', id); if (error) alert('خطأ في الحظر: ' + error.message); else { alert('تم حظر المستخدم'); renderUsers(); renderBannedUsers(); } } };
+        window.unbanUser = async (id) => { if (confirm('هل تريد فك الحظر عن هذا المستخدم؟')) { const { error } = await supabase.from('profiles').update({ ban_status: 'none' }).eq('id', id); if (error) alert('خطأ في فك الحظر: ' + error.message); else { alert('تم فك الحظر'); renderUsers(); renderBannedUsers(); } } };
         window.logout = async () => { await logout(); window.location.replace('sign-in.html'); };
 
         init();
