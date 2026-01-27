@@ -123,11 +123,11 @@
         </div>
 
         <div id="rewardsTab" class="tab-content">
-            <div class="page-header"><h1>إدارة المكافآت والبلاغات</h1></div>
+            <div class="page-header"><h1>إدارة المكافآت</h1></div>
             <div class="stats-grid">
-                <div class="stat-card"><div class="stat-content"><p class="stat-label">البلاغات المعلقة</p><p class="stat-value" id="admPendingReports" style="color: var(--color-warning);">0</p></div></div>
-                <div class="stat-card"><div class="stat-content"><p class="stat-label">الموافق عليها</p><p class="stat-value" id="admApprovedReports" style="color: var(--color-success);">0</p></div></div>
-                <div class="stat-card"><div class="stat-content"><p class="stat-label">المرفوضة</p><p class="stat-value" id="admRejectedReports" style="color: var(--color-danger);">0</p></div></div>
+                <div class="stat-card"><div class="stat-content"><p class="stat-label">بلاغات معلقة</p><p class="stat-value" id="admPendingReports" style="color: var(--color-warning);">0</p></div></div>
+                <div class="stat-card"><div class="stat-content"><p class="stat-label">بلاغات مقبولة</p><p class="stat-value" id="admApprovedReports" style="color: var(--color-success);">0</p></div></div>
+                <div class="stat-card"><div class="stat-content"><p class="stat-label">بلاغات مرفوضة</p><p class="stat-value" id="admRejectedReports" style="color: var(--color-danger);">0</p></div></div>
                 <div class="stat-card"><div class="stat-content"><p class="stat-label">مستخدمي Pro</p><p class="stat-value" id="admProUsers" style="color: var(--color-accent);">0</p></div></div>
             </div>
             <div class="admin-controls">
@@ -141,16 +141,18 @@
 
         <div id="usersTab" class="tab-content">
             <div class="page-header"><h1>إدارة المستخدمين</h1></div>
-            <div class="admin-controls"><div class="search-box"><input type="text" id="userSearch" placeholder="بحث عن مستخدم..."></div></div>
+            <div class="admin-controls">
+                <div class="search-box"><input type="text" id="userSearch" placeholder="بحث عن مستخدم..."></div>
+            </div>
             <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
-                <table><thead><tr><th>المستخدم</th><th>البريد الإلكتروني</th><th>الدور</th><th>النقاط</th><th>الإجراءات</th></tr></thead><tbody id="usersTableBody"></tbody></table>
+                <table><thead><tr><th>المستخدم</th><th>البريد</th><th>النقاط</th><th>تاريخ الانضمام</th><th>إجراءات</th></tr></thead><tbody id="usersTableBody"></tbody></table>
             </div>
         </div>
 
         <div id="bannedTab" class="tab-content">
-            <div class="page-header"><h1>قائمة المحظورين</h1></div>
+            <div class="page-header"><h1>المستخدمين المحظورين</h1></div>
             <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
-                <table><thead><tr><th>المستخدم</th><th>نوع الحظر</th><th>ينتهي في</th><th>السبب</th><th>إجراءات</th></tr></thead><tbody id="bannedTableBody"></tbody></table>
+                <table><thead><tr><th>المستخدم</th><th>البريد</th><th>نوع الحظر</th><th>السبب</th><th>تاريخ الحظر</th><th>إجراءات</th></tr></thead><tbody id="bannedUsersBody"></tbody></table>
             </div>
         </div>
 
@@ -163,98 +165,31 @@
             <div class="page-header"><h1>الملف الشخصي</h1></div>
             <div class="profile-section">
                 <div class="avatar-upload">
-                    <img id="profileAvatarPreview" src="https://via.placeholder.com/100" class="avatar-preview">
-                    <label for="avatarInput" class="avatar-edit-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </label>
-                    <input type="file" id="avatarInput" style="display: none;" accept="image/*">
+                    <img id="profileAvatarPreview" src="" class="avatar-preview">
+                    <label for="avatarInput" class="avatar-edit-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></label>
+                    <input type="file" id="avatarInput" hidden accept="image/*">
                 </div>
                 <form id="profileForm" class="profile-form">
                     <div class="form-group"><label>الاسم الكامل</label><input type="text" id="profileFullName" class="form-control" required></div>
-                    <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="profileEmail" class="form-control" disabled></div>
-                    <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك"></div>
-                    <button type="submit" class="btn btn-primary" id="saveProfileBtn">حفظ التغييرات</button>
+                    <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="profileEmail" class="form-control" readonly></div>
+                    <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="profilePhone" class="form-control"></div>
+                    <button type="submit" class="btn btn-primary">تحديث البيانات</button>
                 </form>
                 <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--color-border);">
-                <h3>تغيير كلمة المرور</h3>
-                <form id="changePasswordForm" style="margin-top: 1rem; max-width: 600px;">
+                <form id="changePasswordForm" class="profile-form">
+                    <h3>تغيير كلمة المرور</h3>
                     <div class="form-group"><label>كلمة المرور الجديدة</label><input type="password" id="newPassword" class="form-control" required minlength="6"></div>
                     <div class="form-group"><label>تأكيد كلمة المرور</label><input type="password" id="confirmPassword" class="form-control" required minlength="6"></div>
-                    <button type="submit" class="btn btn-secondary" style="width: 100%;">تحديث كلمة المرور</button>
+                    <button type="submit" class="btn btn-secondary">تغيير كلمة المرور</button>
                 </form>
             </div>
         </div>
     </main>
 
-    <!-- Modal الرد على التذكرة -->
-    <div id="replyModal" class="modal">
-        <div class="modal-content">
-            <h2 id="modalTicketTitle">الرد على التذكرة</h2>
-            <div id="repliesList" style="margin: 1.5rem 0; max-height: 300px; overflow-y: auto;"></div>
-            <form id="replyForm">
-                <textarea id="replyMessage" style="width: 100%; min-height: 100px; margin-bottom: 1rem; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;" placeholder="اكتب ردك هنا..." required></textarea>
-                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                    <input type="checkbox" id="isInternal"> <label for="isInternal">ملاحظة داخلية (للأدمن فقط)</label>
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('replyModal').classList.remove('active')">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">إرسال</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal إدارة الحظر -->
-    <div id="banModal" class="modal">
-        <div class="modal-content">
-            <h2 id="banModalTitle">إدارة حظر المستخدم</h2>
-            <form id="banForm" style="margin-top: 1.5rem;">
-                <input type="hidden" id="banUserId">
-                <div class="form-group">
-                    <label>نوع الحظر</label>
-                    <select id="banStatus" class="form-control">
-                        <option value="none">بدون حظر (رفع الحظر)</option>
-                        <option value="temporary">حظر مؤقت</option>
-                        <option value="permanent">حظر دائم</option>
-                    </select>
-                </div>
-                <div class="form-group" id="banUntilGroup" style="display: none;">
-                    <label>حظر حتى تاريخ</label>
-                    <input type="datetime-local" id="banUntil" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>السبب</label>
-                    <textarea id="banReason" class="form-control" placeholder="اذكر سبب الحظر..."></textarea>
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('banModal').classList.remove('active')">إلغاء</button>
-                    <button type="submit" class="btn btn-danger">تحديث حالة الحظر</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal تعديل النقاط -->
-    <div id="pointsModal" class="modal">
-        <div class="modal-content">
-            <h2>تعديل نقاط المستخدم</h2>
-            <form id="pointsForm" style="margin-top: 1.5rem;">
-                <input type="hidden" id="pointsUserId">
-                <div class="form-group">
-                    <label>النقاط الحالية</label>
-                    <input type="number" id="currentPoints" class="form-control" disabled>
-                </div>
-                <div class="form-group">
-                    <label>النقاط الجديدة</label>
-                    <input type="number" id="newPoints" class="form-control" required>
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('pointsModal').classList.remove('active')">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">حفظ</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <!-- Modals -->
+    <div id="replyModal" class="modal"><div class="modal-content"><h3>الرد على التذكرة: <span id="modalTicketTitle"></span></h3><div id="repliesList" style="margin: 1.5rem 0; max-height: 300px; overflow-y: auto;"></div><form id="replyForm"><div class="form-group"><textarea id="replyMessage" class="form-control" placeholder="اكتب ردك هنا..." required style="min-height: 100px;"></textarea></div><div class="form-group" style="margin-top: 1rem;"><label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" id="isInternal"> ملاحظة داخلية (للأدمن فقط)</label></div><div style="display: flex; gap: 1rem; margin-top: 1.5rem;"><button type="button" class="btn btn-secondary" onclick="document.getElementById('replyModal').classList.remove('active')">إلغاء</button><button type="submit" class="btn btn-primary">إرسال الرد</button></div></form></div></div>
+    <div id="banModal" class="modal"><div class="modal-content"><h3>إدارة حظر المستخدم</h3><form id="banForm"><input type="hidden" id="banUserId"><div class="form-group"><label>نوع الحظر</label><select id="banType" class="form-control"><option value="none">بدون حظر</option><option value="temporary">حظر مؤقت (7 أيام)</option><option value="permanent">حظر دائم</option></select></div><div class="form-group"><label>السبب</label><textarea id="banReason" class="form-control" placeholder="سبب الحظر..."></textarea></div><div style="display: flex; gap: 1rem; margin-top: 1.5rem;"><button type="button" class="btn btn-secondary" onclick="document.getElementById('banModal').classList.remove('active')">إلغاء</button><button type="submit" class="btn btn-danger">تحديث حالة الحظر</button></div></form></div></div>
+    <div id="pointsModal" class="modal"><div class="modal-content"><h3>تعديل نقاط المستخدم</h3><form id="pointsForm"><input type="hidden" id="pointsUserId"><div class="form-group"><label>النقاط الحالية</label><input type="number" id="currentPoints" class="form-control" readonly></div><div class="form-group"><label>النقاط الجديدة</label><input type="number" id="newPoints" class="form-control" required></div><div style="display: flex; gap: 1rem; margin-top: 1.5rem;"><button type="button" class="btn btn-secondary" onclick="document.getElementById('pointsModal').classList.remove('active')">إلغاء</button><button type="submit" class="btn btn-primary">تحديث النقاط</button></div></form></div></div>
 
     <script type="module">
         import { supabase } from './api-config.js';
@@ -265,10 +200,39 @@
         import { addProBadgeToElement, injectProBadgeStyles } from './pro-badge.js';
 
         let user;
-        try {
-            user = await requireAuth('admin');
-            if (!user) window.location.replace('sign-in.html');
-        } catch (err) { window.location.replace('sign-in.html'); }
+
+        // دالة التهيئة الرئيسية
+        async function init() {
+            console.log('Initializing Admin Dashboard...');
+            try {
+                user = await requireAuth('admin');
+                if (!user) {
+                    window.location.replace('sign-in.html');
+                    return;
+                }
+                console.log('Auth successful:', user.email);
+                
+                updateUIWithUserData();
+                setupEventListeners();
+                
+                // تحميل البيانات الأولية
+                renderAdminTickets();
+                subscribeToTickets(renderAdminTickets);
+                loadNotifications();
+                subscribeToNotifications(loadNotifications);
+                
+                // تهيئة نظام المكافآت
+                try {
+                    await initAdminRewards();
+                    injectProBadgeStyles();
+                    await import('./admin-rewards.js');
+                } catch (e) { console.error('Rewards init error:', e); }
+
+            } catch (err) {
+                console.error('Init error:', err);
+                window.location.replace('sign-in.html');
+            }
+        }
 
         function updateUIWithUserData() {
             if (user) {
@@ -287,48 +251,94 @@
                 }
             }
         }
-        updateUIWithUserData();
 
-        // تبديل التبويبات
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
-                tab.classList.add('active');
-                const targetTab = document.getElementById(tab.dataset.tab + 'Tab');
-                if (targetTab) targetTab.classList.add('active');
-                
-                if (tab.dataset.tab === 'users') renderUsers();
-                if (tab.dataset.tab === 'banned') renderBannedUsers();
-                if (tab.dataset.tab === 'logs') renderLogs();
-                if (tab.dataset.tab === 'rewards') {
-                    if (typeof initAdminRewards === 'function') initAdminRewards();
-                }
+        function setupEventListeners() {
+            console.log('Setting up event listeners...');
+
+            // تبديل التبويبات
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    console.log('Tab clicked:', tab.dataset.tab);
+                    document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
+                    tab.classList.add('active');
+                    const targetTab = document.getElementById(tab.dataset.tab + 'Tab');
+                    if (targetTab) targetTab.classList.add('active');
+                    
+                    if (tab.dataset.tab === 'users') renderUsers();
+                    if (tab.dataset.tab === 'banned') renderBannedUsers();
+                    if (tab.dataset.tab === 'logs') renderLogs();
+                    if (tab.dataset.tab === 'rewards') {
+                        if (typeof initAdminRewards === 'function') initAdminRewards();
+                    }
+                });
             });
-        });
 
-        // إدارة الإشعارات
-        const notificationBtn = document.getElementById('notificationBtn');
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        const notificationBadge = document.getElementById('notificationBadge');
-        const notificationsList = document.getElementById('notificationsList');
-        const clearNotifications = document.getElementById('clearNotifications');
+            // زر الخروج
+            const signOutBtn = document.getElementById('signOutBtn');
+            if (signOutBtn) {
+                signOutBtn.onclick = async () => {
+                    console.log('Signing out...');
+                    await logout();
+                    window.location.href = 'sign-in.html';
+                };
+            }
 
-        if (notificationBtn) {
-            notificationBtn.onclick = (e) => {
-                e.stopPropagation();
-                const isVisible = notificationDropdown.style.display === 'block';
-                notificationDropdown.style.display = isVisible ? 'none' : 'block';
-                if (!isVisible) loadNotifications();
-            };
+            // زر الملف الشخصي في النافبار
+            const profileNavBtn = document.getElementById('profileNavBtn');
+            if (profileNavBtn) {
+                profileNavBtn.onclick = () => {
+                    console.log('Profile nav clicked');
+                    document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
+                    const profileTabBtn = document.querySelector('.nav-tab[data-tab="profile"]');
+                    const profileTabContent = document.getElementById('profileTab');
+                    if (profileTabBtn) profileTabBtn.classList.add('active');
+                    if (profileTabContent) profileTabContent.classList.add('active');
+                };
+            }
+
+            // إدارة الإشعارات
+            const notificationBtn = document.getElementById('notificationBtn');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            if (notificationBtn) {
+                notificationBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const isVisible = notificationDropdown.style.display === 'block';
+                    notificationDropdown.style.display = isVisible ? 'none' : 'block';
+                    if (!isVisible) loadNotifications();
+                };
+            }
+
+            const clearNotifications = document.getElementById('clearNotifications');
+            if (clearNotifications) {
+                clearNotifications.onclick = async () => {
+                    await markAllAsRead();
+                    loadNotifications();
+                };
+            }
+
+            window.addEventListener('click', () => {
+                if (notificationDropdown) notificationDropdown.style.display = 'none';
+            });
+
+            // فلاتر التذاكر
+            document.getElementById('statusFilter').onchange = renderAdminTickets;
+            document.getElementById('ticketSearch').oninput = renderAdminTickets;
+            document.getElementById('userSearch').oninput = renderUsers;
         }
+
+        // --- دوال العرض والبيانات ---
 
         async function loadNotifications() {
             try {
                 const notifications = await fetchNotifications();
-                notificationBadge.textContent = notifications.filter(n => !n.is_read).length;
-                notificationBadge.style.display = notificationBadge.textContent > 0 ? 'flex' : 'none';
+                const badge = document.getElementById('notificationBadge');
+                const list = document.getElementById('notificationsList');
+                const unreadCount = notifications.filter(n => !n.is_read).length;
                 
-                notificationsList.innerHTML = notifications.length ? '' : '<div style="padding:1rem;text-align:center;color:var(--color-text-secondary);">لا توجد إشعارات</div>';
+                badge.textContent = unreadCount;
+                badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+                
+                list.innerHTML = notifications.length ? '' : '<div style="padding:1rem;text-align:center;color:var(--color-text-secondary);">لا توجد إشعارات</div>';
                 
                 notifications.forEach(n => {
                     const div = document.createElement('div');
@@ -337,56 +347,33 @@
                         <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">${n.message}</div>
                         <div style="font-size: 0.75rem; color: var(--color-text-secondary);">${new Date(n.created_at).toLocaleString('ar-EG')}</div>
                     `;
-                    notificationsList.appendChild(div);
+                    list.appendChild(div);
                 });
             } catch (err) { console.error('Notifications error:', err); }
         }
 
-        if (clearNotifications) {
-            clearNotifications.onclick = async () => {
-                await markAllAsRead();
-                loadNotifications();
-            };
-        }
-
-        // إغلاق القوائم المنبثقة عند النقر في أي مكان آخر
-        window.onclick = () => {
-            if (notificationDropdown) notificationDropdown.style.display = 'none';
-        };
-
-        // زر الملف الشخصي في النافبار
-        const profileNavBtn = document.getElementById('profileNavBtn');
-        if (profileNavBtn) {
-            profileNavBtn.onclick = () => {
-                document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
-                const profileTabBtn = document.querySelector('.nav-tab[data-tab="profile"]');
-                const profileTabContent = document.getElementById('profileTab');
-                if (profileTabBtn) profileTabBtn.classList.add('active');
-                if (profileTabContent) profileTabContent.classList.add('active');
-            };
-        }
-
-        // إدارة المستخدمين
         async function renderUsers() {
             const body = document.getElementById('usersTableBody');
             const search = document.getElementById('userSearch').value;
+            body.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1rem;">جاري التحميل...</td></tr>';
+            
             let query = supabase.from('profiles').select('*');
             if (search) query = query.ilike('full_name', `%${search}%`);
             const { data: users, error } = await query;
             
-            body.innerHTML = users?.length ? '' : '<tr><td colspan="5" style="text-align:center;padding:2rem;">لا يوجد مستخدمين</td></tr>';
-            users?.forEach(u => {
+            if (error) return body.innerHTML = '<tr><td colspan="5">خطأ في التحميل</td></tr>';
+            body.innerHTML = users.length ? '' : '<tr><td colspan="5">لا يوجد مستخدمين</td></tr>';
+            
+            users.forEach(u => {
                 const tr = document.createElement('tr');
-                const banBadge = u.ban_status && u.ban_status !== 'none' ? `<span class="ban-badge ban-${u.ban_status}">${u.ban_status === 'temporary' ? 'محظور مؤقت' : 'محظور دائم'}</span>` : '';
-                const roleDisplay = u.role === 'admin' ? 'مسئول' : u.role === 'customer' ? 'عميل' : u.role;
                 tr.innerHTML = `
-                    <td>${u.full_name || '---'} ${banBadge}</td>
+                    <td>${u.full_name || 'بدون اسم'}</td>
                     <td>${u.email}</td>
-                    <td>${roleDisplay}</td>
                     <td>${u.points || 0}</td>
+                    <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
                     <td>
                         <button class="btn btn-secondary btn-sm" onclick="openPointsModal('${u.id}', ${u.points || 0})">نقاط</button>
-                        <button class="btn btn-warning btn-sm" onclick="openBanModal('${u.id}', '${u.full_name}', '${u.ban_status}', '${u.ban_until || ''}', '${u.ban_reason || ''}')">حظر</button>
+                        <button class="btn btn-warning btn-sm" onclick="openBanModal('${u.id}', '${u.ban_type || 'none'}', '${u.ban_reason || ''}')">حظر</button>
                         <button class="btn btn-primary btn-sm" onclick="impersonateUser('${u.id}')">دخول</button>
                     </td>
                 `;
@@ -394,159 +381,29 @@
             });
         }
 
-        // إدارة المحظورين
         async function renderBannedUsers() {
-            const body = document.getElementById('bannedTableBody');
-            const { data: users } = await supabase.from('profiles').select('*').neq('ban_status', 'none');
-            
-            body.innerHTML = users?.length ? '' : '<tr><td colspan="5" style="text-align:center;padding:2rem;">لا يوجد محظورين</td></tr>';
-            users?.forEach(u => {
+            const body = document.getElementById('bannedUsersBody');
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1rem;">جاري التحميل...</td></tr>';
+            const { data: users, error } = await supabase.from('profiles').select('*').neq('ban_type', 'none');
+            if (error) return body.innerHTML = '<tr><td colspan="6">خطأ في التحميل</td></tr>';
+            body.innerHTML = users.length ? '' : '<tr><td colspan="6" style="text-align:center;padding:2rem;">لا يوجد مستخدمين محظورين</td></tr>';
+            users.forEach(u => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${u.full_name || u.email}</td>
-                    <td><span class="ban-badge ban-${u.ban_status}">${u.ban_status === 'temporary' ? 'مؤقت' : 'دائم'}</span></td>
-                    <td>${u.ban_until ? new Date(u.ban_until).toLocaleString('ar-EG') : '---'}</td>
-                    <td>${u.ban_reason || '---'}</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm" onclick="openBanModal('${u.id}', '${u.full_name}', '${u.ban_status}', '${u.ban_until || ''}', '${u.ban_reason || ''}')">تعديل/رفع</button>
-                    </td>
+                    <td>${u.email}</td>
+                    <td><span class="ban-badge ban-${u.ban_type}">${u.ban_type === 'permanent' ? 'دائم' : 'مؤقت'}</span></td>
+                    <td>${u.ban_reason || '-'}</td>
+                    <td>${new Date(u.updated_at).toLocaleDateString('ar-EG')}</td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="openBanModal('${u.id}', '${u.ban_type}', '${u.ban_reason}')">تعديل</button></td>
                 `;
                 body.appendChild(tr);
             });
         }
 
-        // مودال الحظر
-        window.openBanModal = (id, name, status, until, reason) => {
-            document.getElementById('banUserId').value = id;
-            document.getElementById('banModalTitle').textContent = `إدارة حظر: ${name}`;
-            document.getElementById('banStatus').value = status || 'none';
-            document.getElementById('banReason').value = reason || '';
-            if (until) {
-                const date = new Date(until);
-                date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-                document.getElementById('banUntil').value = date.toISOString().slice(0, 16);
-            } else {
-                document.getElementById('banUntil').value = '';
-            }
-            toggleBanUntil();
-            document.getElementById('banModal').classList.add('active');
-        };
-
-        function toggleBanUntil() {
-            const status = document.getElementById('banStatus').value;
-            document.getElementById('banUntilGroup').style.display = status === 'temporary' ? 'block' : 'none';
-        }
-        document.getElementById('banStatus').onchange = toggleBanUntil;
-
-        document.getElementById('banForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('banUserId').value;
-            const status = document.getElementById('banStatus').value;
-            const until = document.getElementById('banUntil').value;
-            const reason = document.getElementById('banReason').value;
-            
-            try {
-                const updates = {
-                    ban_status: status,
-                    ban_reason: reason
-                };
-                
-                if (status === 'temporary' && until) {
-                    updates.ban_until = new Date(until).toISOString();
-                } else {
-                    updates.ban_until = null;
-                }
-                
-                const { error } = await supabase
-                    .from('profiles')
-                    .update(updates)
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('تم تحديث حالة الحظر بنجاح');
-                document.getElementById('banModal').classList.remove('active');
-                renderUsers();
-                renderBannedUsers();
-            } catch (err) { 
-                console.error('Ban error:', err);
-                alert('خطأ في التحديث: ' + err.message); 
-            }
-        };
-
-        // مودال النقاط
-        window.openPointsModal = (id, points) => {
-            document.getElementById('pointsUserId').value = id;
-            document.getElementById('currentPoints').value = points;
-            document.getElementById('newPoints').value = points;
-            document.getElementById('pointsModal').classList.add('active');
-        };
-
-        document.getElementById('pointsForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('pointsUserId').value;
-            const points = parseInt(document.getElementById('newPoints').value);
-            try {
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({ points: points })
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('تم تحديث النقاط بنجاح');
-                document.getElementById('pointsModal').classList.remove('active');
-                renderUsers();
-            } catch (err) { 
-                console.error('Points error:', err);
-                alert('خطأ في التحديث: ' + err.message); 
-            }
-        };
-
-        // تحديث البروفايل
-        document.getElementById('profileForm').onsubmit = async (e) => {
-            e.preventDefault();
-            try {
-                await updateProfile({
-                    full_name: document.getElementById('profileFullName').value,
-                    phone: document.getElementById('profilePhone').value
-                });
-                alert('تم تحديث البيانات بنجاح');
-                user.profile.full_name = document.getElementById('profileFullName').value;
-                user.profile.phone = document.getElementById('profilePhone').value;
-                updateUIWithUserData();
-            } catch (err) { alert('خطأ في التحديث'); }
-        };
-
-        // تغيير كلمة المرور
-        document.getElementById('changePasswordForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const pass = document.getElementById('newPassword').value;
-            const confirm = document.getElementById('confirmPassword').value;
-            if (pass !== confirm) return alert('كلمات المرور غير متطابقة');
-            try {
-                await updatePassword(pass);
-                alert('تم تغيير كلمة المرور بنجاح');
-                e.target.reset();
-            } catch (err) { alert('خطأ في تغيير كلمة المرور'); }
-        };
-
-        // رفع الصورة
-        document.getElementById('avatarInput').onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            try {
-                const url = await uploadAvatar(file);
-                await updateProfile({ avatar_url: url });
-                user.profile.avatar_url = url;
-                updateUIWithUserData();
-                alert('تم تحديث صورة الملف الشخصي');
-            } catch (err) { alert('خطأ في رفع الصورة'); }
-        };
-
-        // جلب وعرض سجل النشاطات
         async function renderLogs() {
             const list = document.getElementById('logsList');
+            list.innerHTML = 'جاري التحميل...';
             try {
                 const { fetchActivityLogs, formatActivityMessage } = await import('./activity-service.js');
                 const logs = await fetchActivityLogs(50);
@@ -560,12 +417,9 @@
                     `;
                     list.appendChild(div);
                 });
-            } catch (err) {
-                list.innerHTML = '<p style="text-align:center;color:var(--color-danger);">خطأ في تحميل السجل</p>';
-            }
+            } catch (err) { list.innerHTML = '<p style="text-align:center;color:var(--color-danger);">خطأ في تحميل السجل</p>'; }
         }
 
-        // إدارة التذاكر (الأدمن)
         async function renderAdminTickets() {
             const body = document.getElementById('admTicketsBody');
             const tickets = await fetchUserTickets({
@@ -593,6 +447,22 @@
             document.getElementById('admResolved').textContent = stats.resolved;
         }
 
+        // --- الدوال العالمية (Window Functions) ---
+
+        window.openBanModal = (id, type, reason) => {
+            document.getElementById('banUserId').value = id;
+            document.getElementById('banType').value = type;
+            document.getElementById('banReason').value = reason;
+            document.getElementById('banModal').classList.add('active');
+        };
+
+        window.openPointsModal = (id, points) => {
+            document.getElementById('pointsUserId').value = id;
+            document.getElementById('currentPoints').value = points;
+            document.getElementById('newPoints').value = points;
+            document.getElementById('pointsModal').classList.add('active');
+        };
+
         window.openReplyModal = async (id, title) => {
             const modal = document.getElementById('replyModal');
             document.getElementById('modalTicketTitle').textContent = title;
@@ -619,39 +489,79 @@
             try { 
                 await adminImpersonateUser(id); 
                 window.location.href = 'customer-dashboard.html';
-            } catch (err) { 
-                console.error('Impersonate error:', err);
-                alert('خطأ في الدخول كعميل'); 
-            }
+            } catch (err) { alert('خطأ في الدخول كعميل'); }
         };
 
-        document.getElementById('statusFilter').onchange = renderAdminTickets;
-        document.getElementById('ticketSearch').oninput = renderAdminTickets;
-        document.getElementById('userSearch').oninput = renderUsers;
-        const signOutBtn = document.getElementById('signOutBtn');
-        if (signOutBtn) {
-            signOutBtn.onclick = async () => { 
-                await logout(); 
-                window.location.href = 'sign-in.html'; 
-            };
-        }
+        // --- ربط النماذج (Forms) ---
 
-        renderAdminTickets();
-        subscribeToTickets(renderAdminTickets);
-        loadNotifications();
-        subscribeToNotifications(loadNotifications);
-        
-        // تهيئة نظام إدارة المكافآت
-        try {
-            await initAdminRewards();
-            injectProBadgeStyles();
-            
-            // تحميل الدوال من admin-rewards.js وتحويلها إلى window object
-            await import('./admin-rewards.js');
-            console.log('Admin rewards system initialized');
-        } catch (err) {
-            console.error('Error initializing admin rewards:', err);
-        }
+        document.getElementById('banForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('banUserId').value;
+            const type = document.getElementById('banType').value;
+            const reason = document.getElementById('banReason').value;
+            try {
+                const { error } = await supabase.from('profiles').update({ ban_type: type, ban_reason: reason }).eq('id', id);
+                if (error) throw error;
+                alert('تم تحديث حالة الحظر بنجاح');
+                document.getElementById('banModal').classList.remove('active');
+                renderUsers();
+                renderBannedUsers();
+            } catch (err) { alert('خطأ في التحديث: ' + err.message); }
+        };
+
+        document.getElementById('pointsForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('pointsUserId').value;
+            const points = parseInt(document.getElementById('newPoints').value);
+            try {
+                const { error } = await supabase.from('profiles').update({ points: points }).eq('id', id);
+                if (error) throw error;
+                alert('تم تحديث النقاط بنجاح');
+                document.getElementById('pointsModal').classList.remove('active');
+                renderUsers();
+            } catch (err) { alert('خطأ في التحديث: ' + err.message); }
+        };
+
+        document.getElementById('profileForm').onsubmit = async (e) => {
+            e.preventDefault();
+            try {
+                await updateProfile({
+                    full_name: document.getElementById('profileFullName').value,
+                    phone: document.getElementById('profilePhone').value
+                });
+                alert('تم تحديث البيانات بنجاح');
+                user.profile.full_name = document.getElementById('profileFullName').value;
+                user.profile.phone = document.getElementById('profilePhone').value;
+                updateUIWithUserData();
+            } catch (err) { alert('خطأ في التحديث'); }
+        };
+
+        document.getElementById('changePasswordForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const pass = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            if (pass !== confirm) return alert('كلمات المرور غير متطابقة');
+            try {
+                await updatePassword(pass);
+                alert('تم تغيير كلمة المرور بنجاح');
+                e.target.reset();
+            } catch (err) { alert('خطأ في تغيير كلمة المرور'); }
+        };
+
+        document.getElementById('avatarInput').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const url = await uploadAvatar(file);
+                await updateProfile({ avatar_url: url });
+                user.profile.avatar_url = url;
+                updateUIWithUserData();
+                alert('تم تحديث صورة الملف الشخصي');
+            } catch (err) { alert('خطأ في رفع الصورة'); }
+        };
+
+        // بدء التشغيل
+        init();
     </script>
 </body>
 </html>
