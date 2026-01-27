@@ -335,6 +335,7 @@
         // الاستماع لتحديثات النقاط من Supabase
         if (user && user.id) {
             supabase
+                .channel('profile-updates')
                 .on('postgres_changes', {
                     event: 'UPDATE',
                     schema: 'public',
