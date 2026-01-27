@@ -44,88 +44,16 @@ async function loadPendingReports() {
             return;
         }
 
-        tbody.innerHTML = reports.map(report => {
-            const createdDate = new Date(report.created_at).toLocaleDateString('ar-EG');
-            const userName = report.profiles?.full_name || report.profiles?.email?.split('@')[0] || 'مستخدم';
-            const userEmail = report.profiles?.email || '-';
-
-            return `
-                <tr>
-                    <td>
-                        <div style="font-weight: 600;">${userName}</div>
-                        <div style="font-size: 0.85rem; color: var(--color-text-secondary);">${userEmail}</div>
-                    </td>
-                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${report.title}</td>
-                    <td><span style="padding: 0.25rem 0.75rem; background: var(--color-muted); border-radius: 0.25rem; font-size: 0.85rem;">${report.problem_type}</span></td>
-                    <td><span style="padding: 0.25rem 0.75rem; background: ${getSeverityColor(report.severity)}; border-radius: 0.25rem; font-size: 0.85rem; color: white;">${report.severity}</span></td>
-                    <td><span class="status-badge status-${report.status}">${getStatusText(report.status)}</span></td>
-                    <td style="font-weight: 600; color: var(--color-accent);">${report.estimated_points}</td>
-                    <td style="font-size: 0.85rem; color: var(--color-text-secondary);">${createdDate}</td>
-                    <td>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn btn-sm" style="background: var(--color-success); color: white; border: none; cursor: pointer;" onclick="openApproveModal(${report.id}, ${report.estimated_points})">موافقة</button>
-                            <button class="btn btn-sm" style="background: var(--color-danger); color: white; border: none; cursor: pointer;" onclick="openRejectModal(${report.id})">رفض</button>
-                            <button class="btn btn-sm" style="background: var(--color-accent); color: white; border: none; cursor: pointer;" onclick="viewReportDetails(${report.id})">عرض</button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
+        renderReportsToTable(reports);
 
     } catch (error) {
         console.error('خطأ في تحميل البلاغات:', error);
     }
 }
 
-// ==================== ربط البحث والفلاتر ====================
-function bindSearchAndFilters() {
-    const searchInput = document.getElementById('reportsSearch');
-    const statusFilter = document.getElementById('reportsStatusFilter');
-
-    if (searchInput) {
-        searchInput.addEventListener('input', async (e) => {
-            const query = e.target.value;
-            if (query.length < 2) {
-                await loadPendingReports();
-                return;
-            }
-
-            try {
-                const results = await searchReports(query);
-                displaySearchResults(results);
-            } catch (error) {
-                console.error('خطأ في البحث:', error);
-            }
-        });
-    }
-
-    if (statusFilter) {
-        statusFilter.addEventListener('change', async (e) => {
-            const status = e.target.value;
-            try {
-                let results;
-                if (status === 'all') {
-                    results = await getPendingReports();
-                } else {
-                    results = await searchReports('', status);
-                }
-                displaySearchResults(results);
-            } catch (error) {
-                console.error('خطأ في الفلترة:', error);
-            }
-        });
-    }
-}
-
-// ==================== عرض نتائج البحث ====================
-function displaySearchResults(reports) {
+// ==================== رندر البلاغات في الجدول ====================
+function renderReportsToTable(reports) {
     const tbody = document.getElementById('reportsTableBody');
-
-    if (reports.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">لا توجد نتائج</td></tr>';
-        return;
-    }
-
     tbody.innerHTML = reports.map(report => {
         const createdDate = new Date(report.created_at).toLocaleDateString('ar-EG');
         const userName = report.profiles?.full_name || report.profiles?.email?.split('@')[0] || 'مستخدم';
@@ -146,15 +74,55 @@ function displaySearchResults(reports) {
                 <td>
                     <div style="display: flex; gap: 0.5rem;">
                         ${report.status === 'pending' ? `
-                            <button class="btn btn-sm" style="background: var(--color-success); color: white; border: none; cursor: pointer;" onclick="openApproveModal(${report.id}, ${report.estimated_points})">موافقة</button>
-                            <button class="btn btn-sm" style="background: var(--color-danger); color: white; border: none; cursor: pointer;" onclick="openRejectModal(${report.id})">رفض</button>
+                            <button class="btn btn-sm" style="background: var(--color-success); color: white; border: none; cursor: pointer;" onclick="openApproveModal('${report.id}', ${report.estimated_points})">موافقة</button>
+                            <button class="btn btn-sm" style="background: var(--color-danger); color: white; border: none; cursor: pointer;" onclick="openRejectModal('${report.id}')">رفض</button>
                         ` : ''}
-                        <button class="btn btn-sm" style="background: var(--color-accent); color: white; border: none; cursor: pointer;" onclick="viewReportDetails(${report.id})">عرض</button>
+                        <button class="btn btn-sm" style="background: var(--color-accent); color: white; border: none; cursor: pointer;" onclick="viewReportDetails('${report.id}')">عرض</button>
                     </div>
                 </td>
             </tr>
         `;
     }).join('');
+}
+
+// ==================== ربط البحث والفلاتر ====================
+function bindSearchAndFilters() {
+    const searchInput = document.getElementById('reportsSearch');
+    const statusFilter = document.getElementById('reportsStatusFilter');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', async (e) => {
+            const query = e.target.value;
+            if (query.length < 2) {
+                await loadPendingReports();
+                return;
+            }
+
+            try {
+                const results = await searchReports(query);
+                renderReportsToTable(results);
+            } catch (error) {
+                console.error('خطأ في البحث:', error);
+            }
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', async (e) => {
+            const status = e.target.value;
+            try {
+                let results;
+                if (status === 'all') {
+                    results = await getPendingReports();
+                } else {
+                    results = await searchReports('', status);
+                }
+                renderReportsToTable(results);
+            } catch (error) {
+                console.error('خطأ في الفلترة:', error);
+            }
+        });
+    }
 }
 
 // ==================== دوال مساعدة ====================
@@ -273,9 +241,47 @@ window.openRejectModal = function(reportId) {
 };
 
 // ==================== عرض تفاصيل البلاغ ====================
-window.viewReportDetails = function(reportId) {
-    // سيتم تنفيذه لاحقاً
-    console.log('عرض تفاصيل البلاغ:', reportId);
+window.viewReportDetails = async function(reportId) {
+    try {
+        // جلب البلاغ من البحث (أو يمكن جلب بياناته من Supabase مباشرة)
+        const results = await searchReports('');
+        const report = results.find(r => r.id === reportId);
+        
+        if (!report) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.id = 'viewReportModal';
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); z-index: 1000; display: flex; 
+            align-items: center; justify-content: center;
+        `;
+
+        modal.innerHTML = `
+            <div class="modal-content" style="background: var(--color-surface); padding: 2rem; border-radius: 1rem; width: 90%; max-width: 600px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="margin: 0;">تفاصيل البلاغ</h2>
+                    <button onclick="document.getElementById('viewReportModal').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text);">&times;</button>
+                </div>
+                <div style="display: grid; gap: 1rem;">
+                    <div><strong>العنوان:</strong> ${report.title}</div>
+                    <div><strong>النوع:</strong> ${report.problem_type}</div>
+                    <div><strong>درجة الخطورة:</strong> ${report.severity}</div>
+                    <div><strong>الحالة:</strong> ${getStatusText(report.status)}</div>
+                    <div><strong>الوصف:</strong><div style="background: var(--color-muted); padding: 1rem; border-radius: 0.5rem; margin-top: 0.5rem; white-space: pre-wrap;">${report.description}</div></div>
+                    ${report.rejection_reason ? `<div><strong>سبب الرفض:</strong> <span style="color: var(--color-danger);">${report.rejection_reason}</span></div>` : ''}
+                </div>
+                <div style="margin-top: 2rem; text-align: left;">
+                    <button class="btn btn-secondary" onclick="document.getElementById('viewReportModal').remove()">إغلاق</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    } catch (error) {
+        console.error('خطأ في عرض التفاصيل:', error);
+    }
 };
 
 // ==================== دالة الإشعار ====================
