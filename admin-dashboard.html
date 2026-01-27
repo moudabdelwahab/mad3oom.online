@@ -99,6 +99,7 @@
     <main class="dashboard-container" style="margin-top: 2rem;">
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="overview">إدارة التذاكر</div>
+            <div class="nav-tab" data-tab="rewards">إدارة المكافآت</div>
             <div class="nav-tab" data-tab="users">المستخدمين</div>
             <div class="nav-tab" data-tab="banned">المحظورين</div>
             <div class="nav-tab" data-tab="logs">سجل النشاطات</div>
@@ -118,6 +119,23 @@
             </div>
             <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
                 <table><thead><tr><th>المستخدم</th><th>العنوان</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody id="admTicketsBody"></tbody></table>
+            </div>
+        </div>
+
+        <div id="rewardsTab" class="tab-content">
+            <div class="page-header"><h1>إدارة المكافآت والبلاغات</h1></div>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-content"><p class="stat-label">البلاغات المعلقة</p><p class="stat-value" id="admPendingReports" style="color: var(--color-warning);">0</p></div></div>
+                <div class="stat-card"><div class="stat-content"><p class="stat-label">الموافق عليها</p><p class="stat-value" id="admApprovedReports" style="color: var(--color-success);">0</p></div></div>
+                <div class="stat-card"><div class="stat-content"><p class="stat-label">المرفوضة</p><p class="stat-value" id="admRejectedReports" style="color: var(--color-danger);">0</p></div></div>
+                <div class="stat-card"><div class="stat-content"><p class="stat-label">مستخدمي Pro</p><p class="stat-value" id="admProUsers" style="color: var(--color-accent);">0</p></div></div>
+            </div>
+            <div class="admin-controls">
+                <div class="search-box"><input type="text" id="reportsSearch" placeholder="بحث عن بلاغ..." ></div>
+                <select id="reportsStatusFilter"><option value="all">كل الحالات</option><option value="pending">معلقة</option><option value="approved">موافق عليها</option><option value="rejected">مرفوضة</option></select>
+            </div>
+            <div style="overflow-x: auto; background: var(--color-surface); border-radius: 1rem; box-shadow: var(--shadow-sm);">
+                <table><thead><tr><th>المستخدم</th><th>العنوان</th><th>النوع</th><th>درجة الخطورة</th><th>الحالة</th><th>النقاط</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody id="reportsTableBody"></tbody></table>
             </div>
         </div>
 
@@ -241,8 +259,10 @@
     <script type="module">
         import { supabase } from './api-config.js';
         import { requireAuth, logout, updateProfile, adminImpersonateUser, uploadAvatar, updatePassword, adminUpdateUserProfile } from './auth-client.js';
-        import { fetchUserTickets, updateTicketStatus, deleteTicket, fetchTicketStats, addTicketReply, fetchTicketReplies, subscribeToTickets } from './tickets-service.js';
+        import { fetchUserTickets, createTicket, fetchTicketStats, subscribeToTickets, fetchTicketReplies, addTicketReply } from './tickets-service.js';
         import { fetchNotifications, markAllAsRead, subscribeToNotifications } from './notifications-service.js';
+        import { initAdminRewards } from './admin-rewards.js';
+        import { addProBadgeToElement, injectProBadgeStyles } from './pro-badge.js';
 
         let user;
         try {
@@ -541,6 +561,10 @@
 
         renderAdminTickets();
         subscribeToTickets(renderAdminTickets);
+        
+        // تهيئة نظام إدارة المكافآت
+        initAdminRewards();
+        injectProBadgeStyles();
     </script>
 </body>
 </html>

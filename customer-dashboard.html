@@ -81,6 +81,7 @@
     <main class="dashboard-container" style="margin-top: 2rem;">
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="tickets">تذاكري</div>
+            <div class="nav-tab" data-tab="rewards">المكافآت والنقاط</div>
             <div class="nav-tab" data-tab="profile">الملف الشخصي</div>
         </div>
         
@@ -95,6 +96,112 @@
                 <div class="stat-card"><div class="stat-content"><p class="stat-label">المحلولة</p><p class="stat-value" id="userResolvedTickets" style="color: var(--color-success);">0</p></div></div>
             </div>
             <div id="userTicketsList" class="tickets-grid"></div>
+        </div>
+
+        <div id="rewardsTab" class="tab-content">
+            <div class="page-header"><h1>المكافآت والنقاط</h1></div>
+            
+            <!-- Wallet Section -->
+            <div class="stats-grid" style="margin-bottom: 2rem;">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <p class="stat-label">إجمالي النقاط</p>
+                        <p class="stat-value" id="rewardsTotalPoints">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <p class="stat-label">النقاط المتاحة</p>
+                        <p class="stat-value" id="rewardsAvailablePoints" style="color: var(--color-success);">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <p class="stat-label">قيد المراجعة</p>
+                        <p class="stat-value" id="rewardsPendingPoints" style="color: var(--color-warning);">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <p class="stat-label">مستوى العضوية</p>
+                        <p class="stat-value" id="rewardsMemberLevel" style="color: var(--color-accent);">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pro Badge Info -->
+            <div id="proBadgeInfo" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem; display: none;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1rem;">شارة Pro مفعلة! بالروعاية على نظامنا</h3>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">لقد وصلت إلى 1000 نقطة وأنت الآن عضو Pro متميز!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress to Pro -->
+            <div style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem; border: 1px solid var(--color-border);">
+                <h3>التقدم نحو عضوية Pro</h3>
+                <div style="margin-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>النقاط الحالية</span>
+                        <span><strong id="currentProPoints">0</strong> / 1000</span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: var(--color-muted); border-radius: 4px; overflow: hidden;">
+                        <div id="proProgressBar" style="height: 100%; background: linear-gradient(90deg, #fbbf24, #f59e0b); width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); margin-bottom: 2rem;">
+                <h3>البلاغات المقدمة</h3>
+                <div id="reportsListContainer" style="margin-top: 1rem;">
+                    <p class="empty-state">لا توجد بلاغات حتى الآن</p>
+                </div>
+            </div>
+
+            <!-- Report Form -->
+            <div style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border);">
+                <h3>إبلاغ عن مشكلة جديدة</h3>
+                <form id="newReportForm" style="margin-top: 1rem;">
+                    <div class="form-group">
+                        <label>نوع المشكلة</label>
+                        <select id="reportProblemType" class="form-control" required>
+                            <option value="">اختر نوع المشكلة</option>
+                            <option value="bug">خطأ برمجي (Bug)</option>
+                            <option value="performance">مشكلة في الأداء</option>
+                            <option value="ui">مشكلة في الواجهة</option>
+                            <option value="security">مشكلة أمان</option>
+                            <option value="feature">اقتراح ميزة جديدة</option>
+                            <option value="other">أخرى</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>درجة الخطورة</label>
+                        <select id="reportSeverity" class="form-control" required>
+                            <option value="">اختر درجة الخطورة</option>
+                            <option value="low">منخفضة (10 نقاط)</option>
+                            <option value="medium">متوسطة (25 نقطة)</option>
+                            <option value="high">عالية (50 نقطة)</option>
+                            <option value="critical">حرجة (100 نقطة)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>عنوان المشكلة</label>
+                        <input type="text" id="reportTitle" class="form-control" placeholder="اكتب عنواناً واضحاً" required>
+                    </div>
+                    <div class="form-group">
+                        <label>وصف تفصيلي</label>
+                        <textarea id="reportDescription" class="form-control" style="min-height: 120px;" placeholder="اشرح المشكلة بالتفصيل..." required></textarea>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <span id="estimatedReportPoints" style="padding: 0.75rem 1rem; background: var(--color-muted); border-radius: 0.5rem; font-weight: 600; color: var(--color-accent);">0 نقطة</span>
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">إرسال البلاغ</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div id="profileTab" class="tab-content">
@@ -173,6 +280,8 @@
         import { requireAuth, logout, updateProfile, uploadAvatar, updatePassword } from './auth-client.js';
         import { fetchUserTickets, createTicket, fetchTicketStats, subscribeToTickets, fetchTicketReplies, addTicketReply } from './tickets-service.js';
         import { fetchNotifications, markAllAsRead, subscribeToNotifications } from './notifications-service.js';
+        import { initRewardsDashboard } from './rewards-dashboard.js';
+        import { addProBadgeToElement, injectProBadgeStyles } from './pro-badge.js';
 
         let user;
         try {
@@ -201,9 +310,24 @@
                     document.getElementById('userInitial').style.display = 'none';
                     document.getElementById('profileAvatarPreview').src = profile.avatar_url;
                 }
+
+                // إضافة شارة Pro إذا كان المستخدم Pro
+                if (profile.is_pro || (profile.points >= 1000)) {
+                    const profileHeader = document.querySelector('.page-header h1');
+                    if (profileHeader) addProBadgeToElement(profileHeader, true);
+                    
+                    const navLogo = document.querySelector('.nav-logo span');
+                    if (navLogo) addProBadgeToElement(navLogo, true);
+                }
             }
         }
         updateUIWithUserData();
+        injectProBadgeStyles();
+        
+        // تهيئة نظام المكافآت
+        if (user) {
+            initRewardsDashboard(user);
+        }
 
         // الاستماع لتحديثات النقاط من Supabase
         if (user && user.id) {
