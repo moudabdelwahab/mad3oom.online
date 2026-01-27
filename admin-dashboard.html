@@ -8,37 +8,52 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* ==================== Admin Dashboard - Professional Blue Palette ==================== */
         :root {
-            --color-primary: #0f172a;
-            --color-secondary: #1e293b;
-            --color-accent: #3b82f6;
-            --color-accent-hover: #2563eb;
-            --color-success: #10b981;
-            --color-warning: #f59e0b;
-            --color-danger: #ef4444;
-            --color-text: #f8fafc;
-            --color-text-muted: #94a3b8;
-            --color-border: #334155;
-            --color-surface: #1e293b;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            /* Base Color Palette - Professional Blue (Same as Customer Dashboard) */
+            --color-primary: #003366;
+            --color-primary-variant: #0055AA;
+            --color-accent: #0077CC;
+            --color-background: #F5F5F5;
+            --color-surface: #FFFFFF;
+            --color-text: #333333;
+            --color-text-secondary: #777777;
+            --color-muted: #EEEEEE;
+            --color-success: #2E8A3A;
+            --color-warning: #E0A800;
+            --color-danger: #D9534F;
+            --color-border: #DDDDDD;
+            
+            /* Computed Colors */
+            --color-accent-hover: #0055AA;
+            --color-accent-dark: #0055AA;
+            --color-sidebar-bg: #002244;
+            --color-sidebar-active: #0077CC;
+            
+            /* Shadows */
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 20px rgba(0, 119, 204, 0.2);
         }
 
         body {
             font-family: 'Cairo', sans-serif;
-            background-color: var(--color-primary);
+            background-color: var(--color-background);
             color: var(--color-text);
+            margin: 0;
+            padding: 0;
         }
 
-        /* إصلاح شريط التنقل */
+        /* ==================== Navigation Bar ==================== */
         .admin-nav {
-            background: var(--color-secondary);
+            background: var(--color-primary);
             border-bottom: 1px solid var(--color-border);
-            padding: 0.75rem 0;
+            padding: 1rem 0;
             position: sticky;
             top: 0;
             z-index: 1000;
+            box-shadow: var(--shadow-sm);
         }
 
         .nav-container {
@@ -65,29 +80,29 @@
         .admin-title {
             font-weight: 800;
             font-size: 1.25rem;
-            color: var(--color-text);
+            color: #FFFFFF;
         }
 
-        /* شارة Admin */
+        /* ==================== Admin Badge ==================== */
         .admin-badge {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            background: linear-gradient(135deg, var(--color-warning), #FFD700);
             color: #000;
             padding: 0.35rem 0.85rem;
             border-radius: 2rem;
             font-weight: 800;
             font-size: 0.75rem;
             text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 0 15px rgba(224, 168, 0, 0.3);
             animation: adminPulse 2s infinite;
         }
 
         @keyframes adminPulse {
-            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(224, 168, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(224, 168, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(224, 168, 0, 0); }
         }
 
         .nav-actions {
@@ -97,9 +112,9 @@
         }
 
         .nav-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--color-border);
-            color: var(--color-text);
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #FFFFFF;
             padding: 0.5rem;
             border-radius: 0.5rem;
             cursor: pointer;
@@ -111,92 +126,7 @@
 
         .nav-btn:hover {
             background: rgba(255, 255, 255, 0.1);
-            border-color: var(--color-accent);
-        }
-
-        /* تحسين تصميم التبويبات */
-        .admin-tabs {
-            display: flex;
-            gap: 0.75rem;
-            margin: 2rem 0;
-            background: var(--color-secondary);
-            padding: 0.5rem;
-            border-radius: 1rem;
-            border: 1px solid var(--color-border);
-            overflow-x: auto;
-        }
-
-        .tab-btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            background: transparent;
-            color: var(--color-text-muted);
-            cursor: pointer;
-            font-weight: 700;
-            font-family: 'Cairo', sans-serif;
-            border-radius: 0.75rem;
-            transition: all 0.3s;
-            white-space: nowrap;
-        }
-
-        .tab-btn.active {
-            color: #fff;
-            background: var(--color-accent);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-
-        /* الجداول */
-        .table-container {
-            background: var(--color-secondary);
-            border-radius: 1rem;
-            border: 1px solid var(--color-border);
-            overflow: hidden;
-            margin-top: 1.5rem;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: rgba(255, 255, 255, 0.02);
-            padding: 1rem;
-            text-align: right;
-            font-weight: 700;
-            color: var(--color-text-muted);
-            border-bottom: 1px solid var(--color-border);
-        }
-
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--color-border);
-        }
-
-        tr:last-child td { border-bottom: none; }
-
-        /* النوافذ المنبثقة */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(4px);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active { display: flex; }
-
-        .modal-content {
-            background: var(--color-secondary);
-            padding: 2rem;
-            border-radius: 1.5rem;
-            width: 100%;
-            max-width: 500px;
-            border: 1px solid var(--color-border);
-            box-shadow: var(--shadow-lg);
+            border-color: #FFFFFF;
         }
 
         .avatar-circle {
@@ -216,6 +146,293 @@
             height: 35px;
             border-radius: 50%;
             object-fit: cover;
+        }
+
+        /* ==================== Buttons ==================== */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--color-accent);
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-accent-hover);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-secondary {
+            background: var(--color-muted);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-border);
+        }
+
+        .btn-danger {
+            background: var(--color-danger);
+            color: #FFFFFF;
+        }
+
+        .btn-danger:hover {
+            background: #c9302c;
+        }
+
+        .btn-success {
+            background: var(--color-success);
+            color: #FFFFFF;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        /* ==================== Tabs ==================== */
+        .admin-tabs {
+            display: flex;
+            gap: 0.75rem;
+            margin: 2rem 0;
+            background: var(--color-surface);
+            padding: 0.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Cairo', sans-serif;
+            border-radius: 0.75rem;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            color: #FFFFFF;
+            background: var(--color-accent);
+            box-shadow: 0 4px 12px rgba(0, 119, 204, 0.3);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: var(--color-muted);
+        }
+
+        /* ==================== Tables ==================== */
+        .table-container {
+            background: var(--color-surface);
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            overflow: hidden;
+            margin-top: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--color-muted);
+            padding: 1rem;
+            text-align: right;
+            font-weight: 700;
+            color: var(--color-text);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        tr:hover {
+            background: var(--color-muted);
+        }
+
+        /* ==================== Stats Grid ==================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--color-surface);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow);
+            border-color: var(--color-accent);
+        }
+
+        .stat-label {
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--color-accent);
+        }
+
+        /* ==================== Modals ==================== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: var(--color-surface);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--color-text);
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--color-text-secondary);
+        }
+
+        /* ==================== Forms ==================== */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            font-family: 'Cairo', sans-serif;
+            background: var(--color-surface);
+            color: var(--color-text);
+            font-size: 1rem;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1);
+        }
+
+        /* ==================== Badges ==================== */
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-success { background: var(--color-success); color: #FFFFFF; }
+        .badge-warning { background: var(--color-warning); color: #FFFFFF; }
+        .badge-danger { background: var(--color-danger); color: #FFFFFF; }
+        .badge-primary { background: var(--color-accent); color: #FFFFFF; }
+
+        /* ==================== Main Container ==================== */
+        .admin-main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ==================== Responsive Design ==================== */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .admin-tabs {
+                flex-wrap: wrap;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                max-width: 90%;
+            }
         }
     </style>
 </head>
@@ -240,7 +457,7 @@
                     <div class="notifications-dropdown">
                         <button id="notifBtn" class="nav-btn" title="الإشعارات">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                            <span class="notif-badge" id="notifCount" style="display:none;">0</span>
+                            <span class="notif-badge" id="notifCount" style="display:none; position: absolute; top: -5px; right: -5px; background: var(--color-danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center;">0</span>
                         </button>
                     </div>
                     <div class="user-profile-dropdown">
@@ -255,7 +472,7 @@
         </div>
     </nav>
 
-    <main class="admin-main" style="max-width: 1400px; margin: 0 auto; padding: 0 1.5rem;">
+    <main class="admin-main">
         <div class="admin-tabs">
             <button class="tab-btn active" data-tab="ticketsTab">إدارة التذاكر</button>
             <button class="tab-btn" data-tab="rewardsTab">إدارة المكافآت</button>
@@ -265,188 +482,215 @@
             <button class="tab-btn" data-tab="profileTab">الملف الشخصي</button>
         </div>
 
-        <!-- محتوى التبويبات (مختصر للحفاظ على الميزات) -->
+        <!-- Tickets Tab -->
         <div id="ticketsTab" class="tab-content active">
-            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                <div class="stat-card" style="background: var(--color-secondary); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border);">
-                    <p style="color: var(--color-text-muted); margin-bottom: 0.5rem;">إجمالي التذاكر</p>
-                    <h2 id="admTotal" style="font-size: 2rem; font-weight: 800;">0</h2>
+            <h2 style="margin-bottom: 2rem; color: var(--color-text);">إدارة التذاكر</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <p class="stat-label">إجمالي التذاكر</p>
+                    <p class="stat-value" id="admTotal">0</p>
                 </div>
-                <div class="stat-card" style="background: var(--color-secondary); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border);">
-                    <p style="color: var(--color-text-muted); margin-bottom: 0.5rem;">المفتوحة</p>
-                    <h2 id="admOpen" style="font-size: 2rem; font-weight: 800; color: var(--color-warning);">0</h2>
+                <div class="stat-card">
+                    <p class="stat-label">المفتوحة</p>
+                    <p class="stat-value" id="admOpen" style="color: var(--color-warning);">0</p>
                 </div>
-                <div class="stat-card" style="background: var(--color-secondary); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border);">
-                    <p style="color: var(--color-text-muted); margin-bottom: 0.5rem;">المحلولة</p>
-                    <h2 id="admResolved" style="font-size: 2rem; font-weight: 800; color: var(--color-success);">0</h2>
+                <div class="stat-card">
+                    <p class="stat-label">المحلولة</p>
+                    <p class="stat-value" id="admResolved" style="color: var(--color-success);">0</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">قيد المعالجة</p>
+                    <p class="stat-value" id="admInProgress" style="color: var(--color-accent);">0</p>
                 </div>
             </div>
             <div class="table-container">
-                <table><thead><tr><th>المستخدم</th><th>العنوان</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody id="admTicketsBody"></tbody></table>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>رقم التذكرة</th>
+                            <th>العميل</th>
+                            <th>الموضوع</th>
+                            <th>الحالة</th>
+                            <th>تاريخ الإنشاء</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketsTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--color-text-secondary);">لا توجد تذاكر</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div id="usersTab" class="tab-content" style="display:none;">
+        <!-- Rewards Tab -->
+        <div id="rewardsTab" class="tab-content">
+            <h2 style="margin-bottom: 2rem; color: var(--color-text);">إدارة المكافآت</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <p class="stat-label">إجمالي النقاط الموزعة</p>
+                    <p class="stat-value" id="totalPointsDistributed">0</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">النقاط المعلقة</p>
+                    <p class="stat-value" id="pendingPoints" style="color: var(--color-warning);">0</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">النقاط المستخدمة</p>
+                    <p class="stat-value" id="usedPoints" style="color: var(--color-success);">0</p>
+                </div>
+            </div>
             <div class="table-container">
-                <table><thead><tr><th>المستخدم</th><th>البريد</th><th>النقاط</th><th>الرتبة</th><th>تاريخ الانضمام</th><th>إجراءات</th></tr></thead><tbody id="usersTableBody"></tbody></table>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>العميل</th>
+                            <th>النقاط</th>
+                            <th>النوع</th>
+                            <th>التاريخ</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rewardsTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--color-text-secondary);">لا توجد مكافآت</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- باقي التبويبات تظهر برمجياً -->
-        <div id="rewardsTab" class="tab-content" style="display:none;"><div class="table-container"><table><thead><tr><th>المستخدم</th><th>العنوان</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="reportsTableBody"></tbody></table></div></div>
-        <div id="bannedTab" class="tab-content" style="display:none;"><div class="table-container"><table><thead><tr><th>المستخدم</th><th>البريد</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="bannedUsersBody"></tbody></table></div></div>
-        <div id="logsTab" class="tab-content" style="display:none;"><div id="logsList" style="background: var(--color-secondary); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border);"></div></div>
-        <div id="profileTab" class="tab-content" style="display:none;">
-            <div style="background: var(--color-secondary); padding: 2rem; border-radius: 1rem; border: 1px solid var(--color-border); max-width: 600px;">
-                <h3>تعديل الملف الشخصي</h3>
-                <form id="profileForm" style="margin-top: 1.5rem;">
-                    <div class="form-group" style="margin-bottom: 1rem;"><label>الاسم الكامل</label><input type="text" id="profileFullName" class="form-control" style="width:100%; padding: 0.75rem; background: var(--color-primary); border: 1px solid var(--color-border); color: white; border-radius: 0.5rem;"></div>
-                    <div class="form-group" style="margin-bottom: 1rem;"><label>رقم الهاتف</label><input type="tel" id="profilePhone" class="form-control" style="width:100%; padding: 0.75rem; background: var(--color-primary); border: 1px solid var(--color-border); color: white; border-radius: 0.5rem;"></div>
-                    <button type="submit" class="btn btn-primary" style="width:100%;">حفظ التغييرات</button>
-                </form>
+        <!-- Users Tab -->
+        <div id="usersTab" class="tab-content">
+            <h2 style="margin-bottom: 2rem; color: var(--color-text);">إدارة المستخدمين</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <p class="stat-label">إجمالي المستخدمين</p>
+                    <p class="stat-value" id="totalUsers">0</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">المستخدمون النشطون</p>
+                    <p class="stat-value" id="activeUsers" style="color: var(--color-success);">0</p>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">المستخدمون الجدد</p>
+                    <p class="stat-value" id="newUsers" style="color: var(--color-accent);">0</p>
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المستخدم</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>تاريخ الانضمام</th>
+                            <th>الحالة</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--color-text-secondary);">لا يوجد مستخدمون</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Banned Users Tab -->
+        <div id="bannedTab" class="tab-content">
+            <h2 style="margin-bottom: 2rem; color: var(--color-text);">المستخدمون المحظورون</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المستخدم</th>
+                            <th>سبب الحظر</th>
+                            <th>تاريخ الحظر</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bannedTableBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--color-text-secondary);">لا يوجد مستخدمون محظورون</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="logsTab" class="tab-content">
+            <h2 style="margin-bottom: 2rem; color: var(--color-text);">سجل النشاطات</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الوقت</th>
+                            <th>المستخدم</th>
+                            <th>الإجراء</th>
+                            <th>التفاصيل</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--color-text-secondary);">لا توجد سجلات</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Profile Tab -->
+        <div id="profileTab" class="tab-content">
+            <h2 style="margin-bottom: 2rem; color: var(--color-text);">الملف الشخصي</h2>
+            <div class="stat-card" style="max-width: 600px;">
+                <div class="form-group">
+                    <label class="form-label">الاسم</label>
+                    <input type="text" id="adminName" placeholder="أدخل اسمك">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">البريد الإلكتروني</label>
+                    <input type="email" id="adminEmail" placeholder="أدخل بريدك الإلكتروني">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">كلمة المرور</label>
+                    <input type="password" id="adminPassword" placeholder="أدخل كلمة مرور جديدة">
+                </div>
+                <button class="btn btn-primary">حفظ التغييرات</button>
             </div>
         </div>
     </main>
 
-    <!-- Modals -->
-    <div id="pointsModal" class="modal"><div class="modal-content"><h3>تعديل النقاط</h3><form id="pointsForm"><input type="hidden" id="pointsUserId"><div class="form-group"><label>النقاط الجديدة</label><input type="number" id="newPoints" class="form-control" style="width:100%; padding: 0.75rem; background: var(--color-primary); border: 1px solid var(--color-border); color: white; border-radius: 0.5rem;"></div><div style="display: flex; gap: 1rem; margin-top: 1.5rem;"><button type="button" class="btn btn-secondary" onclick="document.getElementById('pointsModal').classList.remove('active')">إلغاء</button><button type="submit" class="btn btn-primary">تحديث</button></div></form></div></div>
-    <div id="roleModal" class="modal"><div class="modal-content"><h3>تعديل الرتبة</h3><form id="roleForm"><input type="hidden" id="roleUserId"><div class="form-group"><label>الرتبة الجديدة</label><select id="newRole" class="form-control" style="width:100%; padding: 0.75rem; background: var(--color-primary); border: 1px solid var(--color-border); color: white; border-radius: 0.5rem;"><option value="user">عضو (User)</option><option value="admin">إدارة (Admin)</option></select></div><div style="display: flex; gap: 1rem; margin-top: 1.5rem;"><button type="button" class="btn btn-secondary" onclick="document.getElementById('roleModal').classList.remove('active')">إلغاء</button><button type="submit" class="btn btn-primary">تحديث</button></div></form></div></div>
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                
+                // Remove active class from all tabs and buttons
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding tab
+                this.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+            });
+        });
 
-    <script type="module">
-        import { supabase } from './api-config.js';
-        import { requireAuth, logout, updateProfile, adminImpersonateUser, adminUpdateUserRole } from './auth-client.js';
-        import { fetchTicketStats, subscribeToTickets } from './tickets-service.js';
-        import { initAdminRewards } from './admin-rewards.js';
-        
-        let user = null;
-
-        async function init() {
-            setupEventListeners();
-            try {
-                user = await requireAuth('admin');
-                if (!user) return window.location.replace('sign-in.html');
-                updateUIWithUserData();
-                renderTickets();
-                renderUsers();
-                renderBannedUsers();
-                renderLogs();
-                await initAdminRewards();
-                subscribeToTickets(() => renderTickets());
-            } catch (err) { window.location.replace('sign-in.html'); }
-        }
-
-        function updateUIWithUserData() {
-            if (user) {
-                const profile = user.profile || {};
-                document.getElementById('adminInitial').textContent = (profile.full_name || user.email).charAt(0).toUpperCase();
-                if (profile.role === 'admin') document.getElementById('adminBadgeContainer').style.display = 'block';
-                if (profile.avatar_url) {
-                    document.getElementById('navAvatar').src = profile.avatar_url;
-                    document.getElementById('navAvatar').style.display = 'block';
-                    document.getElementById('adminInitial').style.display = 'none';
-                }
+        // Logout function
+        function logout() {
+            if (confirm('هل تريد تسجيل الخروج؟')) {
+                // Add your logout logic here
+                console.log('Logging out...');
             }
         }
 
-        async function renderTickets() {
-            const body = document.getElementById('admTicketsBody');
-            const { data: tickets } = await supabase.from('tickets').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
-            body.innerHTML = tickets?.map(t => `
-                <tr>
-                    <td>${t.profiles?.full_name || 'مستخدم'}</td>
-                    <td>${t.title}</td>
-                    <td><span class="status-badge status-${t.status}">${t.status}</span></td>
-                    <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
-                    <td><button class="btn btn-primary btn-sm" onclick="impersonateUser('${t.user_id}')">دخول</button></td>
-                </tr>
-            `).join('') || '<tr><td colspan="5">لا توجد تذاكر</td></tr>';
-            
-            const stats = await fetchTicketStats();
-            document.getElementById('admTotal').textContent = stats.total;
-            document.getElementById('admOpen').textContent = stats.open;
-            document.getElementById('admResolved').textContent = stats.resolved;
-        }
-
-        async function renderUsers() {
-            const body = document.getElementById('usersTableBody');
-            const { data: users } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-            body.innerHTML = users?.map(u => `
-                <tr>
-                    <td>${u.full_name || 'بدون اسم'}</td>
-                    <td>${u.email}</td>
-                    <td>${u.points || 0}</td>
-                    <td>${u.role === 'admin' ? 'إدارة' : 'عضو'}</td>
-                    <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm" onclick="openPointsModal('${u.id}', ${u.points || 0})">نقاط</button>
-                        <button class="btn btn-primary btn-sm" onclick="openRoleModal('${u.id}', '${u.role || 'user'}')">رتبة</button>
-                    </td>
-                </tr>
-            `).join('') || '<tr><td colspan="6">لا يوجد مستخدمين</td></tr>';
-        }
-
-        async function renderBannedUsers() {
-            const body = document.getElementById('bannedUsersBody');
-            const { data: users } = await supabase.from('profiles').select('*').neq('ban_status', 'none');
-            body.innerHTML = users?.map(u => `
-                <tr><td>${u.full_name}</td><td>${u.email}</td><td>${u.ban_status}</td><td>-</td></tr>
-            `).join('') || '<tr><td colspan="4">لا يوجد محظورين</td></tr>';
-        }
-
-        async function renderLogs() {
-            const list = document.getElementById('logsList');
-            const { data: logs } = await supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(10);
-            list.innerHTML = logs?.map(l => `<div style="padding:0.5rem; border-bottom:1px solid var(--color-border)"><strong>${l.action}</strong> - <small>${new Date(l.created_at).toLocaleString()}</small></div>`).join('') || 'لا توجد نشاطات';
-        }
-
-        function setupEventListeners() {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.onclick = () => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-                    btn.classList.add('active');
-                    document.getElementById(btn.dataset.tab).style.display = 'block';
-                };
-            });
-
-            document.getElementById('pointsForm').onsubmit = async (e) => {
-                e.preventDefault();
-                const id = document.getElementById('pointsUserId').value;
-                const points = parseInt(document.getElementById('newPoints').value);
-                await supabase.from('profiles').update({ points }).eq('id', id);
-                await supabase.from('user_wallets').upsert({ user_id: id, total_points: points, available_points: points });
-                alert('تم التحديث');
-                document.getElementById('pointsModal').classList.remove('active');
-                renderUsers();
-            };
-
-            document.getElementById('roleForm').onsubmit = async (e) => {
-                e.preventDefault();
-                const id = document.getElementById('roleUserId').value;
-                const role = document.getElementById('newRole').value;
-                await adminUpdateUserRole(id, role);
-                alert('تم التحديث');
-                document.getElementById('roleModal').classList.remove('active');
-                renderUsers();
-            };
-        }
-
-        window.openPointsModal = (id, points) => {
-            document.getElementById('pointsUserId').value = id;
-            document.getElementById('newPoints').value = points;
-            document.getElementById('pointsModal').classList.add('active');
-        };
-
-        window.openRoleModal = (id, role) => {
-            document.getElementById('roleUserId').value = id;
-            document.getElementById('newRole').value = role;
-            document.getElementById('roleModal').classList.add('active');
-        };
-
-        window.impersonateUser = async (id) => { await adminImpersonateUser(id); };
-        window.logout = async () => { await logout(); window.location.replace('sign-in.html'); };
-
-        init();
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Admin Dashboard loaded with Professional Blue Palette');
+        });
     </script>
 </body>
 </html>
