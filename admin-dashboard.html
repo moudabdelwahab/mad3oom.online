@@ -228,17 +228,21 @@
                 console.log('Auth successful:', user.email);
                 updateUIWithUserData();
                 
-                // 3. تحميل البيانات بعد نجاح المصادقة
-                renderAdminTickets();
+                // 3. تحميل البيانات بشكل متوازي بعد نجاح المصادقة لسرعة الاستجابة
+                Promise.all([
+                    renderAdminTickets(),
+                    loadNotifications(),
+                    (async () => {
+                        try {
+                            await initAdminRewards();
+                            injectProBadgeStyles();
+                        } catch (e) { console.error('Rewards init error:', e); }
+                    })()
+                ]);
+
+                // 4. الاشتراك في التحديثات اللحظية
                 subscribeToTickets(renderAdminTickets);
-                loadNotifications();
                 subscribeToNotifications(loadNotifications);
-                
-                try {
-                    await initAdminRewards();
-                    injectProBadgeStyles();
-                    await import('./admin-rewards.js');
-                } catch (e) { console.error('Rewards init error:', e); }
 
             } catch (err) {
                 console.error('Authentication failed or timed out:', err);

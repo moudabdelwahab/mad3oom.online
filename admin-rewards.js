@@ -8,11 +8,11 @@ import {
 } from './rewards-service.js';
 
 export async function initAdminRewards() {
-    // تحميل الإحصائيات
-    await loadRewardsStats();
-
-    // تحميل البلاغات المعلقة
-    await loadPendingReports();
+    // تحميل الإحصائيات والبلاغات بشكل متوازي لسرعة الاستجابة
+    await Promise.all([
+        loadRewardsStats(),
+        loadPendingReports()
+    ]);
 
     // ربط البحث والفلاتر
     bindSearchAndFilters();
