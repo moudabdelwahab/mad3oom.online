@@ -291,15 +291,80 @@
 
         // تبديل التبويبات
         document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.onclick = () => {
+            tab.addEventListener('click', () => {
                 document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
                 tab.classList.add('active');
-                document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+                const targetTab = document.getElementById(tab.dataset.tab + 'Tab');
+                if (targetTab) targetTab.classList.add('active');
+                
                 if (tab.dataset.tab === 'users') renderUsers();
                 if (tab.dataset.tab === 'banned') renderBannedUsers();
                 if (tab.dataset.tab === 'logs') renderLogs();
-            };
+                if (tab.dataset.tab === 'rewards') {
+                    if (typeof initAdminRewards === 'function') initAdminRewards();
+                }
+            });
         });
+
+        // إدارة الإشعارات
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationBadge = document.getElementById('notificationBadge');
+        const notificationsList = document.getElementById('notificationsList');
+        const clearNotifications = document.getElementById('clearNotifications');
+
+        if (notificationBtn) {
+            notificationBtn.onclick = (e) => {
+                e.stopPropagation();
+                const isVisible = notificationDropdown.style.display === 'block';
+                notificationDropdown.style.display = isVisible ? 'none' : 'block';
+                if (!isVisible) loadNotifications();
+            };
+        }
+
+        async function loadNotifications() {
+            try {
+                const notifications = await fetchNotifications();
+                notificationBadge.textContent = notifications.filter(n => !n.is_read).length;
+                notificationBadge.style.display = notificationBadge.textContent > 0 ? 'flex' : 'none';
+                
+                notificationsList.innerHTML = notifications.length ? '' : '<div style="padding:1rem;text-align:center;color:var(--color-text-secondary);">لا توجد إشعارات</div>';
+                
+                notifications.forEach(n => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `padding: 0.75rem; border-bottom: 1px solid var(--color-border); cursor: pointer; background: ${n.is_read ? 'transparent' : 'rgba(59, 130, 246, 0.05)'}`;
+                    div.innerHTML = `
+                        <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">${n.message}</div>
+                        <div style="font-size: 0.75rem; color: var(--color-text-secondary);">${new Date(n.created_at).toLocaleString('ar-EG')}</div>
+                    `;
+                    notificationsList.appendChild(div);
+                });
+            } catch (err) { console.error('Notifications error:', err); }
+        }
+
+        if (clearNotifications) {
+            clearNotifications.onclick = async () => {
+                await markAllAsRead();
+                loadNotifications();
+            };
+        }
+
+        // إغلاق القوائم المنبثقة عند النقر في أي مكان آخر
+        window.onclick = () => {
+            if (notificationDropdown) notificationDropdown.style.display = 'none';
+        };
+
+        // زر الملف الشخصي في النافبار
+        const profileNavBtn = document.getElementById('profileNavBtn');
+        if (profileNavBtn) {
+            profileNavBtn.onclick = () => {
+                document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
+                const profileTabBtn = document.querySelector('.nav-tab[data-tab="profile"]');
+                const profileTabContent = document.getElementById('profileTab');
+                if (profileTabBtn) profileTabBtn.classList.add('active');
+                if (profileTabContent) profileTabContent.classList.add('active');
+            };
+        }
 
         // إدارة المستخدمين
         async function renderUsers() {
@@ -563,20 +628,29 @@
         document.getElementById('statusFilter').onchange = renderAdminTickets;
         document.getElementById('ticketSearch').oninput = renderAdminTickets;
         document.getElementById('userSearch').oninput = renderUsers;
-        document.getElementById('signOutBtn').onclick = async () => { await logout(); window.location.href = 'sign-in.html'; };
+        const signOutBtn = document.getElementById('signOutBtn');
+        if (signOutBtn) {
+            signOutBtn.onclick = async () => { 
+                await logout(); 
+                window.location.href = 'sign-in.html'; 
+            };
+        }
 
         renderAdminTickets();
         subscribeToTickets(renderAdminTickets);
+        loadNotifications();
+        subscribeToNotifications(loadNotifications);
         
         // تهيئة نظام إدارة المكافآت
-        await initAdminRewards();
-        injectProBadgeStyles();
-        
-        // تحميل الدوال من admin-rewards.js وتحويلها إلى window object
-        const adminRewardsModule = await import('./admin-rewards.js');
-        if (typeof window.openApproveModal === 'undefined') {
-            // الدوال معرفة بالفعل في admin-rewards.js
-            console.log('Admin rewards functions loaded');
+        try {
+            await initAdminRewards();
+            injectProBadgeStyles();
+            
+            // تحميل الدوال من admin-rewards.js وتحويلها إلى window object
+            await import('./admin-rewards.js');
+            console.log('Admin rewards system initialized');
+        } catch (err) {
+            console.error('Error initializing admin rewards:', err);
         }
     </script>
 </body>
