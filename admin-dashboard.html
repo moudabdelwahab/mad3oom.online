@@ -55,6 +55,31 @@
         .ban-badge { padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold; margin-right: 0.5rem; }
         .ban-temporary { background: #fef3c7; color: #92400e; }
         .ban-permanent { background: #fee2e2; color: #991b1b; }
+        
+        /* Admin Badge Styles */
+        .admin-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 10px rgba(217, 119, 6, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            white-space: nowrap;
+            animation: badgePulse 2s infinite;
+        }
+        .admin-badge svg { width: 12px; height: 12px; fill: currentColor; }
+        @keyframes badgePulse {
+            0% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(217, 119, 6, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+        }
     </style>
 </head>
 <body>
@@ -87,9 +112,15 @@
                     </div>
                 </div>
 
-                <div class="profile-nav-item" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" id="profileNavBtn">
-                    <img id="navAvatar" src="" style="width: 32px; height: 32px; border-radius: 50%; display: none; object-fit: cover;">
-                    <div style="width: 32px; height: 32px; background: var(--color-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;" id="adminInitial">A</div>
+                <div class="profile-nav-item" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" id="profileNavBtn">
+                    <div id="adminBadgeContainer" style="display: none;">
+                        <div class="admin-badge">
+                            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"></path></svg>
+                            Admin
+                        </div>
+                    </div>
+                    <img id="navAvatar" src="" style="width: 32px; height: 32px; border-radius: 50%; display: none; object-fit: cover; border: 2px solid var(--color-accent);">
+                    <div style="width: 32px; height: 32px; background: var(--color-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--color-accent);" id="adminInitial">A</div>
                 </div>
                 <button id="signOutBtn" class="btn btn-secondary btn-sm">خروج</button>
             </div>
@@ -262,6 +293,12 @@
                 document.getElementById('profileFullName').value = profile.full_name || '';
                 document.getElementById('profilePhone').value = profile.phone || '';
                 
+                // إظهار شارة Admin إذا كان المستخدم أدمن
+                const adminBadge = document.getElementById('adminBadgeContainer');
+                if (adminBadge && profile.role === 'admin') {
+                    adminBadge.style.display = 'block';
+                }
+
                 if (profile.avatar_url) {
                     document.getElementById('navAvatar').src = profile.avatar_url;
                     document.getElementById('navAvatar').style.display = 'block';
