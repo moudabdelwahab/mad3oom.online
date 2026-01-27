@@ -156,17 +156,23 @@ export async function approveReport(reportId, actualPoints) {
 
         if (updateError) throw updateError;
 
-        // الحصول على المحفظة الحالية
-        const wallet = await getUserWallet(report.user_id);
+        // الحصول على المحفظة الحالية (مباشرة من الجدول لضمان أحدث البيانات)
+        const { data: wallet, error: walletFetchError } = await supabase
+            .from('user_wallets')
+            .select('*')
+            .eq('user_id', report.user_id)
+            .single();
+
+        if (walletFetchError) throw walletFetchError;
 
         // تحديث المحفظة
-        const newTotalPoints = wallet.total_points + actualPoints;
-        const newAvailablePoints = wallet.available_points + actualPoints;
-        const newPendingPoints = Math.max(0, wallet.pending_points - report.estimated_points);
+        const newTotalPoints = (wallet.total_points || 0) + actualPoints;
+        const newAvailablePoints = (wallet.available_points || 0) + actualPoints;
+        const newPendingPoints = Math.max(0, (wallet.pending_points || 0) - (report.estimated_points || 0));
         const newMembershipLevel = calculateMembershipLevel(newTotalPoints);
         const isPro = newTotalPoints >= 1000;
 
-        const { error: walletError } = await supabase
+        const { error: walletUpdateError } = await supabase
             .from('user_wallets')
             .update({
                 total_points: newTotalPoints,
@@ -178,7 +184,7 @@ export async function approveReport(reportId, actualPoints) {
             })
             .eq('user_id', report.user_id);
 
-        if (walletError) throw walletError;
+        if (walletUpdateError) throw walletUpdateError;
 
         // تحديث ملف المستخدم
         const { error: profileError } = await supabase
