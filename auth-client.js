@@ -176,7 +176,7 @@ export async function requireAuth(requiredRole = 'user') {
 
 /**
  * تحديث بيانات البروفايل
- * مسموح فقط للحقول التي تسمح بها سياسات RLS (مثل full_name, phone)
+ * مسموح فقط للحقول التي تسمح بها سياسات RLS (مثل full_name, phone, avatar_url)
  */
 export async function updateProfile(updates) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -187,7 +187,38 @@ export async function updateProfile(updates) {
         .update(updates)
         .eq('id', user.id);
 
+    if (!error) {
+        await logActivity('profile_updated', updates);
+    }
+
     return { data, error };
+}
+
+/**
+ * رفع صورة البروفايل
+ */
+export async function uploadAvatar(file) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { data, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true
+        });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+    return publicUrl;
 }
 
 /**
@@ -204,12 +235,15 @@ export async function resetPasswordEmail(email) {
 }
 
 /**
- * تحديث كلمة المرور (تستخدم بعد النقر على رابط الإيميل)
+ * تحديث كلمة المرور (تستخدم بعد النقر على رابط الإيميل أو من داخل البروفايل)
  */
 export async function updatePassword(newPassword) {
     const { data, error } = await supabase.auth.updateUser({
         password: newPassword
     });
+    if (!error) {
+        await logActivity('password_changed');
+    }
     return { data, error };
 }
 

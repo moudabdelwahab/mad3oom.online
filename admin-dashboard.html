@@ -48,6 +48,9 @@
         .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
         .log-item { padding: 0.75rem; border-bottom: 1px solid var(--color-border); font-size: 0.9rem; }
         .log-time { color: var(--color-text-secondary); font-size: 0.8rem; }
+        .avatar-upload { position: relative; width: 100px; height: 100px; margin: 0 auto 2rem; }
+        .avatar-preview { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-accent); }
+        .avatar-edit-btn { position: absolute; bottom: 0; right: 0; background: var(--color-accent); color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--color-surface); }
     </style>
 </head>
 <body>
@@ -81,6 +84,7 @@
                 </div>
 
                 <div class="profile-nav-item" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" id="profileNavBtn">
+                    <img id="navAvatar" src="" style="width: 32px; height: 32px; border-radius: 50%; display: none; object-fit: cover;">
                     <div style="width: 32px; height: 32px; background: var(--color-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;" id="adminInitial">A</div>
                 </div>
                 <button id="signOutBtn" class="btn btn-secondary btn-sm">خروج</button>
@@ -128,11 +132,26 @@
         <div id="profileTab" class="tab-content">
             <div class="page-header"><h1>الملف الشخصي</h1></div>
             <div class="profile-section">
+                <div class="avatar-upload">
+                    <img id="profileAvatarPreview" src="https://via.placeholder.com/100" class="avatar-preview">
+                    <label for="avatarInput" class="avatar-edit-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </label>
+                    <input type="file" id="avatarInput" style="display: none;" accept="image/*">
+                </div>
                 <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 0.5rem;"></div>
                 <form id="profileForm" class="profile-form">
-                    <div class="form-group"><label>الاسم الكامل</label><input type="text" id="profileFullName" class="form-control"></div>
+                    <div class="form-group"><label>الاسم الكامل</label><input type="text" id="profileFullName" class="form-control" required></div>
                     <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="profileEmail" class="form-control" disabled></div>
+                    <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك"></div>
                     <button type="submit" class="btn btn-primary" id="saveProfileBtn">حفظ التغييرات</button>
+                </form>
+                <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--color-border);">
+                <h3>تغيير كلمة المرور</h3>
+                <form id="changePasswordForm" style="margin-top: 1rem; max-width: 600px;">
+                    <div class="form-group"><label>كلمة المرور الجديدة</label><input type="password" id="newPassword" class="form-control" required minlength="6"></div>
+                    <div class="form-group"><label>تأكيد كلمة المرور</label><input type="password" id="confirmPassword" class="form-control" required minlength="6"></div>
+                    <button type="submit" class="btn btn-secondary" style="width: 100%;">تحديث كلمة المرور</button>
                 </form>
             </div>
         </div>
@@ -156,11 +175,9 @@
     </div>
 
     <script type="module">
-        import { requireAuth, logout, updateProfile, adminImpersonateUser } from './auth-client.js';
+        import { requireAuth, logout, updateProfile, adminImpersonateUser, uploadAvatar, updatePassword } from './auth-client.js';
         import { fetchUserTickets, updateTicketStatus, deleteTicket, fetchTicketStats, addTicketReply, fetchTicketReplies, subscribeToTickets } from './tickets-service.js';
         import { fetchNotifications, markAllAsRead, subscribeToNotifications } from './notifications-service.js';
-        import { fetchActivityLogs } from './activity-service.js';
-        import { supabase } from './api-config.js';
 
         let user;
         try {
@@ -168,115 +185,135 @@
             if (!user) window.location.replace('sign-in.html');
         } catch (err) { window.location.replace('sign-in.html'); }
 
-        if (user) {
-            const name = user.profile?.full_name || user.email;
-            document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
-            document.getElementById('profileEmail').value = user.email;
-            document.getElementById('profileFullName').value = user.profile?.full_name || '';
+        function updateUIWithUserData() {
+            if (user) {
+                const profile = user.profile || {};
+                const name = profile.full_name || user.email;
+                document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
+                document.getElementById('profileEmail').value = profile.email || user.email;
+                document.getElementById('profileFullName').value = profile.full_name || '';
+                document.getElementById('profilePhone').value = profile.phone || '';
+                
+                if (profile.avatar_url) {
+                    document.getElementById('navAvatar').src = profile.avatar_url;
+                    document.getElementById('navAvatar').style.display = 'block';
+                    document.getElementById('adminInitial').style.display = 'none';
+                    document.getElementById('profileAvatarPreview').src = profile.avatar_url;
+                }
+            }
         }
+        updateUIWithUserData();
 
-        function switchTab(tabName) {
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `${tabName}Tab`));
-            if (tabName === 'users') loadUsers();
-            if (tabName === 'overview') loadAdminTickets();
-            if (tabName === 'logs') loadLogs();
-        }
+        // تبديل التبويبات
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.onclick = () => {
+                document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+            };
+        });
 
-        document.querySelectorAll('.nav-tab').forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
-        document.getElementById('signOutBtn').onclick = async () => { if (confirm('خروج؟')) { await logout(); window.location.href = 'sign-in.html'; } };
+        // تحديث البروفايل
+        document.getElementById('profileForm').onsubmit = async (e) => {
+            e.preventDefault();
+            try {
+                await updateProfile({
+                    full_name: document.getElementById('profileFullName').value,
+                    phone: document.getElementById('profilePhone').value
+                });
+                alert('تم تحديث البيانات بنجاح');
+                user.profile.full_name = document.getElementById('profileFullName').value;
+                user.profile.phone = document.getElementById('profilePhone').value;
+                updateUIWithUserData();
+            } catch (err) { alert('خطأ في التحديث'); }
+        };
 
-        async function loadAdminTickets() {
-            const tbody = document.getElementById('admTicketsBody');
+        // تغيير كلمة المرور
+        document.getElementById('changePasswordForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const pass = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            if (pass !== confirm) return alert('كلمات المرور غير متطابقة');
+            try {
+                await updatePassword(pass);
+                alert('تم تغيير كلمة المرور بنجاح');
+                e.target.reset();
+            } catch (err) { alert('خطأ في تغيير كلمة المرور'); }
+        };
+
+        // رفع الصورة
+        document.getElementById('avatarInput').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const url = await uploadAvatar(file);
+                await updateProfile({ avatar_url: url });
+                user.profile.avatar_url = url;
+                updateUIWithUserData();
+                alert('تم تحديث صورة الملف الشخصي');
+            } catch (err) { alert('خطأ في رفع الصورة'); }
+        };
+
+        // إدارة التذاكر (الأدمن)
+        async function renderAdminTickets() {
+            const body = document.getElementById('admTicketsBody');
+            const tickets = await fetchUserTickets({
+                status: document.getElementById('statusFilter').value,
+                search: document.getElementById('ticketSearch').value
+            });
+            body.innerHTML = tickets.length ? '' : '<tr><td colspan="5" style="text-align:center;padding:2rem;">لا توجد تذاكر</td></tr>';
+            tickets.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${t.profiles?.full_name || t.profiles?.email}</td>
+                    <td>${t.title}</td>
+                    <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+                    <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="openReplyModal('${t.id}', '${t.title}')">رد</button>
+                        <button class="btn btn-primary btn-sm" onclick="impersonateUser('${t.user_id}')">دخول كعميل</button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
             const stats = await fetchTicketStats();
             document.getElementById('admTotal').textContent = stats.total;
             document.getElementById('admOpen').textContent = stats.open;
             document.getElementById('admResolved').textContent = stats.resolved;
-            const tickets = await fetchUserTickets({ status: document.getElementById('statusFilter').value, search: document.getElementById('ticketSearch').value });
-            tbody.innerHTML = tickets.length ? '' : '<tr><td colspan="5" style="text-align:center;">لا توجد تذاكر</td></tr>';
-            tickets.forEach(t => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${t.profiles?.full_name || t.profiles?.email}</td><td>${t.title}</td><td><span class="status-badge status-${t.status}">${t.status}</span></td><td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td><td><div style="display:flex;gap:0.5rem;"><button class="btn btn-primary btn-sm" onclick="window.openReply('${t.id}', '${t.title}')">رد</button><button class="btn btn-secondary btn-sm" onclick="window.updateStatus('${t.id}', 'resolved')">حل</button></div></td>`;
-                tbody.appendChild(tr);
-            });
         }
 
-        async function loadUsers() {
-            const tbody = document.getElementById('usersTableBody');
-            const { data: users } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-            tbody.innerHTML = '';
-            users.forEach(u => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${u.full_name || 'بدون اسم'}</td><td>${u.email}</td><td>${u.role}</td><td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td><td><button class="btn btn-secondary btn-sm" onclick="window.impersonate('${u.id}')">دخول</button></td>`;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function loadLogs() {
-            const list = document.getElementById('logsList');
-            const logs = await fetchActivityLogs();
-            list.innerHTML = logs.length ? '' : '<p>لا توجد سجلات</p>';
-            logs.forEach(l => {
-                const div = document.createElement('div');
-                div.className = 'log-item';
-                div.innerHTML = `<span class="log-time">${new Date(l.created_at).toLocaleString('ar-EG')}</span> | <strong>${l.profiles?.full_name || 'System'}</strong>: ${l.action} (${JSON.stringify(l.details)})`;
-                list.appendChild(div);
-            });
-        }
-
-        let currentTicketId = null;
-        window.openReply = async (id, title) => {
-            currentTicketId = id;
+        window.openReplyModal = async (id, title) => {
+            const modal = document.getElementById('replyModal');
             document.getElementById('modalTicketTitle').textContent = title;
-            document.getElementById('replyModal').classList.add('active');
+            modal.classList.add('active');
             const list = document.getElementById('repliesList');
+            list.innerHTML = 'جاري التحميل...';
             const replies = await fetchTicketReplies(id);
             list.innerHTML = '';
             replies.forEach(r => {
                 const div = document.createElement('div');
                 div.className = `reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'} ${r.is_internal ? 'reply-internal' : ''}`;
-                div.innerHTML = `<div style="font-size:0.8rem;margin-bottom:0.5rem;"><strong>${r.profiles?.full_name}</strong> ${r.is_internal ? '(ملاحظة داخلية)' : ''}</div><div>${r.message}</div>`;
+                div.innerHTML = `<div><strong>${r.profiles?.full_name}</strong> ${r.is_internal ? '(ملاحظة داخلية)' : ''}</div><div>${r.message}</div>`;
                 list.appendChild(div);
             });
+            document.getElementById('replyForm').onsubmit = async (e) => {
+                e.preventDefault();
+                await addTicketReply(id, document.getElementById('replyMessage').value, document.getElementById('isInternal').checked);
+                modal.classList.remove('active');
+                renderAdminTickets();
+            };
         };
 
-        document.getElementById('replyForm').onsubmit = async (e) => {
-            e.preventDefault();
-            await addTicketReply(currentTicketId, document.getElementById('replyMessage').value, document.getElementById('isInternal').checked);
-            document.getElementById('replyMessage').value = '';
-            window.openReply(currentTicketId, document.getElementById('modalTicketTitle').textContent);
+        window.impersonateUser = async (id) => {
+            try { await adminImpersonateUser(id); } catch (err) { alert('خطأ في الدخول كعميل'); }
         };
 
-        window.updateStatus = async (id, status) => { await updateTicketStatus(id, status); loadAdminTickets(); };
-        window.impersonate = (id) => adminImpersonateUser(id);
+        document.getElementById('statusFilter').onchange = renderAdminTickets;
+        document.getElementById('ticketSearch').oninput = renderAdminTickets;
+        document.getElementById('signOutBtn').onclick = async () => { await logout(); window.location.href = 'sign-in.html'; };
 
-        async function loadNotifications() {
-            const list = document.getElementById('notificationsList');
-            const badge = document.getElementById('notificationBadge');
-            const notes = await fetchNotifications();
-            const unread = notes.filter(n => !n.is_read).length;
-            badge.style.display = unread ? 'flex' : 'none';
-            badge.textContent = unread;
-            list.innerHTML = notes.length ? '' : '<p style="text-align:center;padding:1rem;">لا توجد إشعارات</p>';
-            notes.forEach(n => {
-                const div = document.createElement('div');
-                div.style.padding = '0.75rem'; div.style.borderBottom = '1px solid var(--color-border)';
-                div.innerHTML = `<div style="font-size:0.9rem; font-weight:${n.is_read ? 'normal' : 'bold'}">${n.message}</div>`;
-                list.appendChild(div);
-            });
-        }
-
-        document.getElementById('notificationBtn').onclick = (e) => {
-            e.stopPropagation();
-            const dropdown = document.getElementById('notificationDropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-            if (dropdown.style.display === 'block') markAllAsRead().then(loadNotifications);
-        };
-
-        subscribeToNotifications(user.id, loadNotifications);
-        subscribeToTickets(loadAdminTickets);
-        loadAdminTickets();
-        loadNotifications();
+        renderAdminTickets();
+        subscribeToTickets(renderAdminTickets);
     </script>
 </body>
 </html>

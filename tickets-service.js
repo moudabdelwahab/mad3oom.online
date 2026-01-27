@@ -103,7 +103,6 @@ export async function uploadTicketImage(file) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // تنظيف اسم الملف من الحروف غير الصالحة
     const fileExt = file.name.split('.').pop();
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
@@ -119,7 +118,6 @@ export async function uploadTicketImage(file) {
 
     if (uploadError) {
         console.error('Upload error details:', uploadError);
-        // إذا كان الخطأ بسبب عدم وجود الـ Bucket، نحاول توضيح ذلك
         if (uploadError.message?.includes('bucket not found') || uploadError.error === 'Bucket not found') {
             throw new Error(`Storage Bucket 'tickets' غير موجود. يرجى إنشاؤه في Supabase وجعله Public.`);
         }
