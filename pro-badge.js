@@ -1,1 +1,274 @@
-// pro-badge.js - إدارة ميزة شارة Pro التلقائية عند الوصول لـ 1000 نقطة\n\n/**\n * شارة Pro:\n * - تظهر تلقائياً عند الوصول لـ 1000 نقطة\n * - تظهر جنب اسم المستخدم في جميع الصفحات\n * - تعطي مزايا خاصة للمستخدم\n */\n\n// ==================== إضافة شارة Pro إلى العناصر ====================\nexport function addProBadgeToElement(element, isPro = false) {\n    if (!element) return;\n\n    // إزالة الشارة القديمة إن وجدت\n    const oldBadge = element.querySelector('.pro-badge');\n    if (oldBadge) oldBadge.remove();\n\n    if (isPro) {\n        const badge = document.createElement('span');\n        badge.className = 'pro-badge';\n        badge.innerHTML = `\n            <svg viewBox=\"0 0 24 24\" fill=\"currentColor\" style=\"width: 16px; height: 16px; display: inline-block; margin-right: 0.25rem;\">\n                <path d=\"M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z\"></path>\n            </svg>\n            Pro\n        `;\n        badge.style.cssText = `\n            display: inline-flex;\n            align-items: center;\n            gap: 0.25rem;\n            padding: 0.25rem 0.75rem;\n            background: linear-gradient(135deg, #fbbf24, #f59e0b);\n            color: white;\n            border-radius: 1rem;\n            font-size: 0.75rem;\n            font-weight: 700;\n            margin-left: 0.5rem;\n            white-space: nowrap;\n        `;\n        element.appendChild(badge);\n    }\n}\n\n// ==================== تحديث شارة Pro في الملف الشخصي ====================\nexport function updateProBadgeInProfile(userName, isPro = false) {\n    // تحديث في لوحة العميل\n    const profileNameElement = document.querySelector('.profile-name, [data-profile-name]');\n    if (profileNameElement) {\n        addProBadgeToElement(profileNameElement, isPro);\n    }\n\n    // تحديث في شريط الملاحة\n    const navUserElement = document.querySelector('.nav-user-name, .profile-nav-item');\n    if (navUserElement) {\n        addProBadgeToElement(navUserElement, isPro);\n    }\n}\n\n// ==================== تحديث شارة Pro في البطاقات ====================\nexport function updateProBadgeInCards(userId, isPro = false) {\n    // تحديث في قائمة المستخدمين (Admin)\n    const userRows = document.querySelectorAll('table tbody tr');\n    userRows.forEach(row => {\n        const userCell = row.querySelector('td:first-child');\n        if (userCell && userCell.textContent.includes(userId)) {\n            addProBadgeToElement(userCell, isPro);\n        }\n    });\n}\n\n// ==================== عرض إشعار شارة Pro ====================\nexport function showProBadgeNotification(userName) {\n    const notification = document.createElement('div');\n    notification.style.cssText = `\n        position: fixed;\n        top: 50%;\n        left: 50%;\n        transform: translate(-50%, -50%);\n        background: linear-gradient(135deg, #fbbf24, #f59e0b);\n        color: white;\n        padding: 2rem;\n        border-radius: 1rem;\n        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);\n        z-index: 10001;\n        text-align: center;\n        max-width: 400px;\n        animation: proBadgePopup 0.5s ease;\n    `;\n\n    notification.innerHTML = `\n        <div style=\"font-size: 3rem; margin-bottom: 1rem;\">\n            <svg viewBox=\"0 0 24 24\" fill=\"currentColor\" style=\"width: 60px; height: 60px; display: inline-block;\">\n                <path d=\"M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z\"></path>\n            </svg>\n        </div>\n        <h2 style=\"margin: 0 0 0.5rem 0; font-size: 1.5rem;\">تهانينا!</h2>\n        <p style=\"margin: 0 0 1rem 0; font-size: 1rem; opacity: 0.9;\">لقد وصلت إلى 1000 نقطة وأصبحت عضو Pro متميز!</p>\n        <p style=\"margin: 0; font-size: 0.9rem; opacity: 0.8;\">استمتع بالمزايا الحصرية والدعم الأولوي</p>\n    `;\n\n    // إضافة أنماط الحركة\n    const style = document.createElement('style');\n    style.textContent = `\n        @keyframes proBadgePopup {\n            from {\n                opacity: 0;\n                transform: translate(-50%, -50%) scale(0.5);\n            }\n            to {\n                opacity: 1;\n                transform: translate(-50%, -50%) scale(1);\n            }\n        }\n        @keyframes proBadgeFadeOut {\n            from {\n                opacity: 1;\n                transform: translate(-50%, -50%) scale(1);\n            }\n            to {\n                opacity: 0;\n                transform: translate(-50%, -50%) scale(0.5);\n            }\n        }\n    `;\n    if (!document.querySelector('style[data-pro-badge]')) {\n        style.setAttribute('data-pro-badge', 'true');\n        document.head.appendChild(style);\n    }\n\n    document.body.appendChild(notification);\n\n    // إزالة الإشعار بعد 4 ثوان\n    setTimeout(() => {\n        notification.style.animation = 'proBadgeFadeOut 0.5s ease';\n        setTimeout(() => notification.remove(), 500);\n    }, 4000);\n}\n\n// ==================== تحديث حالة Pro في الملف الشخصي ====================\nexport async function updateProStatusInProfile(user, wallet) {\n    if (!user || !wallet) return;\n\n    const isPro = wallet.is_pro || wallet.total_points >= 1000;\n\n    // تحديث في قاعدة البيانات\n    if (isPro && !wallet.is_pro) {\n        // إذا كان يجب تحديث حالة Pro\n        try {\n            const { error } = await supabase\n                .from('profiles')\n                .update({ is_pro: true })\n                .eq('id', user.id);\n\n            if (error) throw error;\n\n            // عرض الإشعار\n            showProBadgeNotification(user.email);\n        } catch (error) {\n            console.error('خطأ في تحديث حالة Pro:', error);\n        }\n    }\n\n    // تحديث الواجهة\n    updateProBadgeInProfile(user.email, isPro);\n}\n\n// ==================== إضافة شارة Pro إلى التعليقات والردود ====================\nexport function addProBadgeToComments(userId, isPro = false) {\n    const userComments = document.querySelectorAll(`[data-user-id=\"${userId}\"]`);\n    userComments.forEach(comment => {\n        addProBadgeToElement(comment, isPro);\n    });\n}\n\n// ==================== إضافة شارة Pro إلى الملف الشخصي العام ====================\nexport function addProBadgeToPublicProfile(profileElement, isPro = false) {\n    if (!profileElement) return;\n\n    const profileHeader = profileElement.querySelector('.profile-header, .profile-info');\n    if (profileHeader) {\n        addProBadgeToElement(profileHeader, isPro);\n    }\n}\n\n// ==================== تحديث شارة Pro عند تحديث النقاط ====================\nexport function subscribeToProBadgeUpdates(userId, onProStatusChange) {\n    // هذا سيتم تنفيذه من خلال Supabase Real-time\n    // للاستماع لتحديثات النقاط والحالة\n    \n    if (typeof supabase === 'undefined') return;\n\n    supabase\n        .on('postgres_changes', {\n            event: 'UPDATE',\n            schema: 'public',\n            table: 'profiles',\n            filter: `id=eq.${userId}`\n        }, (payload) => {\n            if (payload.new.is_pro !== payload.old.is_pro) {\n                if (payload.new.is_pro) {\n                    showProBadgeNotification(payload.new.email);\n                }\n                if (onProStatusChange) {\n                    onProStatusChange(payload.new.is_pro);\n                }\n            }\n        })\n        .subscribe();\n}\n\n// ==================== إضافة CSS لشارة Pro ====================\nexport function injectProBadgeStyles() {\n    const style = document.createElement('style');\n    style.setAttribute('data-pro-badge-styles', 'true');\n    style.textContent = `\n        .pro-badge {\n            display: inline-flex;\n            align-items: center;\n            gap: 0.25rem;\n            padding: 0.25rem 0.75rem;\n            background: linear-gradient(135deg, #fbbf24, #f59e0b);\n            color: white;\n            border-radius: 1rem;\n            font-size: 0.75rem;\n            font-weight: 700;\n            margin-left: 0.5rem;\n            white-space: nowrap;\n            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);\n            animation: proBadgeGlow 2s ease-in-out infinite;\n        }\n\n        @keyframes proBadgeGlow {\n            0%, 100% {\n                box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);\n            }\n            50% {\n                box-shadow: 0 4px 16px rgba(251, 191, 36, 0.6);\n            }\n        }\n\n        .pro-badge svg {\n            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));\n        }\n\n        /* شارة Pro في البطاقات */\n        .ticket-card.pro-user::before,\n        .user-card.pro-user::before {\n            content: '';\n            position: absolute;\n            top: -8px;\n            right: -8px;\n            width: 24px;\n            height: 24px;\n            background: linear-gradient(135deg, #fbbf24, #f59e0b);\n            border-radius: 50%;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);\n        }\n\n        /* شارة Pro في الجداول */\n        table tbody tr.pro-user td:first-child::after {\n            content: '★';\n            color: #fbbf24;\n            font-weight: bold;\n            margin-left: 0.5rem;\n        }\n    `;\n\n    if (!document.querySelector('style[data-pro-badge-styles]')) {\n        document.head.appendChild(style);\n    }\n}\n\n// ==================== تصدير الدوال ====================\nexport default {\n    addProBadgeToElement,\n    updateProBadgeInProfile,\n    updateProBadgeInCards,\n    showProBadgeNotification,\n    updateProStatusInProfile,\n    addProBadgeToComments,\n    addProBadgeToPublicProfile,\n    subscribeToProBadgeUpdates,\n    injectProBadgeStyles\n};\n
+// pro-badge.js - إدارة ميزة شارة Pro التلقائية عند الوصول لـ 1000 نقطة
+
+/**
+ * شارة Pro:
+ * - تظهر تلقائياً عند الوصول لـ 1000 نقطة
+ * - تظهر جنب اسم المستخدم في جميع الصفحات
+ * - تعطي مزايا خاصة للمستخدم
+ */
+
+// ==================== إضافة شارة Pro إلى العناصر ====================
+export function addProBadgeToElement(element, isPro = false) {
+    if (!element) return;
+
+    // إزالة الشارة القديمة إن وجدت
+    const oldBadge = element.querySelector('.pro-badge');
+    if (oldBadge) oldBadge.remove();
+
+    if (isPro) {
+        const badge = document.createElement('span');
+        badge.className = 'pro-badge';
+        badge.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 16px; height: 16px; display: inline-block; margin-right: 0.25rem;">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+            </svg>
+            Pro
+        `;
+        badge.style.cssText = `
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        `;
+        element.appendChild(badge);
+    }
+}
+
+// ==================== تحديث شارة Pro في الملف الشخصي ====================
+export function updateProBadgeInProfile(userName, isPro = false) {
+    // تحديث في لوحة العميل
+    const profileNameElement = document.querySelector('.profile-name, [data-profile-name]');
+    if (profileNameElement) {
+        addProBadgeToElement(profileNameElement, isPro);
+    }
+
+    // تحديث في شريط الملاحة
+    const navUserElement = document.querySelector('.nav-user-name, .profile-nav-item');
+    if (navUserElement) {
+        addProBadgeToElement(navUserElement, isPro);
+    }
+}
+
+// ==================== تحديث شارة Pro في البطاقات ====================
+export function updateProBadgeInCards(userId, isPro = false) {
+    // تحديث في قائمة المستخدمين (Admin)
+    const userRows = document.querySelectorAll('table tbody tr');
+    userRows.forEach(row => {
+        const userCell = row.querySelector('td:first-child');
+        if (userCell && userCell.textContent.includes(userId)) {
+            addProBadgeToElement(userCell, isPro);
+        }
+    });
+}
+
+// ==================== عرض إشعار شارة Pro ====================
+export function showProBadgeNotification(userName) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        z-index: 10001;
+        text-align: center;
+        max-width: 400px;
+        animation: proBadgePopup 0.5s ease;
+    `;
+
+    notification.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 1rem;">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 60px; height: 60px; display: inline-block;">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+            </svg>
+        </div>
+        <h2 style="margin: 0 0 0.5rem 0; font-size: 1.5rem;">تهانينا!</h2>
+        <p style="margin: 0 0 1rem 0; font-size: 1rem; opacity: 0.9;">لقد وصلت إلى 1000 نقطة وأصبحت عضو Pro متميز!</p>
+        <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">استمتع بالمزايا الحصرية والدعم الأولوي</p>
+    `;
+
+    // إضافة أنماط الحركة
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes proBadgePopup {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        @keyframes proBadgeFadeOut {
+            from {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+        }
+    `;
+    if (!document.querySelector('style[data-pro-badge]')) {
+        style.setAttribute('data-pro-badge', 'true');
+        document.head.appendChild(style);
+    }
+
+    document.body.appendChild(notification);
+
+    // إزالة الإشعار بعد 4 ثوان
+    setTimeout(() => {
+        notification.style.animation = 'proBadgeFadeOut 0.5s ease';
+        setTimeout(() => notification.remove(), 500);
+    }, 4000);
+}
+
+// ==================== تحديث حالة Pro في الملف الشخصي ====================
+export async function updateProStatusInProfile(user, wallet) {
+    if (!user || !wallet) return;
+
+    const isPro = wallet.is_pro || wallet.total_points >= 1000;
+
+    // تحديث في قاعدة البيانات
+    if (isPro && !wallet.is_pro) {
+        // إذا كان يجب تحديث حالة Pro
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ is_pro: true })
+                .eq('id', user.id);
+
+            if (error) throw error;
+
+            // عرض الإشعار
+            showProBadgeNotification(user.email);
+        } catch (error) {
+            console.error('خطأ في تحديث حالة Pro:', error);
+        }
+    }
+
+    // تحديث الواجهة
+    updateProBadgeInProfile(user.email, isPro);
+}
+
+// ==================== إضافة شارة Pro إلى التعليقات والردود ====================
+export function addProBadgeToComments(userId, isPro = false) {
+    const userComments = document.querySelectorAll(`[data-user-id="${userId}"]`);
+    userComments.forEach(comment => {
+        addProBadgeToElement(comment, isPro);
+    });
+}
+
+// ==================== إضافة شارة Pro إلى الملف الشخصي العام ====================
+export function addProBadgeToPublicProfile(profileElement, isPro = false) {
+    if (!profileElement) return;
+
+    const profileHeader = profileElement.querySelector('.profile-header, .profile-info');
+    if (profileHeader) {
+        addProBadgeToElement(profileHeader, isPro);
+    }
+}
+
+// ==================== تحديث شارة Pro عند تحديث النقاط ====================
+export function subscribeToProBadgeUpdates(userId, onProStatusChange) {
+    // هذا سيتم تنفيذه من خلال Supabase Real-time
+    // للاستماع لتحديثات النقاط والحالة
+    
+    if (typeof supabase === 'undefined') return;
+
+    supabase
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${userId}`
+        }, (payload) => {
+            if (payload.new.is_pro !== payload.old.is_pro) {
+                if (payload.new.is_pro) {
+                    showProBadgeNotification(payload.new.email);
+                }
+                if (onProStatusChange) {
+                    onProStatusChange(payload.new.is_pro);
+                }
+            }
+        })
+        .subscribe();
+}
+
+// ==================== إضافة CSS لشارة Pro ====================
+export function injectProBadgeStyles() {
+    const style = document.createElement('style');
+    style.setAttribute('data-pro-badge-styles', 'true');
+    style.textContent = `
+        .pro-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+            animation: proBadgeGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes proBadgeGlow {
+            0%, 100% {
+                box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+            }
+            50% {
+                box-shadow: 0 4px 16px rgba(251, 191, 36, 0.6);
+            }
+        }
+
+        .pro-badge svg {
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+        }
+
+        /* شارة Pro في البطاقات */
+        .ticket-card.pro-user::before,
+        .user-card.pro-user::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
+        }
+
+        /* شارة Pro في الجداول */
+        table tbody tr.pro-user td:first-child::after {
+            content: '★';
+            color: #fbbf24;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+    `;
+
+    if (!document.querySelector('style[data-pro-badge-styles]')) {
+        document.head.appendChild(style);
+    }
+}
