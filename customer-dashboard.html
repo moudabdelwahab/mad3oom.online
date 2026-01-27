@@ -205,6 +205,24 @@
         }
         updateUIWithUserData();
 
+        // الاستماع لتحديثات النقاط من Supabase
+        if (user && user.id) {
+            supabase
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'profiles',
+                    filter: `id=eq.${user.id}`
+                }, (payload) => {
+                    if (payload.new.points !== undefined) {
+                        user.profile.points = payload.new.points;
+                        document.getElementById('pointsCount').textContent = payload.new.points || 0;
+                        document.getElementById('pointsTooltip').textContent = payload.new.points || 0;
+                    }
+                })
+                .subscribe();
+        }
+
         // تبديل التبويبات
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.onclick = () => {

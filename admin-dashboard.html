@@ -52,8 +52,7 @@
         .avatar-upload { position: relative; width: 100px; height: 100px; margin: 0 auto 2rem; }
         .avatar-preview { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-accent); }
         .avatar-edit-btn { position: absolute; bottom: 0; right: 0; background: var(--color-accent); color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--color-surface); }
-        .ban-badge { padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold; }
-        .ban-none { display: none; }
+        .ban-badge { padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold; margin-right: 0.5rem; }
         .ban-temporary { background: #fef3c7; color: #92400e; }
         .ban-permanent { background: #fee2e2; color: #991b1b; }
     </style>
@@ -293,10 +292,12 @@
             body.innerHTML = users?.length ? '' : '<tr><td colspan="5" style="text-align:center;padding:2rem;">لا يوجد مستخدمين</td></tr>';
             users?.forEach(u => {
                 const tr = document.createElement('tr');
+                const banBadge = u.ban_status && u.ban_status !== 'none' ? `<span class="ban-badge ban-${u.ban_status}">${u.ban_status === 'temporary' ? 'محظور مؤقت' : 'محظور دائم'}</span>` : '';
+                const roleDisplay = u.role === 'admin' ? 'مسئول' : u.role === 'customer' ? 'عميل' : u.role;
                 tr.innerHTML = `
-                    <td>${u.full_name || '---'} <span class="ban-badge ban-${u.ban_status}">${u.ban_status === 'temporary' ? 'محظور مؤقت' : 'محظور دائم'}</span></td>
+                    <td>${u.full_name || '---'} ${banBadge}</td>
                     <td>${u.email}</td>
-                    <td>${u.role}</td>
+                    <td>${roleDisplay}</td>
                     <td>${u.points || 0}</td>
                     <td>
                         <button class="btn btn-secondary btn-sm" onclick="openPointsModal('${u.id}', ${u.points || 0})">نقاط</button>
@@ -360,16 +361,32 @@
             const reason = document.getElementById('banReason').value;
             
             try {
-                await adminUpdateUserProfile(id, {
+                const updates = {
                     ban_status: status,
-                    ban_until: status === 'temporary' ? until : null,
                     ban_reason: reason
-                });
+                };
+                
+                if (status === 'temporary' && until) {
+                    updates.ban_until = new Date(until).toISOString();
+                } else {
+                    updates.ban_until = null;
+                }
+                
+                const { error } = await supabase
+                    .from('profiles')
+                    .update(updates)
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
                 alert('تم تحديث حالة الحظر بنجاح');
                 document.getElementById('banModal').classList.remove('active');
                 renderUsers();
                 renderBannedUsers();
-            } catch (err) { alert('خطأ في التحديث'); }
+            } catch (err) { 
+                console.error('Ban error:', err);
+                alert('خطأ في التحديث: ' + err.message); 
+            }
         };
 
         // مودال النقاط
@@ -383,13 +400,22 @@
         document.getElementById('pointsForm').onsubmit = async (e) => {
             e.preventDefault();
             const id = document.getElementById('pointsUserId').value;
-            const points = document.getElementById('newPoints').value;
+            const points = parseInt(document.getElementById('newPoints').value);
             try {
-                await adminUpdateUserProfile(id, { points: parseInt(points) });
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({ points: points })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
                 alert('تم تحديث النقاط بنجاح');
                 document.getElementById('pointsModal').classList.remove('active');
                 renderUsers();
-            } catch (err) { alert('خطأ في التحديث'); }
+            } catch (err) { 
+                console.error('Points error:', err);
+                alert('خطأ في التحديث: ' + err.message); 
+            }
         };
 
         // تحديث البروفايل
