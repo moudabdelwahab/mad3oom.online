@@ -1,5 +1,6 @@
 // rewards-service.js - نظام المكافآت والنقاط المتكامل
 import { supabase } from './api-config.js';
+import { createNotification } from './notifications-service.js';
 
 // ==================== نقاط الخطورة ====================
 export const SEVERITY_POINTS = {
@@ -101,6 +102,20 @@ export async function submitReport(userId, reportData) {
 
         if (walletError) throw walletError;
 
+        // إشعار للمسؤولين عند تقديم بلاغ جديد
+        const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+        if (admins) {
+            for (const admin of admins) {
+                await createNotification({
+                    userId: admin.id,
+                    title: 'بلاغ مكافأة جديد',
+                    message: `قام مستخدم بتقديم بلاغ جديد: ${reportData.title}`,
+                    type: 'info',
+                    link: `admin-dashboard.html?tab=rewards`
+                });
+            }
+        }
+
         // تسجيل في السجل
         await logRewardActivity(userId, 'report_submitted', {
             reportId: report.id,
@@ -196,6 +211,15 @@ export async function approveReport(reportId, actualPoints) {
             .eq('id', report.user_id);
 
         if (profileError) throw profileError;
+
+        // إشعار للعميل عند الموافقة على البلاغ
+        await createNotification({
+            userId: report.user_id,
+            title: 'تمت الموافقة على بلاغك',
+            message: `تمت الموافقة على بلاغك "${report.title}" وإضافة ${actualPoints} نقطة إلى رصيدك.`,
+            type: 'success',
+            link: `customer-dashboard.html?tab=rewards`
+        });
 
         // تسجيل النشاط
         await logRewardActivity(report.user_id, 'report_approved', {
