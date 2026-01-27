@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة العميل - منصة مدعوم</title>
-    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="stylesheet" href="styles.css">
     <script>
         (function() {
@@ -281,7 +281,9 @@
         import { fetchUserTickets, createTicket, fetchTicketStats, subscribeToTickets, fetchTicketReplies, addTicketReply } from './tickets-service.js';
         import { fetchNotifications, markAllAsRead, subscribeToNotifications } from './notifications-service.js';
         import { initRewardsDashboard } from './rewards-dashboard.js';
-        import { addProBadgeToElement, injectProBadgeStyles } from './pro-badge.js';
+        // استيراد دوال شارة Pro مع معالجة الخطأ في حال فشل التصدير المسمى
+        import * as ProBadgeModule from './pro-badge.js';
+        const { addProBadgeToElement, injectProBadgeStyles } = ProBadgeModule.default || ProBadgeModule;
 
         let user;
         try {
