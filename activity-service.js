@@ -106,7 +106,10 @@ export async function fetchActivityLogs(filters = {}, limit = 50) {
 
     const { data, error } = await query.limit(limit);
 
-    if (error) throw error;
+    if (error) {
+        console.error('Supabase error fetching logs:', error);
+        throw error;
+    }
     return data;
 }
 
