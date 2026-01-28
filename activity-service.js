@@ -25,22 +25,34 @@ function getDeviceInfo() {
  * الحصول على الموقع التقريبي بناءً على IP
  */
 async function getLocationInfo() {
-    // محاولة الخدمة الأولى
+    // محاولة خدمة ipify للحصول على الـ IP أولاً بشكل موثوق
+    let ip = null;
     try {
-        const response = await fetch('https://ipapi.co/json/');
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        if (ipRes.ok) {
+            const ipData = await ipRes.json();
+            ip = ipData.ip;
+        }
+    } catch (e) {
+        console.warn('Failed to get IP from ipify');
+    }
+
+    // محاولة جلب الموقع باستخدام الـ IP أو بدونه
+    try {
+        const url = ip ? `https://ipapi.co/${ip}/json/` : 'https://ipapi.co/json/';
+        const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
             return {
                 country: data.country_name,
                 city: data.city,
-                ip: data.ip
+                ip: data.ip || ip
             };
         }
     } catch (e) {
-        console.warn('ipapi.co failed, trying fallback...');
+        console.warn('ipapi.co failed');
     }
 
-    // محاولة الخدمة البديلة (ip-api.com)
     try {
         const response = await fetch('http://ip-api.com/json/');
         if (response.ok) {
@@ -48,14 +60,14 @@ async function getLocationInfo() {
             return {
                 country: data.country,
                 city: data.city,
-                ip: data.query
+                ip: data.query || ip
             };
         }
     } catch (e) {
         console.error('All location services failed');
     }
 
-    return null;
+    return ip ? { ip, country: null, city: null } : null;
 }
 
 /**
@@ -108,7 +120,7 @@ export async function logActivity(action, details = {}) {
 }
 
 /**
- * جلب سجل النشاطات مع دعم الفلاتر (للأدمن فقط)
+ * جلب سجل النشاطات مع دعم الفلاتر والعدد (للأدمن فقط)
  */
 export async function fetchActivityLogs(filters = {}, limit = 50) {
     let query = supabase
@@ -124,7 +136,14 @@ export async function fetchActivityLogs(filters = {}, limit = 50) {
         query = query.eq('action', filters.action);
     }
 
-    const { data, error } = await query.limit(limit);
+    // إذا كان الليميت 'all' لا نضع حداً (أو نضع حداً كبيراً جداً)
+    if (limit !== 'all') {
+        query = query.limit(parseInt(limit));
+    } else {
+        query = query.limit(1000); // حد أقصى معقول للـ "الكل" لتجنب الانهيار
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         console.error('Supabase error fetching logs:', error);

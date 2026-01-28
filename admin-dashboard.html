@@ -7,6 +7,10 @@
     <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- مكتبات التصدير -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
         /* ==================== Admin Dashboard - Professional Blue Palette ==================== */
         :root {
@@ -451,8 +455,8 @@
 
         <!-- Logs Tab -->
         <div id="logsTab" class="tab-content" style="display: none;">
-            <div class="filters-bar" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; background: var(--color-surface); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--color-border);">
-                <div class="form-group" style="margin-bottom: 0; flex: 1;">
+            <div class="filters-bar" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; background: var(--color-surface); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--color-border);">
+                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
                     <label class="form-label" style="font-size: 0.85rem;">نوع المستخدم</label>
                     <select id="logRoleFilter" class="form-control">
                         <option value="all">الكل</option>
@@ -460,7 +464,7 @@
                         <option value="user">أعضاء</option>
                     </select>
                 </div>
-                <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
                     <label class="form-label" style="font-size: 0.85rem;">نوع النشاط</label>
                     <select id="logActionFilter" class="form-control">
                         <option value="all">الكل</option>
@@ -472,6 +476,21 @@
                         <option value="ban_user">حظر مستخدم</option>
                         <option value="unban_user">فك حظر</option>
                     </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 100px;">
+                    <label class="form-label" style="font-size: 0.85rem;">عدد السجلات</label>
+                    <select id="logLimitFilter" class="form-control">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                        <option value="all">الكل</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
+                    <button id="exportExcelBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #217346; color: white; border: none; border-radius: 4px; cursor: pointer;">Excel</button>
+                    <button id="exportPdfBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">PDF</button>
                 </div>
             </div>
             <div class="table-container">
@@ -653,9 +672,11 @@
                 role: document.getElementById('logRoleFilter').value,
                 action: document.getElementById('logActionFilter').value
             };
+            const limit = document.getElementById('logLimitFilter').value;
             
             try {
-                const logs = await fetchActivityLogs(filters, 100);
+                const logs = await fetchActivityLogs(filters, limit);
+                window.currentLogs = logs; // حفظ السجلات الحالية للتصدير
                 body.innerHTML = logs?.map(l => {
                     const location = l.location_info ? `${l.location_info.country || ''} - ${l.location_info.city || ''}` : 'غير متوفر';
                     const userRole = l.profiles?.role || l.user_role;
@@ -686,6 +707,54 @@
             }
         }
 
+        function exportToExcel() {
+            if (!window.currentLogs || window.currentLogs.length === 0) return alert('لا توجد بيانات لتصديرها');
+            
+            const data = window.currentLogs.map(l => ({
+                'المستخدم': l.profiles?.full_name || l.profiles?.email || 'مستخدم',
+                'البريد الإلكتروني': l.profiles?.email || '',
+                'الرتبة': l.profiles?.role === 'admin' ? 'إدارة' : 'عضو',
+                'النشاط': formatActivityMessage(l).replace(/<\/?[^>]+(>|$)/g, ""),
+                'الجهاز/المتصفح': l.device_info || 'غير متوفر',
+                'IP': l.ip_address || '---',
+                'الموقع': l.location_info ? `${l.location_info.country || ''} - ${l.location_info.city || ''}` : 'غير متوفر',
+                'التاريخ والوقت': new Date(l.created_at).toLocaleString('ar-EG')
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Activity Logs");
+            XLSX.writeFile(wb, `Activity_Logs_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function exportToPdf() {
+            if (!window.currentLogs || window.currentLogs.length === 0) return alert('لا توجد بيانات لتصديرها');
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            
+            // إضافة الخط العربي (اختياري، هنا سنستخدم الخط الافتراضي مع دعم النصوص)
+            doc.text("سجل النشاطات - منصة مدعوم", 150, 10, { align: 'center' });
+
+            const tableData = window.currentLogs.map(l => [
+                l.profiles?.full_name || l.profiles?.email || 'مستخدم',
+                l.profiles?.role === 'admin' ? 'إدارة' : 'عضو',
+                formatActivityMessage(l).replace(/<\/?[^>]+(>|$)/g, ""),
+                l.device_info || 'غير متوفر',
+                l.ip_address || '---',
+                new Date(l.created_at).toLocaleString('ar-EG')
+            ]);
+
+            doc.autoTable({
+                head: [['المستخدم', 'الرتبة', 'النشاط', 'الجهاز', 'IP', 'التاريخ']],
+                body: tableData,
+                styles: { font: 'helvetica', halign: 'right' },
+                headStyles: { fillColor: [0, 51, 102] }
+            });
+
+            doc.save(`Activity_Logs_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
         function setupEventListeners() {
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.onclick = () => {
@@ -699,6 +768,9 @@
 
             document.getElementById('logRoleFilter').onchange = renderLogs;
             document.getElementById('logActionFilter').onchange = renderLogs;
+            document.getElementById('logLimitFilter').onchange = renderLogs;
+            document.getElementById('exportExcelBtn').onclick = exportToExcel;
+            document.getElementById('exportPdfBtn').onclick = exportToPdf;
 
             document.getElementById('pointsForm').onsubmit = async (e) => {
                 e.preventDefault();
