@@ -22,20 +22,40 @@ function getDeviceInfo() {
 }
 
 /**
- * الحصول على الموقع التقريبي بناءً على IP (باستخدام خدمة مجانية)
+ * الحصول على الموقع التقريبي بناءً على IP
  */
 async function getLocationInfo() {
+    // محاولة الخدمة الأولى
     try {
         const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        return {
-            country: data.country_name,
-            city: data.city,
-            ip: data.ip
-        };
+        if (response.ok) {
+            const data = await response.json();
+            return {
+                country: data.country_name,
+                city: data.city,
+                ip: data.ip
+            };
+        }
     } catch (e) {
-        return null;
+        console.warn('ipapi.co failed, trying fallback...');
     }
+
+    // محاولة الخدمة البديلة (ip-api.com)
+    try {
+        const response = await fetch('http://ip-api.com/json/');
+        if (response.ok) {
+            const data = await response.json();
+            return {
+                country: data.country,
+                city: data.city,
+                ip: data.query
+            };
+        }
+    } catch (e) {
+        console.error('All location services failed');
+    }
+
+    return null;
 }
 
 /**
@@ -93,7 +113,7 @@ export async function logActivity(action, details = {}) {
 export async function fetchActivityLogs(filters = {}, limit = 50) {
     let query = supabase
         .from('activity_logs')
-        .select('*, profiles(full_name, email)')
+        .select('*, profiles(full_name, email, role)')
         .order('created_at', { ascending: false });
 
     if (filters.role && filters.role !== 'all') {

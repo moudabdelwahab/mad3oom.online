@@ -658,7 +658,8 @@
                 const logs = await fetchActivityLogs(filters, 100);
                 body.innerHTML = logs?.map(l => {
                     const location = l.location_info ? `${l.location_info.country || ''} - ${l.location_info.city || ''}` : 'غير متوفر';
-                    const roleLabel = l.user_role === 'admin' ? '<span class="status-badge status-resolved" style="background:#003366">إدارة</span>' : '<span class="status-badge status-open" style="background:#777">عضو</span>';
+                    const userRole = l.profiles?.role || l.user_role;
+                    const roleLabel = userRole === 'admin' ? '<span class="status-badge status-resolved" style="background:#003366">إدارة</span>' : '<span class="status-badge status-open" style="background:#777">عضو</span>';
                     
                     return `
                         <tr>
