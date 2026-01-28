@@ -13,9 +13,46 @@ import {
     const session = await requireAuth('user');
     if (!session) return;
 
+    const isGuest = session.isGuest || false;
+
     const welcomeEl = document.getElementById('welcomeUser');
     if (welcomeEl) {
-        welcomeEl.textContent = `مرحباً، ${session.profile.email}`;
+        welcomeEl.textContent = isGuest ? `مرحباً بك (زائر)` : `مرحباً، ${session.profile.email}`;
+    }
+
+    if (isGuest) {
+        // تقييد الصلاحيات للضيف
+        const restrictedElements = [
+            'openCreateTicket',
+            'userCreateTicketForm',
+            'newReportForm',
+            'profileTab'
+        ];
+        
+        restrictedElements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (el.tagName === 'FORM' || el.tagName === 'BUTTON') {
+                    el.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('عذراً، هذه الخاصية غير متاحة في وضع الضيف. يرجى تسجيل حساب للاستفادة منها.');
+                    }, true);
+                    if (el.tagName === 'BUTTON') el.style.opacity = '0.5';
+                } else {
+                    el.style.display = 'none';
+                }
+            }
+        });
+
+        // إظهار رسالة تنبيه للضيف
+        const dashboardContainer = document.querySelector('.dashboard-container');
+        if (dashboardContainer) {
+            const guestAlert = document.createElement('div');
+            guestAlert.style.cssText = 'background: var(--hover-bg); color: var(--color-accent); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid var(--color-accent); text-align: center; font-weight: 600;';
+            guestAlert.innerHTML = 'أنت تتصفح الآن بوضع الضيف. يمكنك رؤية المحتوى ولكن لا يمكنك إنشاء تذاكر أو بلاغات. <a href="sign-up.html" style="text-decoration: underline;">أنشئ حساباً الآن</a>';
+            dashboardContainer.prepend(guestAlert);
+        }
     }
 
     const signOutLink = document.getElementById('signOutLink');

@@ -146,6 +146,9 @@
                     <span id="loginBtnText">تسجيل الدخول</span>
                     <span id="loginBtnLoader" style="display:none;">جاري التحقق...</span>
                 </button>
+                <button type="button" class="btn btn-secondary" id="guestLoginBtn" style="margin-top: 1rem; width: 100%;">
+                    الدخول كضيف (عرض محدود)
+                </button>
             </div>
         </form>
 
@@ -156,7 +159,7 @@
 </main>
 
 <script type="module">
-import { signIn, getCurrentUser } from './auth-client.js';
+import { signIn, getCurrentUser, signInAsGuest } from './auth-client.js';
 import { supabase } from './api-config.js';
 
 const form = document.getElementById('signInForm');
@@ -169,6 +172,7 @@ const successMessage = document.getElementById('successMessage');
 const passwordInput = document.getElementById('password');
 const togglePassword = document.getElementById('togglePassword');
 const resendBtn = document.getElementById('resendEmailBtn');
+const guestLoginBtn = document.getElementById('guestLoginBtn');
 
 let isLoggingIn = false;
 
@@ -240,6 +244,23 @@ form.addEventListener('submit', async (e) => {
             errorText.style.whiteSpace = 'pre-line';
             errorText.textContent = err.message || 'فشل تسجيل الدخول. حاول مرة أخرى.';
         }
+    }
+});
+
+// الدخول كضيف
+guestLoginBtn.addEventListener('click', async () => {
+    try {
+        setLoading(true);
+        await signInAsGuest();
+        successMessage.style.display = 'block';
+        successMessage.querySelector('p').textContent = 'تم الدخول كضيف بنجاح! جاري التحويل...';
+        setTimeout(() => {
+            window.location.replace('customer-dashboard.html');
+        }, 1000);
+    } catch (err) {
+        setLoading(false);
+        errorMessage.style.display = 'block';
+        errorText.textContent = 'فشل الدخول كضيف. حاول مرة أخرى.';
     }
 });
 

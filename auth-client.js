@@ -102,6 +102,7 @@ export async function signUp(email, password) {
  */
 export async function logout() {
     await logActivity('logout');
+    localStorage.removeItem('mad3oom-guest-session');
     document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
     document.cookie = "sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
     return await supabase.auth.signOut();
@@ -178,7 +179,36 @@ export async function adminImpersonateUser(userId) {
     window.open(impersonateUrl, '_blank');
 }
 
+/**
+ * تسجيل الدخول كضيف
+ */
+export async function signInAsGuest() {
+    // نستخدم معرف ثابت للضيف أو ننشئ جلسة وهمية
+    const guestSession = {
+        user: { id: 'guest-user', email: 'guest@mad3oom.online' },
+        profile: { 
+            id: 'guest-user', 
+            email: 'guest@mad3oom.online', 
+            role: 'guest',
+            full_name: 'زائر',
+            membership_level: 'زائر'
+        },
+        isGuest: true
+    };
+    
+    localStorage.setItem('mad3oom-guest-session', JSON.stringify(guestSession));
+    await logActivity('guest_login');
+    return { data: guestSession, error: null };
+}
+
 export async function requireAuth(requiredRole = 'user') {
+    // التحقق من وجود جلسة ضيف أولاً
+    const guestSessionJson = localStorage.getItem('mad3oom-guest-session');
+    if (guestSessionJson) {
+        const guestSession = JSON.parse(guestSessionJson);
+        return guestSession;
+    }
+
     const user = await getCurrentUser();
 
     if (!user) {
