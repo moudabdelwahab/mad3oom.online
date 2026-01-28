@@ -56,6 +56,8 @@
         })();
     </script>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="robot.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
     <style>
         /* انسيابية إضافية للصفحة الرئيسية */
         .hero {
@@ -271,6 +273,20 @@
         <p>&copy; 2026 منصة مدعوم. جميع الحقوق محفوظة.</p>
     </footer>
 
+    <!-- Robot Assistant "Mad3oom" -->
+    <div class="robot-container" id="robotContainer">
+        <div class="speech-bubble" id="robotBubble">
+            <p class="robot-text" id="robotText"></p>
+        </div>
+        <div class="robot-avatar" id="robotAvatar" onclick="startTour()">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v8H3v-8a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-1-1-1.73a2 2 0 0 1 2-2M9 13a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m6 0a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2M7.5 18a1.5 1.5 0 0 0 0 3h9a1.5 1.5 0 0 0 0-3h-9z"/>
+            </svg>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+
     <script>
         // قائمة حسابي المنسدلة
         const accountMenuBtn = document.getElementById('accountMenuBtn');
@@ -324,6 +340,46 @@
         hamburger.addEventListener('click', () => {
             hamburger.classList.toggle('active');
             navMenu.classList.toggle('active');
+        });
+
+        // Robot "Mad3oom" Logic
+        const robotBubble = document.getElementById('robotBubble');
+        const robotText = document.getElementById('robotText');
+        const driver = window.driver.js.driver;
+
+        const tourDriver = driver({
+            showProgress: true,
+            nextBtnText: 'التالي',
+            prevBtnText: 'السابق',
+            doneBtnText: 'تم',
+            steps: [
+                { element: '.hero-content', popover: { title: 'أهلاً بك!', description: 'أنا مدعوم، مساعدك الذكي. دعني آخذك في جولة سريعة.', side: "bottom", align: 'start' }},
+                { element: '#accountMenuBtn', popover: { title: 'حسابك الشخصي', description: 'من هنا يمكنك تسجيل الدخول أو إنشاء حساب جديد للبدء.', side: "bottom", align: 'start' }},
+                { element: '.features-grid', popover: { title: 'مميزاتنا', description: 'نقدم لك نظام تذاكر متطور، محادثات فورية، ولوحة تحكم شاملة.', side: "top", align: 'start' }},
+                { element: '.cta', popover: { title: 'ابدأ الآن', description: 'لا تتردد في التواصل معنا إذا كنت بحاجة لأي مساعدة.', side: "top", align: 'start' }}
+            ]
+        });
+
+        function showRobotMessage(message, duration = 5000) {
+            robotText.textContent = message;
+            robotBubble.classList.add('visible');
+            setTimeout(() => {
+                robotBubble.classList.remove('visible');
+            }, duration);
+        }
+
+        window.startTour = function() {
+            tourDriver.drive();
+        };
+
+        // تشغيل الترحيب عند فتح الموقع لأول مرة في الجلسة
+        window.addEventListener('load', () => {
+            if (!sessionStorage.getItem('robot_greeted')) {
+                setTimeout(() => {
+                    showRobotMessage("أهلاً! أنا مدعوم، خليني أعرفك على المنصة بشكل سريع. اضغط عليّ للبدء!");
+                    sessionStorage.setItem('robot_greeted', 'true');
+                }, 2000);
+            }
         });
     </script>
 </body>

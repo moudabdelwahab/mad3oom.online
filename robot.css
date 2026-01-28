@@ -1,0 +1,96 @@
+/* Robot Assistant Styles */
+.robot-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    pointer-events: none;
+}
+
+.robot-avatar {
+    width: 80px;
+    height: 80px;
+    background: var(--color-surface);
+    border-radius: 50%;
+    box-shadow: var(--shadow-glow);
+    border: 3px solid var(--color-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: robotFloat 3s ease-in-out infinite;
+}
+
+.robot-avatar:hover {
+    transform: scale(1.1);
+}
+
+.robot-avatar svg {
+    width: 50px;
+    height: 50px;
+    fill: var(--color-accent);
+}
+
+.speech-bubble {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    padding: 1rem;
+    margin-bottom: 15px;
+    max-width: 250px;
+    box-shadow: var(--shadow);
+    position: relative;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+}
+
+.speech-bubble.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    right: 30px;
+    border-width: 10px 10px 0;
+    border-style: solid;
+    border-color: var(--color-surface) transparent transparent;
+}
+
+.speech-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -11px;
+    right: 30px;
+    border-width: 10px 10px 0;
+    border-style: solid;
+    border-color: var(--color-border) transparent transparent;
+}
+
+.robot-text {
+    font-size: 0.95rem;
+    color: var(--color-text);
+    margin: 0;
+    line-height: 1.4;
+}
+
+@keyframes robotFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Driver.js Customization for RTL */
+.driver-popover.driverjs-theme {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
