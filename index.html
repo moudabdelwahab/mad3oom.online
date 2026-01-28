@@ -276,9 +276,21 @@
     <!-- Robot Assistant "Mad3oom" -->
     <div class="robot-container" id="robotContainer">
         <div class="speech-bubble" id="robotBubble">
+            <div class="robot-header">
+                <span class="robot-status"></span>
+                <span class="robot-name">مدعوم</span>
+            </div>
             <p class="robot-text" id="robotText"></p>
+            <button class="tour-btn" onclick="startTour()">ابدأ الجولة التعريفية</button>
         </div>
-        <div class="robot-avatar" id="robotAvatar" onclick="startTour()">
+        
+        <!-- الروبوت الجديد (يظهر عند الضغط) -->
+        <div class="robot-avatar" id="robotAvatar">
+            <img src="assets/images/mad3oom-robot.png" alt="مدعوم">
+        </div>
+
+        <!-- الأيقونة القديمة (المحفز) -->
+        <div class="chat-trigger" id="chatTrigger">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v8H3v-8a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-1-1-1.73a2 2 0 0 1 2-2M9 13a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m6 0a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2M7.5 18a1.5 1.5 0 0 0 0 3h9a1.5 1.5 0 0 0 0-3h-9z"/>
             </svg>
@@ -343,6 +355,8 @@
         });
 
         // Robot "Mad3oom" Logic
+        const chatTrigger = document.getElementById('chatTrigger');
+        const robotAvatar = document.getElementById('robotAvatar');
         const robotBubble = document.getElementById('robotBubble');
         const robotText = document.getElementById('robotText');
         const driver = window.driver.js.driver;
@@ -360,26 +374,40 @@
             ]
         });
 
-        function showRobotMessage(message, duration = 5000) {
-            robotText.textContent = message;
-            robotBubble.classList.add('visible');
-            setTimeout(() => {
+        function toggleRobot(show) {
+            if (show) {
+                chatTrigger.style.display = 'none';
+                robotAvatar.classList.add('active');
+                setTimeout(() => {
+                    robotBubble.classList.add('visible');
+                }, 500);
+            } else {
                 robotBubble.classList.remove('visible');
-            }, duration);
+                setTimeout(() => {
+                    robotAvatar.classList.remove('active');
+                    chatTrigger.style.display = 'flex';
+                }, 500);
+            }
         }
 
+        chatTrigger.addEventListener('click', () => {
+            robotText.textContent = "أهلاً بك! أنا مدعوم، مساعدك الذكي. هل تود أن آخذك في جولة سريعة للتعرف على المنصة؟";
+            toggleRobot(true);
+        });
+
         window.startTour = function() {
+            robotBubble.classList.remove('visible');
             tourDriver.drive();
         };
 
-        // تشغيل الترحيب عند فتح الموقع لأول مرة في الجلسة
+        // إغلاق الروبوت عند الضغط عليه مرة أخرى
+        robotAvatar.addEventListener('click', () => {
+            toggleRobot(false);
+        });
+
+        // ترحيب بسيط عند التحميل (اختياري - يظهر فقط الأيقونة مع نبض)
         window.addEventListener('load', () => {
-            if (!sessionStorage.getItem('robot_greeted')) {
-                setTimeout(() => {
-                    showRobotMessage("أهلاً! أنا مدعوم، خليني أعرفك على المنصة بشكل سريع. اضغط عليّ للبدء!");
-                    sessionStorage.setItem('robot_greeted', 'true');
-                }, 2000);
-            }
+            console.log("Mad3oom Robot Ready");
         });
     </script>
 </body>

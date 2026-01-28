@@ -1,96 +1,160 @@
-/* Robot Assistant Styles */
+/* Robot Assistant Styles - Interactive Version */
 .robot-container {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 30px;
+    right: 30px;
     z-index: 9999;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     pointer-events: none;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.robot-avatar {
-    width: 80px;
-    height: 80px;
-    background: var(--color-surface);
+/* الأيقونة الأولية (القديمة/أيقونة الدردشة) */
+.chat-trigger {
+    width: 60px;
+    height: 60px;
+    background: var(--color-accent);
     border-radius: 50%;
-    box-shadow: var(--shadow-glow);
-    border: 3px solid var(--color-accent);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     pointer-events: auto;
+    box-shadow: var(--shadow-glow);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    animation: robotFloat 3s ease-in-out infinite;
+    animation: pulse 2s infinite;
 }
 
-.robot-avatar:hover {
+.chat-trigger:hover {
     transform: scale(1.1);
 }
 
-.robot-avatar svg {
-    width: 50px;
-    height: 50px;
-    fill: var(--color-accent);
+.chat-trigger svg {
+    width: 30px;
+    height: 30px;
+    fill: white;
 }
 
+/* الروبوت الجديد (يظهر عند الضغط) */
+.robot-avatar {
+    width: 150px;
+    height: 150px;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+    animation: robotFloat 4s ease-in-out infinite;
+    display: none; /* مخفي في البداية */
+    opacity: 0;
+    transform: translateY(50px) scale(0.5);
+}
+
+.robot-avatar.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.robot-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* نافذة الحوار الاحترافية */
 .speech-bubble {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 1rem;
-    padding: 1rem;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 119, 204, 0.2);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
     margin-bottom: 15px;
-    max-width: 250px;
-    box-shadow: var(--shadow);
+    max-width: 300px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     position: relative;
     pointer-events: auto;
     opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.3s ease;
+    transform: translateY(20px) scale(0.9);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-right: 5px solid var(--color-accent);
+    display: none;
 }
 
 .speech-bubble.visible {
+    display: block;
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 
-.speech-bubble::after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    right: 30px;
-    border-width: 10px 10px 0;
-    border-style: solid;
-    border-color: var(--color-surface) transparent transparent;
+.robot-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 8px;
 }
 
-.speech-bubble::before {
-    content: '';
-    position: absolute;
-    bottom: -11px;
-    right: 30px;
-    border-width: 10px 10px 0;
-    border-style: solid;
-    border-color: var(--color-border) transparent transparent;
+.robot-name {
+    font-weight: 800;
+    color: var(--color-accent);
+    font-size: 1rem;
+}
+
+.robot-status {
+    width: 10px;
+    height: 10px;
+    background: #2ecc71;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #2ecc71;
 }
 
 .robot-text {
-    font-size: 0.95rem;
-    color: var(--color-text);
+    font-size: 1rem;
+    color: #2c3e50;
     margin: 0;
-    line-height: 1.4;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+.tour-btn {
+    margin-top: 15px;
+    background: linear-gradient(135deg, var(--color-accent), #0055AA);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+    text-align: center;
+}
+
+.tour-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 119, 204, 0.3);
 }
 
 @keyframes robotFloat {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+    50% { transform: translateY(-15px); }
 }
 
-/* Driver.js Customization for RTL */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 119, 204, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(0, 119, 204, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 119, 204, 0); }
+}
+
+/* Driver.js RTL Fixes */
 .driver-popover.driverjs-theme {
     direction: rtl;
     text-align: right;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.25);
 }
