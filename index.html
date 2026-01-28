@@ -137,8 +137,26 @@
                 <li><a href="about.html">حول</a></li>
                 <li><a href="rewards.html">المكافآت</a></li>
                 <li><a href="subscriptions.html">الخطط والأسعار</a></li>
-                <li><a href="sign-in.html" id="navSignIn">تسجيل الدخول</a></li>
-                <li><a href="sign-up.html" id="navSignUp">إنشاء حساب</a></li>
+                <li style="position: relative;">
+                    <button id="accountMenuBtn" style="background: none; border: none; color: var(--color-nav-text); cursor: pointer; font-weight: 600; padding: 0.5rem 1rem; border-radius: 0.5rem; transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>حسابي</span>
+                    </button>
+                    <div id="accountDropdown" style="display: none; position: absolute; top: 100%; right: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.5rem; box-shadow: var(--shadow); min-width: 200px; z-index: 1000; margin-top: 0.5rem;">
+                        <a href="sign-in.html" style="display: block; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; border-bottom: 1px solid var(--color-border); transition: all 0.3s;">
+                            تسجيل الدخول
+                        </a>
+                        <a href="sign-up.html" style="display: block; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; border-bottom: 1px solid var(--color-border); transition: all 0.3s;">
+                            إنشاء حساب
+                        </a>
+                        <a href="sign-in.html" id="guestLoginLink" style="display: block; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; transition: all 0.3s;">
+                            الدخول كضيف
+                        </a>
+                    </div>
+                </li>
             </ul>
         </div>
     </nav>
@@ -245,6 +263,33 @@
     </footer>
 
     <script>
+        // قائمة حسابي المنسدلة
+        const accountMenuBtn = document.getElementById('accountMenuBtn');
+        const accountDropdown = document.getElementById('accountDropdown');
+        const guestLoginLink = document.getElementById('guestLoginLink');
+
+        if (accountMenuBtn && accountDropdown) {
+            accountMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = accountDropdown.style.display === 'block';
+                accountDropdown.style.display = isVisible ? 'none' : 'block';
+            });
+
+            document.addEventListener('click', () => {
+                accountDropdown.style.display = 'none';
+            });
+
+            const dropdownLinks = accountDropdown.querySelectorAll('a');
+            dropdownLinks.forEach(link => {
+                link.addEventListener('mouseover', () => {
+                    link.style.background = 'var(--hover-bg)';
+                });
+                link.addEventListener('mouseout', () => {
+                    link.style.background = 'transparent';
+                });
+            });
+        }
+
         // انسيابية الظهور عند التمرير
         const observerOptions = {
             threshold: 0.1
