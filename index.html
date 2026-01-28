@@ -96,8 +96,17 @@
     </style>
     <script src="api-config.js"></script>
     <script type="module">
-        import { autoRedirect } from './auth-client.js';
+        import { autoRedirect, signInAsGuest } from './auth-client.js';
         autoRedirect();
+        window.handleGuestLogin = async function() {
+            try {
+                await signInAsGuest();
+                window.location.replace('customer-dashboard.html');
+            } catch (err) {
+                console.error('Guest login failed:', err);
+                window.location.href = 'sign-in.html';
+            }
+        };
     </script>
     <script src="theme-manager.js" defer></script>
 </head>
@@ -152,7 +161,7 @@
                         <a href="sign-up.html" style="display: block; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; border-bottom: 1px solid var(--color-border); transition: all 0.3s;">
                             إنشاء حساب
                         </a>
-                        <a href="sign-in.html" id="guestLoginLink" style="display: block; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; transition: all 0.3s;">
+                        <a href="javascript:void(0)" onclick="handleGuestLogin()" id="guestLoginLink" style="display: block; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; transition: all 0.3s;">
                             الدخول كضيف
                         </a>
                     </div>
