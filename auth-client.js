@@ -174,7 +174,7 @@ export async function adminImpersonateUser(userId) {
         throw new Error('Unauthorized');
     }
 
-    await logActivity('impersonate', { target_user_id: userId });
+    // Activity logged in admin-dashboard.html before calling this
     const impersonateUrl = `${window.location.origin}/customer-dashboard.html?impersonate=${userId}`;
     window.open(impersonateUrl, '_blank');
 }

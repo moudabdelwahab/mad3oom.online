@@ -451,8 +451,44 @@
 
         <!-- Logs Tab -->
         <div id="logsTab" class="tab-content" style="display: none;">
-            <div id="logsList" class="stat-card">
-                جاري تحميل السجلات...
+            <div class="filters-bar" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; background: var(--color-surface); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--color-border);">
+                <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                    <label class="form-label" style="font-size: 0.85rem;">نوع المستخدم</label>
+                    <select id="logRoleFilter" class="form-control">
+                        <option value="all">الكل</option>
+                        <option value="admin">إدارة</option>
+                        <option value="user">أعضاء</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                    <label class="form-label" style="font-size: 0.85rem;">نوع النشاط</label>
+                    <select id="logActionFilter" class="form-control">
+                        <option value="all">الكل</option>
+                        <option value="login">تسجيل دخول</option>
+                        <option value="logout">تسجيل خروج</option>
+                        <option value="ticket_created">إنشاء تذكرة</option>
+                        <option value="report_submitted">بلاغ مكافأة</option>
+                        <option value="impersonate">تقمص شخصية</option>
+                        <option value="ban_user">حظر مستخدم</option>
+                        <option value="unban_user">فك حظر</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th>المستخدم</th>
+                            <th>النشاط</th>
+                            <th>الجهاز / المتصفح</th>
+                            <th>الموقع / IP</th>
+                            <th>التاريخ والوقت</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr><td colspan="5" style="text-align: center; padding: 2rem;">جاري تحميل السجلات...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -519,6 +555,7 @@
         import { fetchTicketStats, subscribeToTickets } from './tickets-service.js';
         import { initAdminRewards } from './admin-rewards.js';
         import { calculateMembershipLevel } from './rewards-service.js';
+        import { fetchActivityLogs, formatActivityMessage } from './activity-service.js';
         
         let user = null;
 
@@ -611,9 +648,41 @@
         }
 
         async function renderLogs() {
-            const list = document.getElementById('logsList');
-            const { data: logs } = await supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(10);
-            list.innerHTML = logs?.map(l => `<div style="padding:0.5rem; border-bottom:1px solid var(--color-border)"><strong>${l.action}</strong> - <small>${new Date(l.created_at).toLocaleString()}</small></div>`).join('') || 'لا توجد نشاطات';
+            const body = document.getElementById('logsTableBody');
+            const filters = {
+                role: document.getElementById('logRoleFilter').value,
+                action: document.getElementById('logActionFilter').value
+            };
+            
+            try {
+                const logs = await fetchActivityLogs(filters, 100);
+                body.innerHTML = logs?.map(l => {
+                    const location = l.location_info ? `${l.location_info.country || ''} - ${l.location_info.city || ''}` : 'غير متوفر';
+                    const roleLabel = l.user_role === 'admin' ? '<span class="status-badge status-resolved" style="background:#003366">إدارة</span>' : '<span class="status-badge status-open" style="background:#777">عضو</span>';
+                    
+                    return `
+                        <tr>
+                            <td>
+                                <div style="font-weight:600;">${l.profiles?.full_name || 'مستخدم'}</div>
+                                <div style="font-size:0.75rem; color:var(--color-text-secondary);">${l.profiles?.email || ''}</div>
+                                <div style="margin-top:0.25rem;">${roleLabel}</div>
+                            </td>
+                            <td>${formatActivityMessage(l)}</td>
+                            <td><small>${l.device_info || 'غير متوفر'}</small></td>
+                            <td>
+                                <div>${l.ip_address || '---'}</div>
+                                <div style="font-size:0.75rem; color:var(--color-text-secondary);">${location}</div>
+                            </td>
+                            <td>
+                                <div>${new Date(l.created_at).toLocaleDateString('ar-EG')}</div>
+                                <div style="font-size:0.75rem; color:var(--color-text-secondary);">${new Date(l.created_at).toLocaleTimeString('ar-EG')}</div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="5" style="text-align:center;">لا توجد سجلات مطابقة</td></tr>';
+            } catch (err) {
+                body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--color-danger);">خطأ في تحميل السجلات</td></tr>';
+            }
         }
 
         function setupEventListeners() {
@@ -623,8 +692,12 @@
                     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
                     btn.classList.add('active');
                     document.getElementById(btn.dataset.tab).style.display = 'block';
+                    if (btn.dataset.tab === 'logsTab') renderLogs();
                 };
             });
+
+            document.getElementById('logRoleFilter').onchange = renderLogs;
+            document.getElementById('logActionFilter').onchange = renderLogs;
 
             document.getElementById('pointsForm').onsubmit = async (e) => {
                 e.preventDefault();
@@ -699,9 +772,11 @@
 
         window.banUser = async (id) => {
             if (confirm('هل أنت متأكد من حظر هذا المستخدم؟')) {
+                const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
                 const { error } = await supabase.from('profiles').update({ ban_status: 'permanent' }).eq('id', id);
                 if (error) alert('خطأ في الحظر: ' + error.message);
                 else {
+                    import('./activity-service.js').then(m => m.logActivity('ban_user', { target_user_id: id, target_email: targetUser?.email }));
                     alert('تم حظر المستخدم');
                     renderUsers();
                     renderBannedUsers();
@@ -711,9 +786,11 @@
 
         window.unbanUser = async (id) => {
             if (confirm('هل تريد فك الحظر عن هذا المستخدم؟')) {
+                const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
                 const { error } = await supabase.from('profiles').update({ ban_status: 'none' }).eq('id', id);
                 if (error) alert('خطأ في فك الحظر: ' + error.message);
                 else {
+                    import('./activity-service.js').then(m => m.logActivity('unban_user', { target_user_id: id, target_email: targetUser?.email }));
                     alert('تم فك الحظر');
                     renderUsers();
                     renderBannedUsers();
@@ -721,7 +798,11 @@
             }
         };
 
-        window.impersonateUser = async (id) => { await adminImpersonateUser(id); };
+        window.impersonateUser = async (id) => { 
+            const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
+            import('./activity-service.js').then(m => m.logActivity('impersonate', { target_user_id: id, target_email: targetUser?.email }));
+            await adminImpersonateUser(id); 
+        };
         window.logout = async () => { await logout(); window.location.replace('sign-in.html'); };
 
         // Helper for notifications used in admin-rewards.js
