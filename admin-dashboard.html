@@ -518,6 +518,7 @@
         import { requireAuth, logout, updateProfile, adminImpersonateUser, adminUpdateUserRole } from './auth-client.js';
         import { fetchTicketStats, subscribeToTickets } from './tickets-service.js';
         import { initAdminRewards } from './admin-rewards.js';
+        import { calculateMembershipLevel } from './rewards-service.js';
         
         let user = null;
 
@@ -629,11 +630,40 @@
                 e.preventDefault();
                 const id = document.getElementById('pointsUserId').value;
                 const points = parseInt(document.getElementById('newPoints').value);
-                await supabase.from('profiles').update({ points }).eq('id', id);
-                await supabase.from('user_wallets').upsert({ user_id: id, total_points: points, available_points: points });
-                alert('تم التحديث');
-                document.getElementById('pointsModal').classList.remove('active');
-                renderUsers();
+                
+                try {
+                    const membershipLevel = calculateMembershipLevel(points);
+                    const isPro = points >= 1000;
+
+                    // تحديث ملف المستخدم
+                    const { error: profileError } = await supabase.from('profiles')
+                        .update({ 
+                            points: points
+                        })
+                        .eq('id', id);
+                    
+                    if (profileError) throw profileError;
+
+                    // تحديث المحفظة
+                    const { error: walletError } = await supabase.from('user_wallets')
+                        .upsert({ 
+                            user_id: id, 
+                            total_points: points, 
+                            available_points: points,
+                            membership_level: membershipLevel,
+                            is_pro: isPro,
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'user_id' });
+                    
+                    if (walletError) throw walletError;
+
+                    alert('تم تحديث النقاط والمحفظة بنجاح');
+                    document.getElementById('pointsModal').classList.remove('active');
+                    renderUsers();
+                } catch (error) {
+                    console.error('Error updating points:', error);
+                    alert('حدث خطأ أثناء التحديث: ' + error.message);
+                }
             };
 
             document.getElementById('roleForm').onsubmit = async (e) => {

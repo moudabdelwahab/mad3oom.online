@@ -220,8 +220,7 @@ export async function approveReport(reportId, actualPoints) {
         const { error: profileError } = await supabase
             .from('profiles')
             .update({
-                points: newTotalPoints,
-                is_pro: isPro
+                points: newTotalPoints
             })
             .eq('id', report.user_id);
 
