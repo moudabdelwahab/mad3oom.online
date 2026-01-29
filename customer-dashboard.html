@@ -339,7 +339,7 @@
         let user;
         try {
             user = await requireAuth('customer');
-            if (!user) window.location.replace('sign-in.html');
+            if (!user) return; // requireAuth handles redirection
             if (user.isImpersonated) { 
                 document.getElementById('impersonationBanner').style.display = 'block'; 
                 document.getElementById('signOutBtn').style.display = 'none'; 

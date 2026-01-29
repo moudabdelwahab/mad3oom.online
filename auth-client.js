@@ -124,7 +124,8 @@ export async function getCurrentUser() {
 
     if (profileError) {
         console.error('Error fetching profile:', profileError);
-        return { ...user, profile: null };
+        // إذا فشل جلب البروفايل، لا نفترض أنه عميل (customer) بل نعتبر الجلسة غير مكتملة
+        return null;
     }
 
     // إذا كان المستخدم محظوراً أثناء الجلسة، قم بتسجيل خروجه
@@ -154,11 +155,17 @@ export async function autoRedirect() {
     const userRole = user.profile?.role || 'customer';
     const currentPath = window.location.pathname;
 
-    if (currentPath.endsWith('index.html') || currentPath === '/' || currentPath.endsWith('sign-in.html') || currentPath.endsWith('sign-up.html')) {
-        if (userRole === 'admin') {
-            window.location.replace('admin-dashboard.html');
-        } else {
-            window.location.replace('customer-dashboard.html');
+    const isAuthPage = currentPath.endsWith('index.html') || 
+                       currentPath === '/' || 
+                       currentPath.endsWith('/') ||
+                       currentPath.endsWith('sign-in.html') || 
+                       currentPath.endsWith('sign-up.html');
+
+    if (isAuthPage) {
+        const targetPage = userRole === 'admin' ? 'admin-dashboard.html' : 'customer-dashboard.html';
+        // تجنب التوجيه إذا كنا بالفعل في الصفحة المستهدفة
+        if (!currentPath.includes(targetPage)) {
+            window.location.replace(targetPage);
         }
     }
 }

@@ -705,7 +705,7 @@
             setupEventListeners();
             try {
                 user = await requireAuth('admin');
-                if (!user) return window.location.replace('sign-in.html');
+                if (!user) return; // requireAuth handles redirection
                 updateUIWithUserData();
                 renderTickets();
                 renderUsers();
