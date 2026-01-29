@@ -268,30 +268,60 @@
 
         <!-- قسم البروفايل -->
         <div id="profileTab" class="tab-content">
-            <div class="profile-section">
-                <h2>إعدادات المسؤول</h2>
-                <p style="color: var(--text-secondary); margin-bottom: 2rem;">تعديل بيانات الحساب الإداري</p>
+            <div class="profile-section" style="max-width: 800px; margin: 0 auto;">
+                <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                    <div style="width: 80px; height: 80px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; box-shadow: var(--shadow-sm);">
+                        <span id="profileInitials">AD</span>
+                    </div>
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.75rem;">إعدادات المسؤول</h2>
+                        <p style="color: var(--text-secondary); margin: 0.25rem 0 0 0;">إدارة بيانات حسابك الإداري وصلاحياتك</p>
+                    </div>
+                </div>
                 
-                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1rem; padding: 1rem; border-radius: 0.5rem;"></div>
+                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1.5rem; padding: 1rem; border-radius: 0.5rem;"></div>
 
-                <form id="profileForm" class="profile-form">
-                    <div class="form-group">
-                        <label for="profileFullName">الاسم الكامل</label>
-                        <input type="text" id="profileFullName" class="form-control" placeholder="أدخل اسمك الكامل">
+                <form id="profileForm" class="profile-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label for="profileFullName" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">الاسم الكامل</label>
+                        <input type="text" id="profileFullName" class="form-control" placeholder="أدخل اسمك الكامل" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary);">
                     </div>
+                    
                     <div class="form-group">
-                        <label for="profileEmail">البريد الإلكتروني</label>
-                        <input type="email" id="profileEmail" class="form-control" placeholder="أدخل بريدك الإلكتروني">
+                        <label for="profileEmail" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">البريد الإلكتروني</label>
+                        <input type="email" id="profileEmail" class="form-control" readonly disabled style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--hover-bg); color: var(--text-secondary); cursor: not-allowed;">
+                        <small style="color: var(--text-secondary); font-size: 0.8rem;">لا يمكن تغيير البريد الأساسي</small>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="profilePhone">رقم الهاتف</label>
-                        <input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك">
+                        <label for="profilePhone" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">رقم الهاتف</label>
+                        <input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary);">
                     </div>
+
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label for="profileBio" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">نبذة تعريفية (Bio)</label>
+                        <textarea id="profileBio" class="form-control" rows="3" placeholder="اكتب نبذة قصيرة عنك..." style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary); resize: vertical;"></textarea>
+                    </div>
+
                     <div class="form-group">
-                        <label for="profilePassword">كلمة المرور الجديدة</label>
-                        <input type="password" id="profilePassword" class="form-control" placeholder="اتركها فارغة إذا لا تريد التغيير">
+                        <label for="profileWebsite" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">الموقع الإلكتروني</label>
+                        <input type="url" id="profileWebsite" class="form-control" placeholder="https://example.com" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary);">
                     </div>
-                    <button type="submit" class="btn btn-primary" id="saveProfileBtn" style="width: fit-content; padding: 0.75rem 2rem;">حفظ التغييرات</button>
+
+                    <div class="form-group">
+                        <label for="profileRole" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">الدور الوظيفي</label>
+                        <input type="text" id="profileRole" class="form-control" value="مسؤول النظام (Admin)" readonly disabled style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--hover-bg); color: var(--text-secondary); cursor: not-allowed;">
+                    </div>
+
+                    <div class="form-group" style="grid-column: span 2; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                        <label for="profilePassword" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--danger-color);">تغيير كلمة المرور</label>
+                        <input type="password" id="profilePassword" class="form-control" placeholder="اتركها فارغة إذا لا تريد التغيير" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary);">
+                    </div>
+
+                    <div style="grid-column: span 2; display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+                        <button type="button" class="btn btn-secondary" style="padding: 0.75rem 2rem;">إلغاء</button>
+                        <button type="submit" class="btn btn-primary" id="saveProfileBtn" style="padding: 0.75rem 2.5rem; font-weight: bold;">حفظ التغييرات</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -332,10 +362,21 @@
 
         // 2. عرض البيانات الأولية
         if (user) {
-            document.getElementById('welcomeAdmin').textContent = `مرحباً، ${user.profile?.full_name || user.email}`;
+            const fullName = user.profile?.full_name || '';
+            document.getElementById('welcomeAdmin').textContent = `مرحباً، ${fullName || user.email}`;
             document.getElementById('profileEmail').value = user.email;
-            document.getElementById('profileFullName').value = user.profile?.full_name || '';
+            document.getElementById('profileFullName').value = fullName;
             document.getElementById('profilePhone').value = user.profile?.phone || '';
+            
+            // الحقول الجديدة
+            if (document.getElementById('profileBio')) document.getElementById('profileBio').value = user.profile?.bio || '';
+            if (document.getElementById('profileWebsite')) document.getElementById('profileWebsite').value = user.profile?.website || '';
+            
+            // تحديث الأحرف الأولى
+            if (fullName) {
+                const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                document.getElementById('profileInitials').textContent = initials;
+            }
         }
 
         // 3. التبديل بين التبويبات
@@ -384,24 +425,22 @@
             const saveBtn = document.getElementById('saveProfileBtn');
             saveBtn.disabled = true;
             saveBtn.textContent = 'جاري الحفظ...';
-
             try {
                 const fullName = document.getElementById('profileFullName').value;
                 const phone = document.getElementById('profilePhone').value;
-                const email = document.getElementById('profileEmail').value;
+                const bio = document.getElementById('profileBio').value;
+                const website = document.getElementById('profileWebsite').value;
                 const password = document.getElementById('profilePassword').value;
 
                 const { error: profileError } = await updateProfile({
                     full_name: fullName,
                     phone: phone,
-                    updated_at: new Date()
+                    bio: bio,
+                    website: website
                 });
                 if (profileError) throw profileError;
 
-                if (email !== user.email) {
-                    const { error: emailError } = await import('./auth-client.js').then(m => m.updateEmail(email));
-                    if (emailError) throw emailError;
-                }
+
 
                 if (password) {
                     const { error: pwdError } = await import('./auth-client.js').then(m => m.updatePassword(password));
@@ -609,11 +648,16 @@
                         <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">${n.message}</div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-size: 0.75rem; color: var(--text-secondary);">${new Date(n.time).toLocaleTimeString('ar-EG')}</span>
-                            <button style="color: var(--primary-color); background: none; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer;">عرض التذكرة</button>
+                            <button style="color: var(--primary-color); background: none; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer;">عرض التفاصيل</button>
                         </div>
                     `;
                     div.onclick = () => {
-                        openReplyModal(n.ticketId, n.ticketTitle);
+                        if (n.type === 'ticket') {
+                            openReplyModal(n.id, n.title);
+                        } else {
+                            // إذا كان بلاغاً، يمكننا توجيهه لتبويب معين أو إظهار رسالة
+                            alert('بلاغ جديد: ' + n.title);
+                        }
                         notifications.splice(index, 1);
                         updateNotificationUI();
                         notificationDropdown.style.display = 'none';
@@ -638,33 +682,49 @@
             notifications = [];
             updateNotificationUI();
         };
-
         // التحديث التلقائي والاشتراك في التغييرات
         subscribeToTickets((payload) => {
-            console.log('Realtime update:', payload);
+            console.log('Realtime update (Tickets):', payload);
             loadAdminTickets();
 
-            // إذا كان الحدث هو إنشاء تذكرة جديدة (INSERT)
             if (payload.eventType === 'INSERT') {
                 const newTicket = payload.new;
                 notifications.unshift({
-                    ticketId: newTicket.id,
-                    ticketTitle: newTicket.title,
-                    message: `أنشأ مستخدم تذكرة جديدة: "${newTicket.title}"`,
+                    id: newTicket.id,
+                    type: 'ticket',
+                    title: newTicket.title,
+                    message: `تذكرة جديدة: "${newTicket.title}"`,
                     time: newTicket.created_at
                 });
                 updateNotificationUI();
-                
-                // تشغيل صوت تنبيه بسيط (اختياري)
-                try {
-                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
-                    audio.play();
-                } catch (e) {}
+                playNotificationSound();
             }
         });
 
-        // التحميل الأولي
-        loadAdminTickets();
-    </script>
-</body>
+        // الاشتراك في بلاغات المستخدمين (User Reports)
+        supabase
+            .channel('public:user_reports')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'user_reports' }, payload => {
+                console.log('Realtime update (Reports):', payload);
+                const newReport = payload.new;
+                notifications.unshift({
+                    id: newReport.id,
+                    type: 'report',
+                    title: newReport.title,
+                    message: `بلاغ جديد: "${newReport.title}" (مكافأة متوقعة: ${newReport.estimated_points} نقطة)`,
+                    time: newReport.created_at
+                });
+                updateNotificationUI();
+                playNotificationSound();
+            })
+            .subscribe();
+
+        function playNotificationSound() {
+            try {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+                audio.play();
+            } catch (e) {
+                console.log('Audio play failed');
+            }
+        }</body>
 </html>
