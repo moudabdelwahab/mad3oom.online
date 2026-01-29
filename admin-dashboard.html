@@ -6,6 +6,7 @@
     <title>لوحة الإدارة - مدعوم</title>
     <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="robot.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <!-- مكتبات التصدير -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -323,8 +324,76 @@
             <button class="tab-btn" data-tab="rewardsTab">إدارة المكافآت</button>
             <button class="tab-btn" data-tab="usersTab">المستخدمين</button>
             <button class="tab-btn" data-tab="bannedTab">المحظورين</button>
+            <button class="tab-btn" data-tab="statsTab">الإحصائيات</button>
             <button class="tab-btn" data-tab="logsTab">سجل النشاطات</button>
             <button class="tab-btn" data-tab="profileTab">الملف الشخصي</button>
+        </div>
+        <!-- Stats Tab -->
+        <div id="statsTab" class="tab-content" style="display: none;">
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                <div class="stat-card" style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">إجمالي التذاكر</div>
+                    <div id="totalTicketsCount" style="font-size: 2rem; font-weight: bold; color: var(--color-primary);">0</div>
+                </div>
+                <div class="stat-card" style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">إجمالي البلاغات</div>
+                    <div id="totalReportsCount" style="font-size: 2rem; font-weight: bold; color: #217346;">0</div>
+                </div>
+                <div class="stat-card" style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">متوسط سرعة الاستجابة</div>
+                    <div id="avgResponseTime" style="font-size: 1.5rem; font-weight: bold; color: #d32f2f;">--</div>
+                </div>
+                <div class="stat-card" style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">تذاكر قيد الانتظار</div>
+                    <div id="pendingTicketsCount" style="font-size: 2rem; font-weight: bold; color: #f57c00;">0</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 2px solid var(--color-primary); padding-bottom: 0.5rem;">أكثر الموظفين استجابة</h3>
+                    <div class="table-container">
+                        <table style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>الموظف</th>
+                                    <th>عدد الردود</th>
+                                    <th>آخر رد</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topRespondersBody">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 2px solid #217346; padding-bottom: 0.5rem;">حالة البلاغات</h3>
+                    <div id="reportsStatusChart" style="height: 200px; display: flex; align-items: center; justify-content: center; background: #f9f9f9; border-radius: 4px;">
+                        <!-- Simple status summary -->
+                        <div id="reportsStatusSummary" style="width: 100%; padding: 1rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 2px solid #d32f2f; padding-bottom: 0.5rem;">آخر الردود على التذاكر</h3>
+                <div class="table-container">
+                    <table style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>الموظف</th>
+                                <th>التذكرة</th>
+                                <th>الرد</th>
+                                <th>التوقيت</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentRepliesBody">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- Tickets Tab -->
@@ -849,6 +918,7 @@
                     btn.classList.add('active');
                     document.getElementById(btn.dataset.tab).style.display = 'block';
                     if (btn.dataset.tab === 'logsTab') renderLogs();
+                    if (btn.dataset.tab === 'statsTab') renderStats();
                 };
             });
 
@@ -953,6 +1023,124 @@
             }
         };
 
+        async function renderStats() {
+            try {
+                // 1. جلب إجمالي التذاكر والبلاغات
+                const { count: ticketsCount } = await supabase.from('tickets').select('*', { count: 'exact', head: true });
+                const { count: reportsCount } = await supabase.from('user_reports').select('*', { count: 'exact', head: true });
+                const { count: pendingTickets } = await supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'open');
+
+                document.getElementById('totalTicketsCount').innerText = ticketsCount || 0;
+                document.getElementById('totalReportsCount').innerText = reportsCount || 0;
+                document.getElementById('pendingTicketsCount').innerText = pendingTickets || 0;
+
+                // 2. جلب الردود لحساب سرعة الاستجابة وأكثر الموظفين استجابة
+                const { data: replies, error: repliesError } = await supabase
+                    .from('ticket_replies')
+                    .select(`
+                        *,
+                        profiles:user_id (full_name, role),
+                        tickets:ticket_id (created_at, title)
+                    `)
+                    .order('created_at', { ascending: false });
+
+                if (repliesError) throw repliesError;
+
+                // حساب متوسط سرعة الاستجابة (الفرق بين إنشاء التذكرة وأول رد عليها)
+                const firstReplies = {};
+                replies.forEach(r => {
+                    if (!firstReplies[r.ticket_id] || new Date(r.created_at) < new Date(firstReplies[r.ticket_id].created_at)) {
+                        firstReplies[r.ticket_id] = r;
+                    }
+                });
+
+                let totalDiff = 0;
+                let count = 0;
+                Object.values(firstReplies).forEach(r => {
+                    if (r.tickets && r.tickets.created_at) {
+                        const diff = new Date(r.created_at) - new Date(r.tickets.created_at);
+                        totalDiff += diff;
+                        count++;
+                    }
+                });
+
+                if (count > 0) {
+                    const avgMs = totalDiff / count;
+                    const hours = Math.floor(avgMs / (1000 * 60 * 60));
+                    const mins = Math.floor((avgMs % (1000 * 60 * 60)) / (1000 * 60));
+                    document.getElementById('avgResponseTime').innerText = `${hours}س ${mins}د`;
+                } else {
+                    document.getElementById('avgResponseTime').innerText = 'لا توجد بيانات';
+                }
+
+                // أكثر الموظفين استجابة
+                const responders = {};
+                replies.forEach(r => {
+                    if (r.profiles && r.profiles.role === 'admin') {
+                        const name = r.profiles.full_name || 'موظف';
+                        if (!responders[name]) responders[name] = { count: 0, last: r.created_at };
+                        responders[name].count++;
+                        if (new Date(r.created_at) > new Date(responders[name].last)) {
+                            responders[name].last = r.created_at;
+                        }
+                    }
+                });
+
+                const topRespondersBody = document.getElementById('topRespondersBody');
+                topRespondersBody.innerHTML = Object.entries(responders)
+                    .sort((a, b) => b[1].count - a[1].count)
+                    .slice(0, 5)
+                    .map(([name, data]) => `
+                        <tr>
+                            <td>${name}</td>
+                            <td><span class="status-badge status-resolved">${data.count} رد</span></td>
+                            <td>${new Date(data.last).toLocaleDateString('ar-EG')}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="3" style="text-align:center;">لا توجد بيانات</td></tr>';
+
+                // آخر الردود
+                const recentRepliesBody = document.getElementById('recentRepliesBody');
+                recentRepliesBody.innerHTML = replies.slice(0, 5).map(r => `
+                    <tr>
+                        <td>${r.profiles?.full_name || '---'}</td>
+                        <td>${r.tickets?.title || '---'}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.message}</td>
+                        <td>${new Date(r.created_at).toLocaleString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="4" style="text-align:center;">لا توجد ردود حديثة</td></tr>';
+
+                // حالة البلاغات
+                const { data: reports } = await supabase.from('user_reports').select('status');
+                const statusCounts = { pending: 0, approved: 0, rejected: 0 };
+                reports?.forEach(r => statusCounts[r.status]++);
+
+                const summary = document.getElementById('reportsStatusSummary');
+                summary.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>قيد الانتظار:</span> <strong>${statusCounts.pending}</strong>
+                    </div>
+                    <div style="width: 100%; background: #eee; height: 8px; border-radius: 4px; margin-bottom: 1rem;">
+                        <div style="width: ${(statusCounts.pending / (reports?.length || 1)) * 100}%; background: #f57c00; height: 100%; border-radius: 4px;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>مقبولة:</span> <strong>${statusCounts.approved}</strong>
+                    </div>
+                    <div style="width: 100%; background: #eee; height: 8px; border-radius: 4px; margin-bottom: 1rem;">
+                        <div style="width: ${(statusCounts.approved / (reports?.length || 1)) * 100}%; background: #217346; height: 100%; border-radius: 4px;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>مرفوضة:</span> <strong>${statusCounts.rejected}</strong>
+                    </div>
+                    <div style="width: 100%; background: #eee; height: 8px; border-radius: 4px;">
+                        <div style="width: ${(statusCounts.rejected / (reports?.length || 1)) * 100}%; background: #d32f2f; height: 100%; border-radius: 4px;"></div>
+                    </div>
+                `;
+
+            } catch (err) {
+                console.error('Error rendering stats:', err);
+            }
+        }
+
         window.unbanUser = async (id) => {
             if (confirm('هل تريد فك الحظر عن هذا المستخدم؟')) {
                 const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
@@ -980,6 +1168,79 @@
         };
 
         init();
+
+        // Robot "Mad3oom" Logic
+        const chatTrigger = document.getElementById('chatTrigger');
+        const robotAvatar = document.getElementById('robotAvatar');
+        const robotBubble = document.getElementById('robotBubble');
+        const robotText = document.getElementById('robotText');
+        const driver = window.driver.js.driver;
+
+        const tourDriver = driver({
+            showProgress: true,
+            nextBtnText: 'التالي',
+            prevBtnText: 'السابق',
+            doneBtnText: 'تم',
+            steps: [
+                { element: '.admin-tabs', popover: { title: 'أدوات الإدارة', description: 'من هنا يمكنك التحكم في التذاكر، المكافآت، المستخدمين، وسجلات النشاط.', side: "bottom", align: 'start' }},
+                { element: '.stats-grid', popover: { title: 'نظرة عامة', description: 'إحصائيات سريعة حول حالة النظام وعدد التذاكر النشطة.', side: "top", align: 'start' }},
+                { element: '.nav-actions', popover: { title: 'التنبيهات والإعدادات', description: 'تابع الإشعارات الفورية وتحكم في إعدادات مظهر لوحة التحكم.', side: "bottom", align: 'start' }},
+                { element: '[data-tab="logsTab"]', popover: { title: 'سجل النشاطات', description: 'راقب كافة العمليات التي تتم على المنصة لضمان الأمان والشفافية.', side: "bottom", align: 'start' }}
+            ]
+        });
+
+        function toggleRobot(show) {
+            if (show) {
+                chatTrigger.style.display = 'none';
+                robotAvatar.classList.add('active');
+                setTimeout(() => {
+                    robotBubble.classList.add('visible');
+                }, 500);
+            } else {
+                robotBubble.classList.remove('visible');
+                setTimeout(() => {
+                    robotAvatar.classList.remove('active');
+                    chatTrigger.style.display = 'flex';
+                }, 500);
+            }
+        }
+
+        chatTrigger.addEventListener('click', () => {
+            robotText.textContent = "أهلاً بك يا مدير! أنا مدعوم، هل تحتاج لمساعدة في فهم أدوات لوحة الإدارة؟";
+            toggleRobot(true);
+        });
+
+        window.startTour = function() {
+            robotBubble.classList.remove('visible');
+            tourDriver.drive();
+        };
+
+        robotAvatar.addEventListener('click', () => {
+            toggleRobot(false);
+        });
     </script>
+    <!-- Robot Assistant "Mad3oom" -->
+    <div class="robot-container" id="robotContainer">
+        <div class="speech-bubble" id="robotBubble">
+            <div class="robot-header">
+                <span class="robot-status"></span>
+                <span class="robot-name">مدعوم</span>
+            </div>
+            <p class="robot-text" id="robotText"></p>
+            <button class="tour-btn" onclick="startTour()">ابدأ الجولة التعريفية</button>
+        </div>
+        
+        <div class="robot-avatar" id="robotAvatar">
+            <img src="assets/images/mad3oom-robot.png" alt="مدعوم">
+        </div>
+
+        <div class="chat-trigger" id="chatTrigger">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v8H3v-8a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-1-1-1.73a2 2 0 0 1 2-2M9 13a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m6 0a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2M7.5 18a1.5 1.5 0 0 0 0 3h9a1.5 1.5 0 0 0 0-3h-9z"/>
+            </svg>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
 </body>
 </html>

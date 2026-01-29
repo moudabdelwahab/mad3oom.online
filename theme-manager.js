@@ -154,17 +154,17 @@
          */
         setupToggleButton() {
             // Find theme toggle buttons (by ID or class)
-            const toggleButtons = document.querySelectorAll('#themeToggleBtn, .theme-toggle:not(.notification-btn)');
+            const getButtons = () => document.querySelectorAll('#themeToggleBtn, .theme-toggle:not(.notification-btn)');
+            const toggleButtons = getButtons();
             
             if (toggleButtons.length === 0) {
                 // Button might not be loaded yet, try again after a delay
-                setTimeout(() => this.setupToggleButton(), 100);
+                setTimeout(() => this.setupToggleButton(), 500);
                 return;
             }
 
             // Add click handlers to all toggle buttons
             toggleButtons.forEach(button => {
-                // Check if we already initialized this button to avoid infinite loops with cloneNode
                 if (button.dataset.themeInitialized) return;
                 
                 button.addEventListener('click', (e) => {
@@ -174,20 +174,20 @@
                 });
 
                 button.dataset.themeInitialized = 'true';
-                // Set initial state
                 this.updateToggleButton(button);
             });
 
             // Watch for theme changes and update all buttons
-            const observer = new MutationObserver(() => {
-                const buttons = document.querySelectorAll('#themeToggleBtn, .theme-toggle:not(.notification-btn)');
-                buttons.forEach(button => this.updateToggleButton(button));
-            });
+            if (!this.observer) {
+                this.observer = new MutationObserver(() => {
+                    getButtons().forEach(button => this.updateToggleButton(button));
+                });
 
-            observer.observe(document.documentElement, {
-                attributes: true,
-                attributeFilter: ['data-theme']
-            });
+                this.observer.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['data-theme']
+                });
+            }
         }
 
         /**
