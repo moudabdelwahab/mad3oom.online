@@ -3,728 +3,887 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة الإدارة - منصة مدعوم</title>
-    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <title>لوحة الإدارة - مدعوم</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="stylesheet" href="styles.css">
-    <script>
-        (function() {
-            try {
-                var theme = localStorage.getItem('theme-preference') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                document.documentElement.setAttribute('data-theme', theme);
-            } catch(e) {
-                document.documentElement.setAttribute('data-theme', 'light');
-            }
-        })();
-    </script>
-    <script src="theme-manager.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- مكتبات التصدير -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
-        .profile-section {
-            background: var(--card-bg);
-            padding: 2rem;
-            border-radius: 1rem;
+        /* ==================== Admin Dashboard - Professional Blue Palette ==================== */
+        :root {
+            /* Base Color Palette - Professional Blue (Same as Customer Dashboard) */
+            --color-primary: #003366;
+            --color-primary-variant: #0055AA;
+            --color-accent: #0077CC;
+            --color-background: #F5F5F5;
+            --color-surface: #FFFFFF;
+            --color-text: #333333;
+            --color-text-secondary: #777777;
+            --color-muted: #EEEEEE;
+            --color-success: #2E8A3A;
+            --color-warning: #E0A800;
+            --color-danger: #D9534F;
+            --color-border: #DDDDDD;
+            
+            /* Computed Colors */
+            --color-accent-hover: #0055AA;
+            --color-accent-dark: #0055AA;
+            --color-sidebar-bg: #002244;
+            --color-sidebar-active: #0077CC;
+            
+            /* Shadows */
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 20px rgba(0, 119, 204, 0.2);
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ==================== Navigation Bar ==================== */
+        .admin-nav {
+            background: var(--color-primary);
+            border-bottom: 1px solid var(--color-border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
             box-shadow: var(--shadow-sm);
-            margin-top: 2rem;
         }
-        .profile-form {
-            display: grid;
-            gap: 1.5rem;
-            max-width: 600px;
-        }
-        .nav-tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.5rem;
-        }
-        .nav-tab {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border-radius: 0.5rem;
-            transition: all 0.3s;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        .nav-tab:hover {
-            background: var(--hover-bg);
-            color: var(--primary-color);
-        }
-        .nav-tab.active {
-            background: var(--primary-color);
-            color: white;
-        }
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-            background: var(--card-bg);
-            border-radius: 0.5rem;
-            overflow: hidden;
-        }
-        th, td {
-            padding: 1rem;
-            text-align: right;
-            border-bottom: 1px solid var(--border-color);
-        }
-        th {
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            font-weight: 600;
-        }
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        .status-open { background: rgba(224, 168, 0, 0.15); color: var(--warning-color); }
-        .status-resolved { background: rgba(46, 138, 58, 0.15); color: var(--success-color); }
-        .status-closed { background: var(--color-muted); color: var(--text-secondary); }
-        
-        /* تحسينات الفلترة والبحث */
-        .admin-controls {
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
-            gap: 1rem;
-            flex-wrap: wrap;
         }
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            position: relative;
-        }
-        .search-box input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
-            background: var(--input-bg);
-            color: var(--text-primary);
-        }
-        .filter-group {
+
+        .nav-right, .nav-left {
             display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-logo {
+            height: 40px !important;
+            width: auto !important;
+            object-fit: contain;
+        }
+
+        .admin-title {
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #FFFFFF;
+        }
+
+        /* ==================== Admin Badge ==================== */
+        .admin-badge {
+            display: flex;
+            align-items: center;
             gap: 0.5rem;
+            background: linear-gradient(135deg, var(--color-warning), #FFD700);
+            color: #000;
+            padding: 0.35rem 0.85rem;
+            border-radius: 2rem;
+            font-weight: 800;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(224, 168, 0, 0.3);
+            animation: adminPulse 2s infinite;
         }
-        .filter-group select {
-            padding: 0.75rem;
+
+        @keyframes adminPulse {
+            0% { box-shadow: 0 0 0 0 rgba(224, 168, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(224, 168, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(224, 168, 0, 0); }
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #FFFFFF;
+            padding: 0.5rem;
             border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
-            background: var(--input-bg);
-            color: var(--text-primary);
-        }
-        
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
+            cursor: pointer;
+            display: flex;
             align-items: center;
             justify-content: center;
-        }
-        .modal.active { display: flex; }
-        .modal-content {
-            background: var(--card-bg);
-            padding: 2rem;
-            border-radius: 1rem;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
+            transition: all 0.2s;
             position: relative;
         }
-        .reply-item {
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            background: var(--bg-secondary);
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #FFFFFF;
         }
-        .reply-admin { border-right: 4px solid var(--primary-color); }
-        .reply-user { border-right: 4px solid var(--success-color); }
+
+        .notif-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--color-danger);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--color-primary);
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        .avatar-circle {
+            width: 35px;
+            height: 35px;
+            background: var(--color-accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .nav-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* ==================== Buttons ==================== */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary { background: var(--color-accent); color: #FFFFFF; }
+        .btn-primary:hover { background: var(--color-accent-hover); box-shadow: var(--shadow-glow); }
+        .btn-secondary { background: var(--color-muted); color: var(--color-text); border: 1px solid var(--color-border); }
+        .btn-secondary:hover { background: var(--color-border); }
+        .btn-danger { background: var(--color-danger); color: #FFFFFF; }
+        .btn-danger:hover { background: #c9302c; }
+        .btn-warning { background: var(--color-warning); color: #FFFFFF; }
+        .btn-success { background: var(--color-success); color: #FFFFFF; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 0.4rem; }
+
+        /* ==================== Tabs ==================== */
+        .admin-tabs {
+            display: flex;
+            gap: 0.75rem;
+            margin: 2rem 0;
+            background: var(--color-surface);
+            padding: 0.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Cairo', sans-serif;
+            border-radius: 0.75rem;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            color: #FFFFFF;
+            background: var(--color-accent);
+            box-shadow: 0 4px 12px rgba(0, 119, 204, 0.3);
+        }
+
+        .tab-btn:hover:not(.active) { background: var(--color-muted); }
+
+        /* ==================== Tables ==================== */
+        .table-container {
+            background: var(--color-surface);
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            overflow: hidden;
+            margin-top: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--color-muted); padding: 1rem; text-align: right; font-weight: 700; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
+        td { padding: 1rem; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: var(--color-muted); }
+
+        /* ==================== Stats Grid ==================== */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); transition: all 0.3s; }
+        .stat-card:hover { box-shadow: var(--shadow); border-color: var(--color-accent); }
+        .stat-label { color: var(--color-text-secondary); margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; }
+        .stat-value { font-size: 2rem; font-weight: 800; color: var(--color-accent); }
+
+        /* ==================== Modals ==================== */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--color-surface); padding: 2rem; border-radius: 1.5rem; width: 100%; max-width: 500px; border: 1px solid var(--color-border); box-shadow: var(--shadow-lg); }
+
+        /* ==================== Forms ==================== */
+        .form-group { margin-bottom: 1.5rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--color-text); }
+        .form-control { width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; font-family: 'Cairo', sans-serif; background: var(--color-surface); color: var(--color-text); font-size: 1rem; }
+        .form-control:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1); }
+
+        /* ==================== Status Badges ==================== */
+        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .status-open { background: var(--color-warning); color: white; }
+        .status-resolved { background: var(--color-success); color: white; }
+        .status-in-progress { background: var(--color-accent); color: white; }
+        .status-pending { background: var(--color-warning); color: white; }
+        .status-approved { background: var(--color-success); color: white; }
+        .status-rejected { background: var(--color-danger); color: white; }
+
+        /* ==================== Main Container ==================== */
+        .admin-main { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .action-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     </style>
 </head>
-<body>
-    <nav class="navbar">
+<body class="admin-body">
+    <nav class="admin-nav">
         <div class="nav-container">
-            <div class="nav-logo">
-                <img src="logo.svg" alt="Logo" class="logo-image">
-                <span>لوحة الإدارة</span>
+            <div class="nav-right">
+                <img src="/assets/images/logo.png" alt="مدعوم" class="admin-logo">
+                <span class="admin-title">لوحة الإدارة</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme" style="flex-shrink: 0;">
-                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                </button>
-                
-                <div class="notification-wrapper" style="position: relative; display: flex; align-items: center;">
-                    <button id="notificationBtn" class="notification-btn" style="position: relative; flex-shrink: 0; background: none; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.5rem; cursor: pointer; color: var(--text-primary); display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                        </svg>
-                        <span id="notificationBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger-color); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--card-bg);">0</span>
-                    </button>
-                    <div id="notificationDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: var(--shadow-lg); z-index: 1001; margin-top: 0.5rem; max-height: 400px; overflow-y: auto;">
-                        <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
-                            <span>الإشعارات</span>
-                            <button id="clearNotifications" style="font-size: 0.8rem; color: var(--primary-color); background: none; border: none; cursor: pointer;">مسح الكل</button>
-                        </div>
-                        <div id="notificationsList" style="padding: 0.5rem;">
-                            <p style="text-align: center; padding: 1rem; color: var(--text-secondary);">لا توجد إشعارات جديدة</p>
-                        </div>
+            <div class="nav-left">
+                <div id="adminBadgeContainer" style="display: none;">
+                    <div class="admin-badge">
+                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"></path></svg>
+                        ADMIN
                     </div>
                 </div>
-
-                <ul class="nav-menu" style="display: flex; align-items: center; gap: 1rem; margin: 0; padding: 0; list-style: none;">
-                    <li id="welcomeAdmin" style="color: var(--color-nav-text); font-weight: 500; white-space: nowrap;"></li>
-                    <li><a href="#" id="profileLink">الملف الشخصي</a></li>
-                    <li><a href="#" id="signOutLink">تسجيل الخروج</a></li>
-                </ul>
+                <div class="nav-actions">
+                    <button id="themeToggle" class="nav-btn" title="تبديل المظهر">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
+                    </button>
+                    <div class="notifications-dropdown">
+                        <button id="notifBtn" class="nav-btn" title="الإشعارات">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                            <span class="notif-badge" id="notifCount" style="display:none;">0</span>
+                        </button>
+                    </div>
+                    <div class="user-profile-dropdown">
+                        <button id="profileBtn" class="nav-btn" style="padding: 2px; border-radius: 50%;">
+                            <div class="avatar-circle" id="adminInitial">A</div>
+                            <img id="navAvatar" src="" class="nav-avatar" style="display: none;">
+                        </button>
+                    </div>
+                    <button onclick="logout()" class="btn btn-danger btn-sm">خروج</button>
+                </div>
             </div>
         </div>
     </nav>
 
-    <main class="container" style="margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem;">
-        <div class="nav-tabs">
-            <div class="nav-tab active" data-tab="overview">إدارة التذاكر</div>
-            <div class="nav-tab" data-tab="profile">الملف الشخصي</div>
+    <main class="admin-main">
+        <div class="admin-tabs">
+            <button class="tab-btn active" data-tab="ticketsTab">إدارة التذاكر</button>
+            <button class="tab-btn" data-tab="rewardsTab">إدارة المكافآت</button>
+            <button class="tab-btn" data-tab="usersTab">المستخدمين</button>
+            <button class="tab-btn" data-tab="bannedTab">المحظورين</button>
+            <button class="tab-btn" data-tab="logsTab">سجل النشاطات</button>
+            <button class="tab-btn" data-tab="profileTab">الملف الشخصي</button>
         </div>
 
-        <!-- قسم الإدارة -->
-        <div id="overviewTab" class="tab-content active">
-            <div class="page-header">
-                <h1>إدارة التذاكر</h1>
-            </div>
-            
+        <!-- Tickets Tab -->
+        <div id="ticketsTab" class="tab-content" style="display: block;">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">إجمالي التذاكر</p>
-                        <p class="stat-value" id="admTotal">0</p>
-                    </div>
+                    <p class="stat-label">إجمالي التذاكر</p>
+                    <h2 id="admTotal" class="stat-value">0</h2>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">المفتوحة</p>
-                        <p class="stat-value" id="admOpen" style="color: var(--warning-color);">0</p>
-                    </div>
+                    <p class="stat-label">المفتوحة</p>
+                    <h2 id="admOpen" class="stat-value" style="color: var(--color-warning);">0</h2>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">المحلولة</p>
-                        <p class="stat-value" id="admResolved" style="color: var(--success-color);">0</p>
-                    </div>
+                    <p class="stat-label">المحلولة</p>
+                    <h2 id="admResolved" class="stat-value" style="color: var(--color-success);">0</h2>
                 </div>
             </div>
-
-            <div class="admin-controls">
-                <div class="search-box">
-                    <input type="text" id="ticketSearch" placeholder="بحث في التذاكر...">
-                </div>
-                <div class="filter-group">
-                    <select id="statusFilter">
-                        <option value="">كل الحالات</option>
-                        <option value="open">مفتوحة</option>
-                        <option value="resolved">محلولة</option>
-                        <option value="closed">مغلقة</option>
-                    </select>
-                </div>
-            </div>
-
-            <div style="overflow-x: auto; background: var(--card-bg); border-radius: 1rem; box-shadow: var(--shadow-sm);">
+            <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>المستخدم</th>
-                            <th>العنوان</th>
+                            <th>العميل</th>
+                            <th>الموضوع</th>
                             <th>الحالة</th>
                             <th>التاريخ</th>
-                            <th>إجراءات</th>
+                            <th>الإجراء</th>
                         </tr>
                     </thead>
                     <tbody id="admTicketsBody">
-                        <tr><td colspan="5" style="text-align:center; padding: 3rem;">جاري تحميل البيانات...</td></tr>
+                        <tr><td colspan="5" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- قسم البروفايل -->
-        <div id="profileTab" class="tab-content">
-            <div class="profile-section" style="max-width: 800px; margin: 0 auto;">
-                <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);">
-                    <div style="width: 80px; height: 80px; background: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; box-shadow: var(--shadow-sm);">
-                        <span id="profileInitials">AD</span>
-                    </div>
-                    <div>
-                        <h2 style="margin: 0; font-size: 1.75rem;">إعدادات المسؤول</h2>
-                        <p style="color: var(--text-secondary); margin: 0.25rem 0 0 0;">إدارة بيانات حسابك الإداري وصلاحياتك</p>
-                    </div>
+        <!-- Rewards Tab -->
+        <div id="rewardsTab" class="tab-content" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <p class="stat-label">بلاغات معلقة</p>
+                    <h2 id="admPendingReports" class="stat-value">0</h2>
                 </div>
-                
-                <div id="profileMessage" class="message-box" style="display: none; margin-bottom: 1.5rem; padding: 1rem; border-radius: 0.5rem;"></div>
+                <div class="stat-card">
+                    <p class="stat-label">بلاغات مقبولة</p>
+                    <h2 id="admApprovedReports" class="stat-value" style="color: var(--color-success);">0</h2>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">بلاغات مرفوضة</p>
+                    <h2 id="admRejectedReports" class="stat-value" style="color: var(--color-danger);">0</h2>
+                </div>
+                <div class="stat-card">
+                    <p class="stat-label">أعضاء Pro</p>
+                    <h2 id="admProUsers" class="stat-value" style="color: var(--color-accent);">0</h2>
+                </div>
+            </div>
 
-                <form id="profileForm" class="profile-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                    <div class="form-group" style="grid-column: span 2;">
-                        <label for="profileFullName" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">الاسم الكامل</label>
-                        <input type="text" id="profileFullName" class="form-control" placeholder="أدخل اسمك الكامل" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary);">
-                    </div>
-                    
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                <input type="text" id="reportsSearch" class="form-control" placeholder="بحث في البلاغات..." style="flex: 1;">
+                <select id="reportsStatusFilter" class="form-control" style="width: 200px;">
+                    <option value="all">جميع الحالات</option>
+                    <option value="pending">معلقة</option>
+                    <option value="approved">مقبولة</option>
+                    <option value="rejected">مرفوضة</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المستخدم</th>
+                            <th>العنوان</th>
+                            <th>النوع</th>
+                            <th>الخطورة</th>
+                            <th>الحالة</th>
+                            <th>النقاط</th>
+                            <th>التاريخ</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody">
+                        <tr><td colspan="8" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="usersTab" class="tab-content" style="display: none;">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>البريد</th>
+                            <th>النقاط</th>
+                            <th>الرتبة</th>
+                            <th>التاريخ</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="6" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Banned Tab -->
+        <div id="bannedTab" class="tab-content" style="display: none;">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>البريد</th>
+                            <th>الحالة</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bannedUsersBody">
+                        <tr><td colspan="4" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="logsTab" class="tab-content" style="display: none;">
+            <div class="filters-bar" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; background: var(--color-surface); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--color-border);">
+                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+                    <label class="form-label" style="font-size: 0.85rem;">نوع المستخدم</label>
+                    <select id="logRoleFilter" class="form-control">
+                        <option value="all">الكل</option>
+                        <option value="admin">إدارة</option>
+                        <option value="user">أعضاء</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+                    <label class="form-label" style="font-size: 0.85rem;">نوع النشاط</label>
+                    <select id="logActionFilter" class="form-control">
+                        <option value="all">الكل</option>
+                        <option value="login">تسجيل دخول</option>
+                        <option value="logout">تسجيل خروج</option>
+                        <option value="ticket_created">إنشاء تذكرة</option>
+                        <option value="report_submitted">بلاغ مكافأة</option>
+                        <option value="impersonate">تقمص شخصية</option>
+                        <option value="ban_user">حظر مستخدم</option>
+                        <option value="unban_user">فك حظر</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 100px;">
+                    <label class="form-label" style="font-size: 0.85rem;">عدد السجلات</label>
+                    <select id="logLimitFilter" class="form-control">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                        <option value="all">الكل</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
+                    <button id="exportExcelBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #217346; color: white; border: none; border-radius: 4px; cursor: pointer;">Excel</button>
+                    <button id="exportPdfBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">PDF</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th>المستخدم</th>
+                            <th>النشاط</th>
+                            <th>الجهاز / المتصفح</th>
+                            <th>الموقع / IP</th>
+                            <th>التاريخ والوقت</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr><td colspan="5" style="text-align: center; padding: 2rem;">جاري تحميل السجلات...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Profile Tab -->
+        <div id="profileTab" class="tab-content" style="display: none;">
+            <div class="stat-card" style="max-width: 600px; margin: 0 auto;">
+                <h3>تعديل الملف الشخصي</h3>
+                <form id="profileForm" style="margin-top: 1.5rem;">
                     <div class="form-group">
-                        <label for="profileEmail" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">البريد الإلكتروني</label>
-                        <input type="email" id="profileEmail" class="form-control" readonly disabled style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--hover-bg); color: var(--text-secondary); cursor: not-allowed;">
-                        <small style="color: var(--text-secondary); font-size: 0.8rem;">لا يمكن تغيير البريد الأساسي</small>
+                        <label class="form-label">الاسم الكامل</label>
+                        <input type="text" id="profileFullName" class="form-control">
                     </div>
-                    
                     <div class="form-group">
-                        <label for="profilePhone" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">رقم الهاتف</label>
-                        <input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary);">
+                        <label class="form-label">رقم الهاتف</label>
+                        <input type="tel" id="profilePhone" class="form-control">
                     </div>
-
-                    <div class="form-group" style="grid-column: span 2;">
-                        <label for="profileBio" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">نبذة تعريفية (Bio)</label>
-                        <textarea id="profileBio" class="form-control" rows="3" placeholder="اكتب نبذة قصيرة عنك..." style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary); resize: vertical;"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="profileWebsite" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">الموقع الإلكتروني</label>
-                        <input type="url" id="profileWebsite" class="form-control" placeholder="https://example.com" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary);">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="profileRole" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">الدور الوظيفي</label>
-                        <input type="text" id="profileRole" class="form-control" value="مسؤول النظام (Admin)" readonly disabled style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--hover-bg); color: var(--text-secondary); cursor: not-allowed;">
-                    </div>
-
-                    <div class="form-group" style="grid-column: span 2; margin-top: 1rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-                        <label for="profilePassword" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--danger-color);">تغيير كلمة المرور</label>
-                        <input type="password" id="profilePassword" class="form-control" placeholder="اتركها فارغة إذا لا تريد التغيير" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary);">
-                    </div>
-
-                    <div style="grid-column: span 2; display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
-                        <button type="button" class="btn btn-secondary" style="padding: 0.75rem 2rem;">إلغاء</button>
-                        <button type="submit" class="btn btn-primary" id="saveProfileBtn" style="padding: 0.75rem 2.5rem; font-weight: bold;">حفظ التغييرات</button>
-                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">حفظ التغييرات</button>
                 </form>
             </div>
         </div>
     </main>
 
-    <!-- Modal الرد على التذكرة -->
-    <div id="replyModal" class="modal">
+    <!-- Modals -->
+    <div id="pointsModal" class="modal">
         <div class="modal-content">
-            <h2 id="modalTicketTitle">الرد على التذكرة</h2>
-            <div id="repliesList" style="margin: 1.5rem 0; max-height: 300px; overflow-y: auto;">
-                <!-- الردود ستظهر هنا -->
-            </div>
-            <form id="replyForm">
-                <textarea id="replyMessage" class="form-control" style="width: 100%; min-height: 100px; margin-bottom: 1rem; padding: 0.75rem;" placeholder="اكتب ردك هنا..." required></textarea>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('replyModal').classList.remove('active')">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">إرسال الرد</button>
+            <h3>تعديل النقاط</h3>
+            <form id="pointsForm">
+                <input type="hidden" id="pointsUserId">
+                <div class="form-group">
+                    <label class="form-label">النقاط الجديدة</label>
+                    <input type="number" id="newPoints" class="form-control">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('pointsModal').classList.remove('active')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">تحديث</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="roleModal" class="modal">
+        <div class="modal-content">
+            <h3>تعديل الرتبة</h3>
+            <form id="roleForm">
+                <input type="hidden" id="roleUserId">
+                <div class="form-group">
+                    <label class="form-label">الرتبة الجديدة</label>
+                    <select id="newRole" class="form-control">
+                        <option value="user">عضو (User)</option>
+                        <option value="admin">إدارة (Admin)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('roleModal').classList.remove('active')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">تحديث</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script type="module">
-        import { requireAuth, logout, updateProfile } from './auth-client.js';
-        import { fetchUserTickets, fetchTicketStats, updateTicketStatus, deleteTicket, addTicketReply, fetchTicketReplies, subscribeToTickets } from './tickets-service.js';
+        import { supabase } from './api-config.js';
+        import { requireAuth, logout, updateProfile, adminImpersonateUser, adminUpdateUserRole } from './auth-client.js';
+        import { fetchTicketStats, subscribeToTickets } from './tickets-service.js';
+        import { initAdminRewards } from './admin-rewards.js';
+        import { calculateMembershipLevel } from './rewards-service.js';
+        import { fetchActivityLogs, formatActivityMessage } from './activity-service.js';
+        
+        let user = null;
 
-        // 1. حماية الصفحة (Admin Only)
-        let user;
-        try {
-            user = await requireAuth('admin');
-            if (!user) {
-                window.location.replace('sign-in.html');
-            }
-        } catch (err) {
-            console.error('Auth error:', err);
-            window.location.replace('sign-in.html');
-        }
-
-        // 2. عرض البيانات الأولية
-        if (user) {
-            const fullName = user.profile?.full_name || '';
-            document.getElementById('welcomeAdmin').textContent = `مرحباً، ${fullName || user.email}`;
-            document.getElementById('profileEmail').value = user.email;
-            document.getElementById('profileFullName').value = fullName;
-            document.getElementById('profilePhone').value = user.profile?.phone || '';
-            
-            // الحقول الجديدة
-            if (document.getElementById('profileBio')) document.getElementById('profileBio').value = user.profile?.bio || '';
-            if (document.getElementById('profileWebsite')) document.getElementById('profileWebsite').value = user.profile?.website || '';
-            
-            // تحديث الأحرف الأولى
-            if (fullName) {
-                const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-                document.getElementById('profileInitials').textContent = initials;
-            }
-        }
-
-        // 3. التبديل بين التبويبات
-        function switchTab(tabName) {
-            const tabs = document.querySelectorAll('.nav-tab');
-            const contents = document.querySelectorAll('.tab-content');
-            
-            tabs.forEach(t => {
-                t.classList.toggle('active', t.dataset.tab === tabName);
-            });
-            
-            contents.forEach(c => {
-                c.classList.toggle('active', c.id === `${tabName}Tab`);
-            });
-
-            // حفظ التبويب الحالي في URL
-            const url = new URL(window.location);
-            url.searchParams.set('tab', tabName);
-            window.history.pushState({}, '', url);
-        }
-
-        // ربط أحداث التبويبات
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-        });
-
-        // ربط زر الملف الشخصي في النافبار
-        document.getElementById('profileLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            switchTab('profile');
-        });
-
-        // التحقق من التبويب في URL عند التحميل
-        const params = new URLSearchParams(window.location.search);
-        const activeTab = params.get('tab');
-        if (activeTab && (activeTab === 'overview' || activeTab === 'profile')) {
-            switchTab(activeTab);
-        }
-
-        // 4. تحديث البروفايل
-        const profileForm = document.getElementById('profileForm');
-        const profileMessage = document.getElementById('profileMessage');
-
-        profileForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const saveBtn = document.getElementById('saveProfileBtn');
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'جاري الحفظ...';
+        async function init() {
+            setupEventListeners();
             try {
+                user = await requireAuth('admin');
+                if (!user) return window.location.replace('sign-in.html');
+                updateUIWithUserData();
+                renderTickets();
+                renderUsers();
+                renderBannedUsers();
+                renderLogs();
+                await initAdminRewards();
+                subscribeToTickets(() => renderTickets());
+            } catch (err) { 
+                console.error('Init error:', err);
+                window.location.replace('sign-in.html'); 
+            }
+        }
+
+        function updateUIWithUserData() {
+            if (user) {
+                const profile = user.profile || {};
+                document.getElementById('adminInitial').textContent = (profile.full_name || user.email).charAt(0).toUpperCase();
+                if (profile.role === 'admin') document.getElementById('adminBadgeContainer').style.display = 'block';
+                if (profile.avatar_url) {
+                    document.getElementById('navAvatar').src = profile.avatar_url;
+                    document.getElementById('navAvatar').style.display = 'block';
+                    document.getElementById('adminInitial').style.display = 'none';
+                }
+            }
+        }
+
+        async function renderTickets() {
+            const body = document.getElementById('admTicketsBody');
+            const { data: tickets } = await supabase.from('tickets').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+            body.innerHTML = tickets?.map(t => `
+                <tr>
+                    <td>${t.profiles?.full_name || 'مستخدم'}</td>
+                    <td>${t.title}</td>
+                    <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+                    <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
+                    <td><button class="btn btn-primary btn-sm" onclick="impersonateUser('${t.user_id}')">دخول</button></td>
+                </tr>
+            `).join('') || '<tr><td colspan="5">لا توجد تذاكر</td></tr>';
+            
+            const stats = await fetchTicketStats();
+            document.getElementById('admTotal').textContent = stats.total;
+            document.getElementById('admOpen').textContent = stats.open;
+            document.getElementById('admResolved').textContent = stats.resolved;
+        }
+
+        async function renderUsers() {
+            const body = document.getElementById('usersTableBody');
+            const { data: users } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+            body.innerHTML = users?.map(u => `
+                <tr>
+                    <td>${u.full_name || 'بدون اسم'}</td>
+                    <td>${u.email}</td>
+                    <td>${u.points || 0}</td>
+                    <td>${u.role === 'admin' ? 'إدارة' : 'عضو'}</td>
+                    <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn btn-warning btn-sm" onclick="openPointsModal('${u.id}', ${u.points || 0})">نقاط</button>
+                            <button class="btn btn-primary btn-sm" onclick="openRoleModal('${u.id}', '${u.role || 'user'}')">رتبة</button>
+                            <button class="btn btn-success btn-sm" onclick="impersonateUser('${u.id}')">دخول</button>
+                            ${u.ban_status === 'none' || !u.ban_status ? 
+                                `<button class="btn btn-danger btn-sm" onclick="banUser('${u.id}')">حظر</button>` : 
+                                `<button class="btn btn-secondary btn-sm" onclick="unbanUser('${u.id}')">فك الحظر</button>`
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="6">لا يوجد مستخدمين</td></tr>';
+        }
+
+        async function renderBannedUsers() {
+            const body = document.getElementById('bannedUsersBody');
+            const { data: users } = await supabase.from('profiles').select('*').neq('ban_status', 'none');
+            body.innerHTML = users?.map(u => `
+                <tr>
+                    <td>${u.full_name}</td>
+                    <td>${u.email}</td>
+                    <td>${u.ban_status}</td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="unbanUser('${u.id}')">فك الحظر</button></td>
+                </tr>
+            `).join('') || '<tr><td colspan="4">لا يوجد محظورين</td></tr>';
+        }
+
+        async function renderLogs() {
+            const body = document.getElementById('logsTableBody');
+            const filters = {
+                role: document.getElementById('logRoleFilter').value,
+                action: document.getElementById('logActionFilter').value
+            };
+            const limit = document.getElementById('logLimitFilter').value;
+            
+            try {
+                const logs = await fetchActivityLogs(filters, limit);
+                window.currentLogs = logs; // حفظ السجلات الحالية للتصدير
+                body.innerHTML = logs?.map(l => {
+                    const location = l.location_info ? `${l.location_info.country || ''} - ${l.location_info.city || ''}` : 'غير متوفر';
+                    const userRole = l.profiles?.role || l.user_role;
+                    const roleLabel = userRole === 'admin' ? '<span class="status-badge status-resolved" style="background:#003366">إدارة</span>' : '<span class="status-badge status-open" style="background:#777">عضو</span>';
+                    
+                    return `
+                        <tr>
+                            <td>
+                                <div style="font-weight:600;">${l.profiles?.full_name || 'مستخدم'}</div>
+                                <div style="font-size:0.75rem; color:var(--color-text-secondary);">${l.profiles?.email || ''}</div>
+                                <div style="margin-top:0.25rem;">${roleLabel}</div>
+                            </td>
+                            <td>${formatActivityMessage(l)}</td>
+                            <td><small>${l.device_info || 'غير متوفر'}</small></td>
+                            <td>
+                                <div>${l.ip_address || '---'}</div>
+                                <div style="font-size:0.75rem; color:var(--color-text-secondary);">${location}</div>
+                            </td>
+                            <td>
+                                <div>${new Date(l.created_at).toLocaleDateString('ar-EG')}</div>
+                                <div style="font-size:0.75rem; color:var(--color-text-secondary);">${new Date(l.created_at).toLocaleTimeString('ar-EG')}</div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="5" style="text-align:center;">لا توجد سجلات مطابقة</td></tr>';
+            } catch (err) {
+                body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--color-danger);">خطأ في تحميل السجلات</td></tr>';
+            }
+        }
+
+        function exportToExcel() {
+            if (!window.currentLogs || window.currentLogs.length === 0) return alert('لا توجد بيانات لتصديرها');
+            
+            const data = window.currentLogs.map(l => ({
+                'المستخدم': l.profiles?.full_name || l.profiles?.email || 'مستخدم',
+                'البريد الإلكتروني': l.profiles?.email || '',
+                'الرتبة': l.profiles?.role === 'admin' ? 'إدارة' : 'عضو',
+                'النشاط': formatActivityMessage(l).replace(/<\/?[^>]+(>|$)/g, ""),
+                'الجهاز/المتصفح': l.device_info || 'غير متوفر',
+                'IP': l.ip_address || '---',
+                'الموقع': l.location_info ? `${l.location_info.country || ''} - ${l.location_info.city || ''}` : 'غير متوفر',
+                'التاريخ والوقت': new Date(l.created_at).toLocaleString('ar-EG')
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Activity Logs");
+            XLSX.writeFile(wb, `Activity_Logs_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function exportToPdf() {
+            if (!window.currentLogs || window.currentLogs.length === 0) return alert('لا توجد بيانات لتصديرها');
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            
+            // إضافة الخط العربي (اختياري، هنا سنستخدم الخط الافتراضي مع دعم النصوص)
+            doc.text("سجل النشاطات - منصة مدعوم", 150, 10, { align: 'center' });
+
+            const tableData = window.currentLogs.map(l => [
+                l.profiles?.full_name || l.profiles?.email || 'مستخدم',
+                l.profiles?.role === 'admin' ? 'إدارة' : 'عضو',
+                formatActivityMessage(l).replace(/<\/?[^>]+(>|$)/g, ""),
+                l.device_info || 'غير متوفر',
+                l.ip_address || '---',
+                new Date(l.created_at).toLocaleString('ar-EG')
+            ]);
+
+            doc.autoTable({
+                head: [['المستخدم', 'الرتبة', 'النشاط', 'الجهاز', 'IP', 'التاريخ']],
+                body: tableData,
+                styles: { font: 'helvetica', halign: 'right' },
+                headStyles: { fillColor: [0, 51, 102] }
+            });
+
+            doc.save(`Activity_Logs_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+                    btn.classList.add('active');
+                    document.getElementById(btn.dataset.tab).style.display = 'block';
+                    if (btn.dataset.tab === 'logsTab') renderLogs();
+                };
+            });
+
+            document.getElementById('logRoleFilter').onchange = renderLogs;
+            document.getElementById('logActionFilter').onchange = renderLogs;
+            document.getElementById('logLimitFilter').onchange = renderLogs;
+            document.getElementById('exportExcelBtn').onclick = exportToExcel;
+            document.getElementById('exportPdfBtn').onclick = exportToPdf;
+
+            document.getElementById('pointsForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('pointsUserId').value;
+                const points = parseInt(document.getElementById('newPoints').value);
+                
+                try {
+                    const membershipLevel = calculateMembershipLevel(points);
+                    const isPro = points >= 1000;
+
+                    // تحديث ملف المستخدم
+                    const { error: profileError } = await supabase.from('profiles')
+                        .update({ 
+                            points: points
+                        })
+                        .eq('id', id);
+                    
+                    if (profileError) throw profileError;
+
+                    // تحديث المحفظة
+                    const { error: walletError } = await supabase.from('user_wallets')
+                        .upsert({ 
+                            user_id: id, 
+                            total_points: points, 
+                            available_points: points,
+                            membership_level: membershipLevel,
+                            is_pro: isPro,
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'user_id' });
+                    
+                    if (walletError) throw walletError;
+
+                    alert('تم تحديث النقاط والمحفظة بنجاح');
+                    document.getElementById('pointsModal').classList.remove('active');
+                    renderUsers();
+                } catch (error) {
+                    console.error('Error updating points:', error);
+                    alert('حدث خطأ أثناء التحديث: ' + error.message);
+                }
+            };
+
+            document.getElementById('roleForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('roleUserId').value;
+                const role = document.getElementById('newRole').value;
+                await adminUpdateUserRole(id, role);
+                alert('تم التحديث');
+                document.getElementById('roleModal').classList.remove('active');
+                renderUsers();
+            };
+
+            document.getElementById('profileForm').onsubmit = async (e) => {
+                e.preventDefault();
                 const fullName = document.getElementById('profileFullName').value;
                 const phone = document.getElementById('profilePhone').value;
-                const bio = document.getElementById('profileBio').value;
-                const website = document.getElementById('profileWebsite').value;
-                const password = document.getElementById('profilePassword').value;
-
-                const { error: profileError } = await updateProfile({
-                    full_name: fullName,
-                    phone: phone,
-                    bio: bio,
-                    website: website
-                });
-                if (profileError) throw profileError;
-
-
-
-                if (password) {
-                    const { error: pwdError } = await import('./auth-client.js').then(m => m.updatePassword(password));
-                    if (pwdError) throw pwdError;
-                }
-
-                profileMessage.style.display = 'block';
-                profileMessage.style.background = 'rgba(46, 138, 58, 0.1)';
-                profileMessage.style.color = 'var(--success-color)';
-                profileMessage.textContent = 'تم تحديث البيانات بنجاح.';
-                
-                document.getElementById('welcomeAdmin').textContent = `مرحباً، ${fullName}`;
-                document.getElementById('profilePassword').value = '';
-
-            } catch (err) {
-                profileMessage.style.display = 'block';
-                profileMessage.style.background = 'rgba(217, 83, 79, 0.1)';
-                profileMessage.style.color = 'var(--danger-color)';
-                profileMessage.textContent = err.message || 'فشل التحديث';
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'حفظ التغييرات';
-            }
-        });
-
-        // 5. تسجيل الخروج
-        document.getElementById('signOutLink').addEventListener('click', async (e) => {
-            e.preventDefault();
-            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-                try {
-                    await logout();
-                    window.location.href = 'sign-in.html';
-                } catch (err) {
-                    console.error('Logout error:', err);
-                    alert('حدث خطأ أثناء تسجيل الخروج');
-                }
-            }
-        });
-
-        // 6. تحميل وإدارة التذاكر
-        async function loadAdminTickets() {
-            const tbody = document.getElementById('admTicketsBody');
-            try {
-                // تحميل الإحصائيات
-                const stats = await fetchTicketStats();
-                document.getElementById('admTotal').textContent = stats.total;
-                document.getElementById('admOpen').textContent = stats.open;
-                document.getElementById('admResolved').textContent = stats.resolved;
-
-                // تحميل التذاكر مع الفلاتر
-                const status = document.getElementById('statusFilter').value;
-                const search = document.getElementById('ticketSearch').value;
-                
-                const tickets = await fetchUserTickets({ status, search });
-                tbody.innerHTML = '';
-
-                if (!tickets || tickets.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 3rem;">لا توجد تذاكر تطابق البحث</td></tr>';
-                    return;
-                }
-
-                tickets.forEach(t => {
-                    const tr = document.createElement('tr');
-                    // محاولة جلب البيانات من البروفايل المرتبط
-                    const profile = t.profiles;
-                    const userIdentifier = profile?.full_name || profile?.email || 'مستخدم مجهول';
-                    const userEmail = profile?.email || '';
-                    
-                    tr.innerHTML = `
-                        <td>
-                            <div style="font-weight: 600;">${userIdentifier}</div>
-                            <div style="font-size: 0.8rem; color: var(--text-secondary);">${userEmail}</div>
-                        </td>
-                        <td>${t.title}</td>
-                        <td><span class="status-badge status-${t.status}">${t.status === 'open' ? 'مفتوحة' : t.status === 'resolved' ? 'محلولة' : 'مغلقة'}</span></td>
-                        <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
-                        <td>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-primary btn-sm" data-id="${t.id}" data-title="${t.title}" data-action="reply">رد</button>
-                                ${t.status !== 'resolved' ? `<button class="btn btn-secondary btn-sm" data-id="${t.id}" data-action="resolve">حل</button>` : ''}
-                                <button class="btn btn-danger btn-sm" data-id="${t.id}" data-action="delete">حذف</button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-                // ربط الأحداث بالأزرار
-                tbody.querySelectorAll('button').forEach(btn => {
-                    btn.onclick = async (e) => {
-                        e.preventDefault();
-                        const id = btn.dataset.id;
-                        const action = btn.dataset.action;
-                        const title = btn.dataset.title;
-                        
-                        btn.disabled = true;
-                        if (action === 'reply') {
-                            openReplyModal(id, title);
-                            btn.disabled = false;
-                            return;
-                        } else if (action === 'resolve') {
-                            await updateTicketStatus(id, 'resolved');
-                        } else if (action === 'delete') {
-                            if (confirm('هل أنت متأكد من حذف هذه التذكرة؟')) {
-                                await deleteTicket(id);
-                            } else {
-                                btn.disabled = false;
-                                return;
-                            }
-                        }
-                        loadAdminTickets();
-                    };
-                });
-            } catch (err) {
-                console.error('Admin tickets error:', err);
-                let errorMsg = 'حدث خطأ أثناء تحميل البيانات';
-                if (err.message) errorMsg += `: ${err.message}`;
-                if (err.details) errorMsg += ` (${err.details})`;
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--danger-color); padding: 3rem;">${errorMsg}</td></tr>`;
-            }
+                await updateProfile({ full_name: fullName, phone });
+                alert('تم حفظ التغييرات');
+            };
         }
 
-        // ربط الفلاتر والبحث
-        document.getElementById('statusFilter').addEventListener('change', loadAdminTickets);
-        let searchTimeout;
-        document.getElementById('ticketSearch').addEventListener('input', () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(loadAdminTickets, 500);
-        });
-
-        // إدارة الردود
-        let currentTicketId = null;
-        async function openReplyModal(ticketId, title) {
-            currentTicketId = ticketId;
-            document.getElementById('modalTicketTitle').textContent = `الرد على: ${title}`;
-            document.getElementById('replyModal').classList.add('active');
-            document.getElementById('repliesList').innerHTML = 'جاري تحميل الردود...';
-            
-            try {
-                const replies = await fetchTicketReplies(ticketId);
-                const list = document.getElementById('repliesList');
-                list.innerHTML = replies.length ? '' : '<p style="text-align:center; color:var(--text-secondary);">لا توجد ردود سابقة</p>';
-                
-                replies.forEach(r => {
-                    const div = document.createElement('div');
-                    const profile = r.profiles;
-                    div.className = `reply-item ${profile?.role === 'admin' ? 'reply-admin' : 'reply-user'}`;
-                    div.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.85rem;">
-                            <span style="font-weight:600;">${profile?.full_name || 'مستخدم'}</span>
-                            <span style="color:var(--text-secondary);">${new Date(r.created_at).toLocaleString('ar-EG')}</span>
-                        </div>
-                        <div>${r.message}</div>
-                    `;
-                    list.appendChild(div);
-                });
-                list.scrollTop = list.scrollHeight;
-            } catch (err) {
-                console.error('Fetch replies error:', err);
-                document.getElementById('repliesList').innerHTML = 'خطأ في تحميل الردود';
-            }
-        }
-
-        document.getElementById('replyForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const msg = document.getElementById('replyMessage').value;
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            
-            submitBtn.disabled = true;
-            try {
-                await addTicketReply(currentTicketId, msg);
-                document.getElementById('replyMessage').value = '';
-                openReplyModal(currentTicketId, document.getElementById('modalTicketTitle').textContent.replace('الرد على: ', ''));
-                loadAdminTickets();
-            } catch (err) {
-                alert('فشل إرسال الرد: ' + err.message);
-            } finally {
-                submitBtn.disabled = false;
-            }
-        });
-
-        // إدارة الإشعارات
-        let notifications = [];
-        const notificationBtn = document.getElementById('notificationBtn');
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        const notificationBadge = document.getElementById('notificationBadge');
-        const notificationsList = document.getElementById('notificationsList');
-        const clearNotifications = document.getElementById('clearNotifications');
-
-        function updateNotificationUI() {
-            if (notifications.length > 0) {
-                notificationBadge.style.display = 'flex';
-                notificationBadge.textContent = notifications.length;
-                notificationsList.innerHTML = '';
-                notifications.forEach((n, index) => {
-                    const div = document.createElement('div');
-                    div.style.padding = '0.75rem';
-                    div.style.borderBottom = '1px solid var(--border-color)';
-                    div.style.cursor = 'pointer';
-                    div.style.transition = 'background 0.2s';
-                    div.onmouseover = () => div.style.background = 'var(--hover-bg)';
-                    div.onmouseout = () => div.style.background = 'transparent';
-                    
-                    div.innerHTML = `
-                        <div style="font-size: 0.9rem; margin-bottom: 0.25rem;">${n.message}</div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.75rem; color: var(--text-secondary);">${new Date(n.time).toLocaleTimeString('ar-EG')}</span>
-                            <button style="color: var(--primary-color); background: none; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer;">عرض التفاصيل</button>
-                        </div>
-                    `;
-                    div.onclick = () => {
-                        if (n.type === 'ticket') {
-                            openReplyModal(n.id, n.title);
-                        } else {
-                            // إذا كان بلاغاً، يمكننا توجيهه لتبويب معين أو إظهار رسالة
-                            alert('بلاغ جديد: ' + n.title);
-                        }
-                        notifications.splice(index, 1);
-                        updateNotificationUI();
-                        notificationDropdown.style.display = 'none';
-                    };
-                    notificationsList.appendChild(div);
-                });
-            } else {
-                notificationBadge.style.display = 'none';
-                notificationsList.innerHTML = '<p style="text-align: center; padding: 1rem; color: var(--text-secondary);">لا توجد إشعارات جديدة</p>';
-            }
-        }
-
-        notificationBtn.onclick = (e) => {
-            e.stopPropagation();
-            notificationDropdown.style.display = notificationDropdown.style.display === 'none' ? 'block' : 'none';
+        window.openPointsModal = (id, points) => {
+            document.getElementById('pointsUserId').value = id;
+            document.getElementById('newPoints').value = points;
+            document.getElementById('pointsModal').classList.add('active');
         };
 
-        document.onclick = () => notificationDropdown.style.display = 'none';
-        notificationDropdown.onclick = (e) => e.stopPropagation();
-
-        clearNotifications.onclick = () => {
-            notifications = [];
-            updateNotificationUI();
+        window.openRoleModal = (id, role) => {
+            document.getElementById('roleUserId').value = id;
+            document.getElementById('newRole').value = role;
+            document.getElementById('roleModal').classList.add('active');
         };
-        // التحديث التلقائي والاشتراك في التغييرات
-        subscribeToTickets((payload) => {
-            console.log('Realtime update (Tickets):', payload);
-            loadAdminTickets();
 
-            if (payload.eventType === 'INSERT') {
-                const newTicket = payload.new;
-                notifications.unshift({
-                    id: newTicket.id,
-                    type: 'ticket',
-                    title: newTicket.title,
-                    message: `تذكرة جديدة: "${newTicket.title}"`,
-                    time: newTicket.created_at
-                });
-                updateNotificationUI();
-                playNotificationSound();
+        window.banUser = async (id) => {
+            if (confirm('هل أنت متأكد من حظر هذا المستخدم؟')) {
+                const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
+                const { error } = await supabase.from('profiles').update({ ban_status: 'permanent' }).eq('id', id);
+                if (error) alert('خطأ في الحظر: ' + error.message);
+                else {
+                    import('./activity-service.js').then(m => m.logActivity('ban_user', { target_user_id: id, target_email: targetUser?.email }));
+                    alert('تم حظر المستخدم');
+                    renderUsers();
+                    renderBannedUsers();
+                }
             }
-        });
+        };
 
-        // الاشتراك في بلاغات المستخدمين (User Reports)
-        supabase
-            .channel('public:user_reports')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'user_reports' }, payload => {
-                console.log('Realtime update (Reports):', payload);
-                const newReport = payload.new;
-                notifications.unshift({
-                    id: newReport.id,
-                    type: 'report',
-                    title: newReport.title,
-                    message: `بلاغ جديد: "${newReport.title}" (مكافأة متوقعة: ${newReport.estimated_points} نقطة)`,
-                    time: newReport.created_at
-                });
-                updateNotificationUI();
-                playNotificationSound();
-            })
-            .subscribe();
-
-        function playNotificationSound() {
-            try {
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
-                audio.play();
-            } catch (e) {
-                console.log('Audio play failed');
+        window.unbanUser = async (id) => {
+            if (confirm('هل تريد فك الحظر عن هذا المستخدم؟')) {
+                const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
+                const { error } = await supabase.from('profiles').update({ ban_status: 'none' }).eq('id', id);
+                if (error) alert('خطأ في فك الحظر: ' + error.message);
+                else {
+                    import('./activity-service.js').then(m => m.logActivity('unban_user', { target_user_id: id, target_email: targetUser?.email }));
+                    alert('تم فك الحظر');
+                    renderUsers();
+                    renderBannedUsers();
+                }
             }
-        }</body>
+        };
+
+        window.impersonateUser = async (id) => { 
+            const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
+            import('./activity-service.js').then(m => m.logActivity('impersonate', { target_user_id: id, target_email: targetUser?.email }));
+            await adminImpersonateUser(id); 
+        };
+        window.logout = async () => { await logout(); window.location.replace('sign-in.html'); };
+
+        // Helper for notifications used in admin-rewards.js
+        window.showNotification = (message, type = 'info') => {
+            alert(message); // Simple alert for now, can be improved to a toast
+        };
+
+        init();
+    </script>
+</body>
 </html>
