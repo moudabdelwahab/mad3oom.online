@@ -28,12 +28,31 @@ export async function initRewardsDashboard(user) {
 async function loadWalletData(userId) {
     try {
         const wallet = await getUserWallet(userId);
+        
+        // حساب مستوى العضوية الحالي بناءً على النقاط الكلية لضمان التزامن
+        const currentLevel = calculateMembershipLevel(wallet.total_points || 0);
 
-        // تحديث العناصر
-        document.getElementById('rewardsTotalPoints').textContent = wallet.total_points || 0;
-        document.getElementById('rewardsAvailablePoints').textContent = wallet.available_points || 0;
-        document.getElementById('rewardsPendingPoints').textContent = wallet.pending_points || 0;
-        document.getElementById('rewardsMemberLevel').textContent = wallet.membership_level || 'عضو جديد';
+        // تحديث العناصر في تبويب المكافآت
+        if (document.getElementById('rewardsTotalPoints')) {
+            document.getElementById('rewardsTotalPoints').textContent = wallet.total_points || 0;
+        }
+        if (document.getElementById('rewardsAvailablePoints')) {
+            document.getElementById('rewardsAvailablePoints').textContent = wallet.available_points || 0;
+        }
+        if (document.getElementById('rewardsPendingPoints')) {
+            document.getElementById('rewardsPendingPoints').textContent = wallet.pending_points || 0;
+        }
+        if (document.getElementById('rewardsMemberLevel')) {
+            document.getElementById('rewardsMemberLevel').textContent = currentLevel;
+        }
+
+        // تحديث الرصيد في شريط التنقل (Navbar) لضمان التزامن
+        if (document.getElementById('pointsCount')) {
+            document.getElementById('pointsCount').textContent = wallet.total_points || 0;
+        }
+        if (document.getElementById('pointsTooltip')) {
+            document.getElementById('pointsTooltip').textContent = wallet.total_points || 0;
+        }
 
         // تحديث معلومات Pro
         updateProBadgeInfo(wallet);
@@ -49,8 +68,9 @@ async function loadWalletData(userId) {
 // ==================== تحديث معلومات شارة Pro ====================
 function updateProBadgeInfo(wallet) {
     const proBadgeInfo = document.getElementById('proBadgeInfo');
+    if (!proBadgeInfo) return;
     
-    if (wallet.is_pro) {
+    if (wallet.is_pro || (wallet.total_points >= 1000)) {
         proBadgeInfo.style.display = 'flex';
     } else {
         proBadgeInfo.style.display = 'none';
@@ -61,8 +81,12 @@ function updateProBadgeInfo(wallet) {
 function updateProProgressBar(totalPoints) {
     const proInfo = getProProgressInfo(totalPoints);
     
-    document.getElementById('currentProPoints').textContent = proInfo.currentPoints;
-    document.getElementById('proProgressBar').style.width = proInfo.progressPercentage + '%';
+    if (document.getElementById('currentProPoints')) {
+        document.getElementById('currentProPoints').textContent = proInfo.currentPoints;
+    }
+    if (document.getElementById('proProgressBar')) {
+        document.getElementById('proProgressBar').style.width = proInfo.progressPercentage + '%';
+    }
 }
 
 // ==================== تحميل البلاغات ====================
@@ -70,6 +94,7 @@ async function loadUserReports(userId) {
     try {
         const reports = await getUserReports(userId);
         const container = document.getElementById('reportsListContainer');
+        if (!container) return;
 
         if (reports.length === 0) {
             container.innerHTML = '<p class="empty-state">لا توجد بلاغات حتى الآن</p>';
@@ -126,11 +151,17 @@ function bindReportForm(userId) {
     if (!form) return;
 
     // تحديث النقاط المتوقعة عند تغيير درجة الخطورة
-    document.getElementById('reportSeverity').addEventListener('change', (e) => {
-        const severity = e.target.value;
-        const points = SEVERITY_POINTS[severity] || 0;
-        document.getElementById('estimatedReportPoints').textContent = points + ' نقطة';
-    });
+    const severitySelect = document.getElementById('reportSeverity');
+    if (severitySelect) {
+        severitySelect.addEventListener('change', (e) => {
+            const severity = e.target.value;
+            const points = SEVERITY_POINTS[severity] || 0;
+            const pointsDisplay = document.getElementById('estimatedReportPoints');
+            if (pointsDisplay) {
+                pointsDisplay.textContent = points + ' نقطة';
+            }
+        });
+    }
 
     // معالجة إرسال النموذج
     form.addEventListener('submit', async (e) => {
@@ -163,7 +194,10 @@ function bindReportForm(userId) {
 
             // إعادة تعيين النموذج
             form.reset();
-            document.getElementById('estimatedReportPoints').textContent = '0 نقطة';
+            const pointsDisplay = document.getElementById('estimatedReportPoints');
+            if (pointsDisplay) {
+                pointsDisplay.textContent = '0 نقطة';
+            }
 
             // إظهار رسالة نجاح
             showNotification('تم إرسال البلاغ بنجاح! سيتم مراجعته قريباً.', 'success');

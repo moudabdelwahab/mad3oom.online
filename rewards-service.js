@@ -11,12 +11,12 @@ export const SEVERITY_POINTS = {
 };
 
 // ==================== مستويات العضوية ====================
+// تم التحديث لتتطابق مع rewards.html
 export const MEMBERSHIP_LEVELS = [
     { name: 'عضو جديد', minPoints: 0, maxPoints: 100 },
-    { name: 'عضو نشط', minPoints: 100, maxPoints: 250 },
-    { name: 'عضو ذهبي', minPoints: 250, maxPoints: 500 },
-    { name: 'عضو بلاتيني', minPoints: 500, maxPoints: 1000 },
-    { name: 'عضو Pro', minPoints: 1000, maxPoints: Infinity }
+    { name: 'عضو نشط', minPoints: 101, maxPoints: 300 },
+    { name: 'خبير', minPoints: 301, maxPoints: 1000 },
+    { name: 'محترف (Pro)', minPoints: 1001, maxPoints: Infinity }
 ];
 
 // ==================== الحصول على محفظة المستخدم ====================

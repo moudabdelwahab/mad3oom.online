@@ -345,8 +345,8 @@
                 }, (payload) => {
                     if (payload.new.points !== undefined) {
                         user.profile.points = payload.new.points;
-                        document.getElementById('pointsCount').textContent = payload.new.points || 0;
-                        document.getElementById('pointsTooltip').textContent = payload.new.points || 0;
+                        // استدعاء loadWalletData لضمان تحديث جميع عناصر الواجهة بما في ذلك مستوى العضوية
+                        import('./rewards-dashboard.js').then(m => m.loadWalletData(user.id));
                     }
                 })
                 .subscribe();
