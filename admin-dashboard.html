@@ -6,6 +6,7 @@
     <title>لوحة الإدارة - مدعوم</title>
     <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="robot.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <!-- مكتبات التصدير -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -884,6 +885,79 @@
         };
 
         init();
+
+        // Robot "Mad3oom" Logic
+        const chatTrigger = document.getElementById('chatTrigger');
+        const robotAvatar = document.getElementById('robotAvatar');
+        const robotBubble = document.getElementById('robotBubble');
+        const robotText = document.getElementById('robotText');
+        const driver = window.driver.js.driver;
+
+        const tourDriver = driver({
+            showProgress: true,
+            nextBtnText: 'التالي',
+            prevBtnText: 'السابق',
+            doneBtnText: 'تم',
+            steps: [
+                { element: '.admin-tabs', popover: { title: 'أدوات الإدارة', description: 'من هنا يمكنك التحكم في التذاكر، المكافآت، المستخدمين، وسجلات النشاط.', side: "bottom", align: 'start' }},
+                { element: '.stats-grid', popover: { title: 'نظرة عامة', description: 'إحصائيات سريعة حول حالة النظام وعدد التذاكر النشطة.', side: "top", align: 'start' }},
+                { element: '.nav-actions', popover: { title: 'التنبيهات والإعدادات', description: 'تابع الإشعارات الفورية وتحكم في إعدادات مظهر لوحة التحكم.', side: "bottom", align: 'start' }},
+                { element: '[data-tab="logsTab"]', popover: { title: 'سجل النشاطات', description: 'راقب كافة العمليات التي تتم على المنصة لضمان الأمان والشفافية.', side: "bottom", align: 'start' }}
+            ]
+        });
+
+        function toggleRobot(show) {
+            if (show) {
+                chatTrigger.style.display = 'none';
+                robotAvatar.classList.add('active');
+                setTimeout(() => {
+                    robotBubble.classList.add('visible');
+                }, 500);
+            } else {
+                robotBubble.classList.remove('visible');
+                setTimeout(() => {
+                    robotAvatar.classList.remove('active');
+                    chatTrigger.style.display = 'flex';
+                }, 500);
+            }
+        }
+
+        chatTrigger.addEventListener('click', () => {
+            robotText.textContent = "أهلاً بك يا مدير! أنا مدعوم، هل تحتاج لمساعدة في فهم أدوات لوحة الإدارة؟";
+            toggleRobot(true);
+        });
+
+        window.startTour = function() {
+            robotBubble.classList.remove('visible');
+            tourDriver.drive();
+        };
+
+        robotAvatar.addEventListener('click', () => {
+            toggleRobot(false);
+        });
     </script>
+    <!-- Robot Assistant "Mad3oom" -->
+    <div class="robot-container" id="robotContainer">
+        <div class="speech-bubble" id="robotBubble">
+            <div class="robot-header">
+                <span class="robot-status"></span>
+                <span class="robot-name">مدعوم</span>
+            </div>
+            <p class="robot-text" id="robotText"></p>
+            <button class="tour-btn" onclick="startTour()">ابدأ الجولة التعريفية</button>
+        </div>
+        
+        <div class="robot-avatar" id="robotAvatar">
+            <img src="assets/images/mad3oom-robot.png" alt="مدعوم">
+        </div>
+
+        <div class="chat-trigger" id="chatTrigger">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v8H3v-8a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-1-1-1.73a2 2 0 0 1 2-2M9 13a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m6 0a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2M7.5 18a1.5 1.5 0 0 0 0 3h9a1.5 1.5 0 0 0 0-3h-9z"/>
+            </svg>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
 </body>
 </html>
