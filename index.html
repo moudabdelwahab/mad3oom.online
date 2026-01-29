@@ -56,6 +56,8 @@
         })();
     </script>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="robot.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
     <style>
         /* انسيابية إضافية للصفحة الرئيسية */
         .hero {
@@ -95,6 +97,19 @@
         }
     </style>
     <script src="api-config.js"></script>
+    <script type="module">
+        import { autoRedirect, signInAsGuest } from './auth-client.js';
+        autoRedirect();
+        window.handleGuestLogin = async function() {
+            try {
+                await signInAsGuest();
+                window.location.replace('customer-dashboard.html');
+            } catch (err) {
+                console.error('Guest login failed:', err);
+                window.location.href = 'sign-in.html';
+            }
+        };
+    </script>
     <script src="theme-manager.js" defer></script>
 </head>
 <body>
@@ -133,8 +148,26 @@
                 <li><a href="about.html">حول</a></li>
                 <li><a href="rewards.html">المكافآت</a></li>
                 <li><a href="subscriptions.html">الخطط والأسعار</a></li>
-                <li><a href="sign-in.html" id="navSignIn">تسجيل الدخول</a></li>
-                <li><a href="sign-up.html" id="navSignUp">إنشاء حساب</a></li>
+                <li style="position: relative;">
+                    <button id="accountMenuBtn" style="background: none; border: none; color: var(--color-nav-text); cursor: pointer; font-weight: 600; padding: 0.5rem 1rem; border-radius: 0.5rem; transition: all 0.3s; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>حسابي</span>
+                    </button>
+                    <div id="accountDropdown" style="display: none; position: absolute; top: 100%; right: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.5rem; box-shadow: var(--shadow); min-width: 200px; z-index: 1000; margin-top: 0.5rem;">
+                        <a href="sign-in.html" style="display: block; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; border-bottom: 1px solid var(--color-border); transition: all 0.3s;">
+                            تسجيل الدخول
+                        </a>
+                        <a href="sign-up.html" style="display: block; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; border-bottom: 1px solid var(--color-border); transition: all 0.3s;">
+                            إنشاء حساب
+                        </a>
+                        <a href="javascript:void(0)" onclick="handleGuestLogin()" id="guestLoginLink" style="display: block; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; transition: all 0.3s;">
+                            الدخول كضيف
+                        </a>
+                    </div>
+                </li>
             </ul>
         </div>
     </nav>
@@ -230,7 +263,7 @@
             <h2>هل تحتاج إلى مساعدة؟</h2>
             <p>تواصل معنا الآن واحصل على دعم فني متخصص وسريع الاستجابة</p>
             <div class="cta-buttons">
-                <a href="sign-in.html" class="btn btn-primary">ابدأ المحادثة</a>
+                <a href="chat.html" class="btn btn-primary">ابدأ المحادثة</a>
                 <a href="sign-in.html" class="btn btn-accent">أنشئ تذكرة</a>
             </div>
         </section>
@@ -240,7 +273,60 @@
         <p>&copy; 2026 منصة مدعوم. جميع الحقوق محفوظة.</p>
     </footer>
 
+    <!-- Robot Assistant "Mad3oom" -->
+    <div class="robot-container" id="robotContainer">
+        <div class="speech-bubble" id="robotBubble">
+            <div class="robot-header">
+                <span class="robot-status"></span>
+                <span class="robot-name">مدعوم</span>
+            </div>
+            <p class="robot-text" id="robotText"></p>
+            <button class="tour-btn" onclick="startTour()">ابدأ الجولة التعريفية</button>
+        </div>
+        
+        <!-- الروبوت الجديد (يظهر عند الضغط) -->
+        <div class="robot-avatar" id="robotAvatar">
+            <img src="assets/images/mad3oom-robot.png" alt="مدعوم">
+        </div>
+
+        <!-- الأيقونة القديمة (المحفز) -->
+        <div class="chat-trigger" id="chatTrigger">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v8H3v-8a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-1-1-1.73a2 2 0 0 1 2-2M9 13a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m6 0a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2M7.5 18a1.5 1.5 0 0 0 0 3h9a1.5 1.5 0 0 0 0-3h-9z"/>
+            </svg>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+
     <script>
+        // قائمة حسابي المنسدلة
+        const accountMenuBtn = document.getElementById('accountMenuBtn');
+        const accountDropdown = document.getElementById('accountDropdown');
+        const guestLoginLink = document.getElementById('guestLoginLink');
+
+        if (accountMenuBtn && accountDropdown) {
+            accountMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isVisible = accountDropdown.style.display === 'block';
+                accountDropdown.style.display = isVisible ? 'none' : 'block';
+            });
+
+            document.addEventListener('click', () => {
+                accountDropdown.style.display = 'none';
+            });
+
+            const dropdownLinks = accountDropdown.querySelectorAll('a');
+            dropdownLinks.forEach(link => {
+                link.addEventListener('mouseover', () => {
+                    link.style.background = 'var(--hover-bg)';
+                });
+                link.addEventListener('mouseout', () => {
+                    link.style.background = 'transparent';
+                });
+            });
+        }
+
         // انسيابية الظهور عند التمرير
         const observerOptions = {
             threshold: 0.1
@@ -266,6 +352,62 @@
         hamburger.addEventListener('click', () => {
             hamburger.classList.toggle('active');
             navMenu.classList.toggle('active');
+        });
+
+        // Robot "Mad3oom" Logic
+        const chatTrigger = document.getElementById('chatTrigger');
+        const robotAvatar = document.getElementById('robotAvatar');
+        const robotBubble = document.getElementById('robotBubble');
+        const robotText = document.getElementById('robotText');
+        const driver = window.driver.js.driver;
+
+        const tourDriver = driver({
+            showProgress: true,
+            nextBtnText: 'التالي',
+            prevBtnText: 'السابق',
+            doneBtnText: 'تم',
+            steps: [
+                { element: '.hero-content', popover: { title: 'أهلاً بك!', description: 'أنا مدعوم، مساعدك الذكي. دعني آخذك في جولة سريعة.', side: "bottom", align: 'start' }},
+                { element: '#accountMenuBtn', popover: { title: 'حسابك الشخصي', description: 'من هنا يمكنك تسجيل الدخول أو إنشاء حساب جديد للبدء.', side: "bottom", align: 'start' }},
+                { element: '.features-grid', popover: { title: 'مميزاتنا', description: 'نقدم لك نظام تذاكر متطور، محادثات فورية، ولوحة تحكم شاملة.', side: "top", align: 'start' }},
+                { element: '.cta', popover: { title: 'ابدأ الآن', description: 'لا تتردد في التواصل معنا إذا كنت بحاجة لأي مساعدة.', side: "top", align: 'start' }}
+            ]
+        });
+
+        function toggleRobot(show) {
+            if (show) {
+                chatTrigger.style.display = 'none';
+                robotAvatar.classList.add('active');
+                setTimeout(() => {
+                    robotBubble.classList.add('visible');
+                }, 500);
+            } else {
+                robotBubble.classList.remove('visible');
+                setTimeout(() => {
+                    robotAvatar.classList.remove('active');
+                    chatTrigger.style.display = 'flex';
+                }, 500);
+            }
+        }
+
+        chatTrigger.addEventListener('click', () => {
+            robotText.textContent = "أهلاً بك! أنا مدعوم، مساعدك الذكي. هل تود أن آخذك في جولة سريعة للتعرف على المنصة؟";
+            toggleRobot(true);
+        });
+
+        window.startTour = function() {
+            robotBubble.classList.remove('visible');
+            tourDriver.drive();
+        };
+
+        // إغلاق الروبوت عند الضغط عليه مرة أخرى
+        robotAvatar.addEventListener('click', () => {
+            toggleRobot(false);
+        });
+
+        // ترحيب بسيط عند التحميل (اختياري - يظهر فقط الأيقونة مع نبض)
+        window.addEventListener('load', () => {
+            console.log("Mad3oom Robot Ready");
         });
     </script>
 </body>

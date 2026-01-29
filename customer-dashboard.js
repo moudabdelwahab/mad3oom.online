@@ -13,9 +13,46 @@ import {
     const session = await requireAuth('user');
     if (!session) return;
 
+    const isGuest = session.isGuest || false;
+
     const welcomeEl = document.getElementById('welcomeUser');
     if (welcomeEl) {
-        welcomeEl.textContent = `مرحباً، ${session.profile.email}`;
+        welcomeEl.textContent = isGuest ? `مرحباً بك (زائر)` : `مرحباً، ${session.profile.email}`;
+    }
+
+    if (isGuest) {
+        // تقييد الصلاحيات للضيف
+        const restrictedElements = [
+            'openCreateTicket',
+            'userCreateTicketForm',
+            'newReportForm',
+            'profileTab'
+        ];
+        
+        restrictedElements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (el.tagName === 'FORM' || el.tagName === 'BUTTON') {
+                    el.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('عذراً، هذه الخاصية غير متاحة في وضع الضيف. يرجى تسجيل حساب للاستفادة منها.');
+                    }, true);
+                    if (el.tagName === 'BUTTON') el.style.opacity = '0.5';
+                } else {
+                    el.style.display = 'none';
+                }
+            }
+        });
+
+        // إظهار رسالة تنبيه للضيف
+        const dashboardContainer = document.querySelector('.dashboard-container');
+        if (dashboardContainer) {
+            const guestAlert = document.createElement('div');
+            guestAlert.style.cssText = 'background: var(--hover-bg); color: var(--color-accent); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid var(--color-accent); text-align: center; font-weight: 600;';
+            guestAlert.innerHTML = 'أنت تتصفح الآن بوضع الضيف. يمكنك رؤية المحتوى ولكن لا يمكنك إنشاء تذاكر أو بلاغات. <a href="sign-up.html" style="text-decoration: underline;">أنشئ حساباً الآن</a>';
+            dashboardContainer.prepend(guestAlert);
+        }
     }
 
     const signOutLink = document.getElementById('signOutLink');
@@ -62,11 +99,37 @@ async function renderTickets(filters = {}) {
 
     tickets.forEach(t => {
         const el = document.createElement('div');
-        el.className = 'ticket-item';
+        el.className = 'ticket-card';
+        
+        const statusLabels = {
+            'open': 'مفتوحة',
+            'in-progress': 'قيد المعالجة',
+            'resolved': 'تم الحل',
+            'closed': 'مغلقة'
+        };
+
+        const priorityLabels = {
+            'low': 'منخفضة',
+            'medium': 'متوسطة',
+            'high': 'عالية'
+        };
+
+        const userName = t.profiles?.full_name || t.profiles?.email?.split('@')[0] || 'مستخدم';
+
         el.innerHTML = `
-            <div class="ticket-title">${t.title}</div>
-            <div class="ticket-description">${t.description}</div>
-            <small>الحالة: ${t.status} | الأولوية: ${t.priority}</small>
+            <div class="ticket-card-header">
+                <span class="ticket-number">#${t.ticket_number || '---'}</span>
+                <span class="ticket-status status-${t.status}">${statusLabels[t.status] || t.status}</span>
+            </div>
+            <div class="ticket-card-body">
+                <h3 class="ticket-title">${t.title}</h3>
+                <p class="ticket-user">بواسطة: <strong>${userName}</strong></p>
+                <p class="ticket-description">${t.description.substring(0, 100)}${t.description.length > 100 ? '...' : ''}</p>
+            </div>
+            <div class="ticket-card-footer">
+                <span class="ticket-priority priority-${t.priority}">${priorityLabels[t.priority] || t.priority}</span>
+                <span class="ticket-date">${new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
+            </div>
         `;
         list.appendChild(el);
     });

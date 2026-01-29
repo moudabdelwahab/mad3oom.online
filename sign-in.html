@@ -50,6 +50,11 @@
         })();
     </script>
 
+    <script src="api-config.js"></script>
+    <script type="module">
+        import { autoRedirect } from './auth-client.js';
+        autoRedirect();
+    </script>
     <script src="theme-manager.js" defer></script>
 </head>
 
@@ -58,14 +63,32 @@
 <nav class="navbar">
     <div class="nav-container">
         <div class="nav-logo">
-            <img src="logo.svg" alt="Logo" class="logo-image">
+            <img src="/assets/images/logo.png" alt="Logo" class="logo-image">
             <span>منصة مدعوم</span>
         </div>
-        <ul class="nav-menu">
-            <li><a href="index.html">الرئيسية</a></li>
-            <li><a href="sign-in.html">تسجيل الدخول</a></li>
-            <li><a href="sign-up.html">حساب جديد</a></li>
-        </ul>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button class="theme-toggle" aria-label="Toggle theme" title="تبديل الوضع الليلي/النهاري">
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+            <ul class="nav-menu" style="display: flex; gap: 1.5rem; list-style: none; margin: 0; padding: 0;">
+                <li><a href="index.html" style="color: var(--color-nav-text); text-decoration: none; transition: all 0.3s;">الرئيسية</a></li>
+                <li><a href="sign-in.html" style="color: var(--color-nav-text); text-decoration: none; transition: all 0.3s; font-weight: 600; border-bottom: 2px solid var(--color-nav-text);">تسجيل الدخول</a></li>
+                <li><a href="sign-up.html" style="color: var(--color-nav-text); text-decoration: none; transition: all 0.3s;">حساب جديد</a></li>
+            </ul>
+        </div>
     </div>
 </nav>
 
@@ -123,6 +146,9 @@
                     <span id="loginBtnText">تسجيل الدخول</span>
                     <span id="loginBtnLoader" style="display:none;">جاري التحقق...</span>
                 </button>
+                <button type="button" class="btn btn-secondary" id="guestLoginBtn" style="margin-top: 1rem; width: 100%;">
+                    الدخول كضيف (عرض محدود)
+                </button>
             </div>
         </form>
 
@@ -133,7 +159,7 @@
 </main>
 
 <script type="module">
-import { signIn, getCurrentUser } from './auth-client.js';
+import { signIn, getCurrentUser, signInAsGuest } from './auth-client.js';
 import { supabase } from './api-config.js';
 
 const form = document.getElementById('signInForm');
@@ -146,6 +172,7 @@ const successMessage = document.getElementById('successMessage');
 const passwordInput = document.getElementById('password');
 const togglePassword = document.getElementById('togglePassword');
 const resendBtn = document.getElementById('resendEmailBtn');
+const guestLoginBtn = document.getElementById('guestLoginBtn');
 
 let isLoggingIn = false;
 
@@ -213,21 +240,31 @@ form.addEventListener('submit', async (e) => {
         } else if (err.message === 'Invalid login credentials') {
             errorText.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
         } else {
-            errorText.textContent = 'فشل تسجيل الدخول. حاول مرة أخرى.';
+            // عرض الرسالة القادمة من auth-client.js (مثل رسائل الحظر المفصلة)
+            errorText.style.whiteSpace = 'pre-line';
+            errorText.textContent = err.message || 'فشل تسجيل الدخول. حاول مرة أخرى.';
         }
     }
 });
 
-// Redirect لو مسجل دخول مسبقًا
-(async () => {
-    if (isLoggingIn) return;
-    const user = await getCurrentUser();
-    if (user) {
-        const userRole = user.profile?.role || 'customer';
-        const targetPage = userRole === 'admin' ? 'admin-dashboard.html' : 'customer-dashboard.html';
-        window.location.replace(targetPage);
+// الدخول كضيف
+guestLoginBtn.addEventListener('click', async () => {
+    try {
+        setLoading(true);
+        await signInAsGuest();
+        successMessage.style.display = 'block';
+        successMessage.querySelector('p').textContent = 'تم الدخول كضيف بنجاح! جاري التحويل...';
+        setTimeout(() => {
+            window.location.replace('customer-dashboard.html');
+        }, 1000);
+    } catch (err) {
+        setLoading(false);
+        errorMessage.style.display = 'block';
+        errorText.textContent = 'فشل الدخول كضيف. حاول مرة أخرى.';
     }
-})();
+});
+
+// التوجيه التلقائي يتم الآن عبر الـ script في الـ head
 </script>
 
 </body>

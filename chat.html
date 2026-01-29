@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المحادثة الفورية - منصة مدعوم</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .chat-page-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 var(--container-padding);
+            height: calc(100vh - 150px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-window {
+            background: var(--color-surface);
+            border-radius: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        .chat-header {
+            background: var(--color-primary);
+            color: white;
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chat-avatar {
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .chat-status-indicator {
+            width: 12px;
+            height: 12px;
+            background: #2ecc71;
+            border-radius: 50%;
+            border: 2px solid var(--color-primary);
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+
+        .chat-messages {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            background: var(--color-background);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 1rem 1.25rem;
+            border-radius: 1.25rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background: var(--color-surface);
+            color: var(--color-text);
+            border-bottom-right-radius: 0.25rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background: var(--color-accent);
+            color: white;
+            border-bottom-left-radius: 0.25rem;
+            box-shadow: 0 5px 15px rgba(0, 119, 204, 0.2);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+            display: block;
+            text-align: left;
+        }
+
+        .chat-input-area {
+            padding: 1.5rem 2rem;
+            background: var(--color-surface);
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex-grow: 1;
+            border: 1px solid var(--color-border);
+            padding: 0.85rem 1.25rem;
+            border-radius: 2rem;
+            background: var(--color-background);
+            color: var(--color-text);
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--color-accent);
+        }
+
+        .send-btn {
+            background: var(--color-accent);
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1) rotate(-10deg);
+            background: var(--color-accent-hover);
+        }
+
+        .chat-empty-state {
+            text-align: center;
+            margin-top: 5rem;
+            color: var(--color-text-secondary);
+        }
+
+        .chat-empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="assets/images/logo.png" alt="Logo" class="logo-image">
+                <span>منصة مدعوم</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html">الرئيسية</a></li>
+                <li><a href="customer-dashboard.html">لوحة التحكم</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="chat-page-container">
+        <div class="chat-window">
+            <div class="chat-header">
+                <div class="chat-user-info">
+                    <div style="position: relative;">
+                        <div class="chat-avatar">
+                            <img src="assets/images/mad3oom-robot.png" alt="مدعوم" style="width: 100%; height: 100%; object-fit: contain;">
+                        </div>
+                        <span class="chat-status-indicator"></span>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1rem;">الدعم الفني المباشر</h3>
+                        <span style="font-size: 0.8rem; opacity: 0.8;">متصل الآن - جاهزون لمساعدتك</span>
+                    </div>
+                </div>
+                <a href="index.html" style="color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.8;">إغلاق</a>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <!-- رسالة ترحيب من النظام -->
+                <div class="message received">
+                    أهلاً بك في منصة مدعوم! كيف يمكننا مساعدتك اليوم؟
+                    <span class="message-time">10:00 ص</span>
+                </div>
+                
+                <!-- مساحة فارغة للمستقبل -->
+                <div class="chat-empty-state" id="emptyState" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <p>ابدأ المحادثة الآن مع فريق الدعم</p>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <button style="background: none; border: none; cursor: pointer; color: var(--color-text-secondary);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <input type="text" class="chat-input" placeholder="اكتب رسالتك هنا..." id="chatInput">
+                <button class="send-btn" id="sendBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(180deg);">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatMessages = document.getElementById('chatMessages');
+
+        function sendMessage() {
+            const text = chatInput.value.trim();
+            if (text) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message sent';
+                const now = new Date();
+                const timeStr = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
+                messageDiv.innerHTML = `${text}<span class="message-time">${timeStr}</span>`;
+                chatMessages.appendChild(messageDiv);
+                chatInput.value = '';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
