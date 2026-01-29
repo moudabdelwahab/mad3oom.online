@@ -502,12 +502,26 @@
                             <th>الجهاز / المتصفح</th>
                             <th>الموقع / IP</th>
                             <th>التاريخ والوقت</th>
+                            <th>الإجراء</th>
                         </tr>
                     </thead>
                     <tbody id="logsTableBody">
-                        <tr><td colspan="5" style="text-align: center; padding: 2rem;">جاري تحميل السجلات...</td></tr>
+                        <!-- Logs will be loaded here -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Log Details Modal -->
+        <div id="logDetailsModal" class="modal">
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h3>تفاصيل النشاط 👁️</h3>
+                    <button class="close-modal" onclick="document.getElementById('logDetailsModal').classList.remove('active')">&times;</button>
+                </div>
+                <div id="logDetailsContent" style="padding: 1.5rem;">
+                    <!-- Details will be loaded here -->
+                </div>
             </div>
         </div>
 
@@ -699,9 +713,12 @@
                                 <div>${new Date(l.created_at).toLocaleDateString('ar-EG')}</div>
                                 <div style="font-size:0.75rem; color:var(--color-text-secondary);">${new Date(l.created_at).toLocaleTimeString('ar-EG')}</div>
                             </td>
+                            <td>
+                                <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="showLogDetails('${l.id}')">👁️ عرض</button>
+                            </td>
                         </tr>
                     `;
-                }).join('') || '<tr><td colspan="5" style="text-align:center;">لا توجد سجلات مطابقة</td></tr>';
+                }).join('') || '<tr><td colspan="6" style="text-align:center;">لا توجد سجلات مطابقة</td></tr>';
             } catch (err) {
                 body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--color-danger);">خطأ في تحميل السجلات</td></tr>';
             }
@@ -755,6 +772,75 @@
             doc.save(`Activity_Logs_${new Date().toISOString().split('T')[0]}.pdf`);
         }
 
+        window.showLogDetails = (logId) => {
+            const log = window.currentLogs.find(l => l.id === logId);
+            if (!log) return;
+
+            const content = document.getElementById('logDetailsContent');
+            const details = log.details || {};
+            const location = log.location_info ? `${log.location_info.country || ''} - ${log.location_info.city || ''}` : 'غير متوفر';
+            
+            let sessionHtml = '';
+            if (log.session_duration) {
+                const mins = Math.floor(log.session_duration / 60);
+                const secs = log.session_duration % 60;
+                sessionHtml = `<div style="margin-bottom: 1rem;"><strong>مدة الجلسة:</strong> ${mins} دقيقة و ${secs} ثانية</div>`;
+            }
+
+            let changesHtml = '';
+            if (details.old_data || details.new_data) {
+                changesHtml = `
+                    <div style="margin-top: 1.5rem; border-top: 1px solid var(--color-border); padding-top: 1rem;">
+                        <h4 style="margin-bottom: 1rem; color: var(--color-primary);">التغييرات (قبل / بعد)</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div style="background: #fff5f5; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #feb2b2;">
+                                <div style="font-weight: bold; color: #c53030; margin-bottom: 0.5rem;">قبل:</div>
+                                <pre style="font-size: 0.8rem; white-space: pre-wrap;">${JSON.stringify(details.old_data || {}, null, 2)}</pre>
+                            </div>
+                            <div style="background: #f0fff4; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #9ae6b4;">
+                                <div style="font-weight: bold; color: #2f855a; margin-bottom: 0.5rem;">بعد:</div>
+                                <pre style="font-size: 0.8rem; white-space: pre-wrap;">${JSON.stringify(details.new_data || {}, null, 2)}</pre>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <div style="margin-bottom: 0.5rem;"><strong>المستخدم:</strong> ${log.profiles?.full_name || 'مستخدم'}</div>
+                        <div style="margin-bottom: 0.5rem;"><strong>البريد:</strong> ${log.profiles?.email || ''}</div>
+                        <div style="margin-bottom: 0.5rem;"><strong>الرتبة:</strong> ${log.profiles?.role === 'admin' ? 'إدارة' : 'عضو'}</div>
+                    </div>
+                    <div>
+                        <div style="margin-bottom: 0.5rem;"><strong>التاريخ:</strong> ${new Date(log.created_at).toLocaleDateString('ar-EG')}</div>
+                        <div style="margin-bottom: 0.5rem;"><strong>الوقت:</strong> ${new Date(log.created_at).toLocaleTimeString('ar-EG')}</div>
+                        <div style="margin-bottom: 0.5rem;"><strong>النشاط:</strong> ${log.action}</div>
+                    </div>
+                </div>
+                
+                <div style="background: var(--color-muted); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <div style="margin-bottom: 0.5rem;"><strong>IP Address:</strong> ${log.ip_address || 'غير متوفر'}</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>الموقع:</strong> ${location}</div>
+                    <div style="margin-bottom: 0.5rem;"><strong>الجهاز:</strong> ${log.device_info || 'غير متوفر'}</div>
+                    <div style="margin-bottom: 0.5rem; word-break: break-all;"><strong>User Agent:</strong> <small>${log.user_agent || 'غير متوفر'}</small></div>
+                    ${sessionHtml}
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <strong>وصف النشاط:</strong>
+                    <div style="margin-top: 0.5rem; padding: 0.75rem; background: #f8fafc; border-right: 4px solid var(--color-primary);">
+                        ${formatActivityMessage(log)}
+                    </div>
+                </div>
+
+                ${changesHtml}
+            `;
+
+            document.getElementById('logDetailsModal').classList.add('active');
+        };
+
         function setupEventListeners() {
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.onclick = () => {
@@ -781,6 +867,9 @@
                     const membershipLevel = calculateMembershipLevel(points);
                     const isPro = points >= 1000;
 
+                    // جلب البيانات القديمة قبل التحديث
+                    const { data: oldProfile } = await supabase.from('profiles').select('points').eq('id', id).single();
+
                     // تحديث ملف المستخدم
                     const { error: profileError } = await supabase.from('profiles')
                         .update({ 
@@ -802,6 +891,13 @@
                         }, { onConflict: 'user_id' });
                     
                     if (walletError) throw walletError;
+
+                    // تسجيل النشاط مع البيانات قبل وبعد
+                    import('./activity-service.js').then(m => m.logActivity('admin_updated_points', { 
+                        target_user_id: id,
+                        old_data: { points: oldProfile?.points },
+                        new_data: { points: points }
+                    }));
 
                     alert('تم تحديث النقاط والمحفظة بنجاح');
                     document.getElementById('pointsModal').classList.remove('active');

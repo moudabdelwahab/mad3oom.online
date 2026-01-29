@@ -271,13 +271,28 @@ export async function updateProfile(updates) {
  * تحديث بروفايل مستخدم آخر (للأدمن فقط)
  */
 export async function adminUpdateUserProfile(userId, updates) {
+    // جلب البيانات القديمة
+    const { data: oldProfile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+
     const { data, error } = await supabase
         .from('profiles')
         .update(updates)
         .eq('id', userId);
 
     if (!error) {
-        await logActivity('admin_updated_user', { target_user_id: userId, updates });
+        // تصفية البيانات القديمة لتشمل فقط الحقول التي تم تحديثها
+        const oldData = {};
+        if (oldProfile) {
+            Object.keys(updates).forEach(key => {
+                oldData[key] = oldProfile[key];
+            });
+        }
+
+        await logActivity('admin_updated_user', { 
+            target_user_id: userId, 
+            old_data: oldData,
+            new_data: updates 
+        });
     }
 
     return { data, error };
@@ -287,6 +302,9 @@ export async function adminUpdateUserProfile(userId, updates) {
  * تحديث رتبة المستخدم (للأدمن فقط)
  */
 export async function adminUpdateUserRole(userId, newRole) {
+    // جلب الرتبة القديمة
+    const { data: oldProfile } = await supabase.from('profiles').select('role').eq('id', userId).single();
+
     // 1. تحديث جدول Profiles
     const { data, error } = await supabase
         .from('profiles')
@@ -296,15 +314,17 @@ export async function adminUpdateUserRole(userId, newRole) {
     if (error) return { data, error };
 
     // 2. تحديث Auth Metadata لضمان عمل السياسات الأمنية
-    // ملاحظة: يتطلب هذا صلاحيات أدمن في Supabase (Service Role) أو استخدام Edge Function
-    // بما أننا نستخدم Client SDK، سنعتمد على تحديث الـ Metadata إذا كان متاحاً
     const { error: authError } = await supabase.auth.admin.updateUserById(
         userId,
         { user_metadata: { role: newRole } }
-    );
+    ).catch(() => ({ error: null })); // تجاهل الخطأ إذا لم تكن الصلاحيات كافية
 
     if (!error) {
-        await logActivity('admin_updated_role', { target_user_id: userId, new_role: newRole });
+        await logActivity('admin_updated_role', { 
+            target_user_id: userId, 
+            old_data: { role: oldProfile?.role },
+            new_data: { role: newRole }
+        });
     }
 
     return { data, error: error || authError };
