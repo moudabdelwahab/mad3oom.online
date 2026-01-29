@@ -12,70 +12,21 @@ class AdminDashboard {
     }
 
     init() {
-        this.renderSidebarMenu();
-        this.renderNavIcons();
         this.setupEventListeners();
         this.loadDashboardData();
         this.initializeCharts();
     }
 
-    // ==================== Render Sidebar Menu ====================
-    renderSidebarMenu() {
-        const sidebarMenu = document.getElementById('sidebarMenu');
-        const menuItems = [
-            { id: 'dashboard', icon: 'dashboard', label: 'لوحة المعلومات' },
-            { id: 'users', icon: 'users', label: 'إدارة المستخدمين' },
-            { id: 'reports', icon: 'reports', label: 'البلاغات والمكافآت' },
-            { id: 'analytics', icon: 'analytics', label: 'التحليلات والتقارير' },
-            { id: 'content', icon: 'content', label: 'إدارة المحتوى' },
-            { id: 'settings', icon: 'settings', label: 'الإعدادات' }
-        ];
-
-        sidebarMenu.innerHTML = menuItems.map((item, index) => `
-            <li class="sidebar-item">
-                <a href="#${item.id}" class="sidebar-link ${index === 0 ? 'active' : ''}" data-page="${item.id}">
-                    <div style="width: 20px; height: 20px;">${AdminIcons[item.icon]}</div>
-                    <span>${item.label}</span>
-                </a>
-            </li>
-        `).join('');
-    }
-
-    // ==================== Render Navigation Icons ====================
-    renderNavIcons() {
-        const notificationBtn = document.getElementById('notificationBtn');
-        const themeToggle = document.getElementById('themeToggle');
-        const refreshBtn = document.getElementById('refreshBtn');
-        const exportBtn = document.getElementById('exportBtn');
-
-        if (notificationBtn) {
-            notificationBtn.innerHTML = `<div style="width: 20px; height: 20px;">${AdminIcons.bell}</div>`;
-        }
-        if (themeToggle) {
-            themeToggle.innerHTML = `<div style="width: 20px; height: 20px;">${AdminIcons.sun}</div>`;
-        }
-        if (refreshBtn) {
-            refreshBtn.innerHTML = `<div style="width: 16px; height: 16px; margin-right: 0.5rem;">${AdminIcons.refresh}</div>تحديث`;
-        }
-        if (exportBtn) {
-            exportBtn.innerHTML = `<div style="width: 16px; height: 16px; margin-right: 0.5rem;">${AdminIcons.download}</div>تصدير`;
-        }
-    }
-
     setupEventListeners() {
-        // Sidebar navigation - wait for sidebar to be rendered
-        setTimeout(() => {
-            document.querySelectorAll('.sidebar-link').forEach(link => {
-                link.addEventListener('click', (e) => this.handlePageNavigation(e, link));
-            });
-        }, 100);
+        // Sidebar navigation
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', (e) => this.handlePageNavigation(e, link));
+        });
 
-        // Tab navigation - wait for tabs to be rendered
-        setTimeout(() => {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => this.handleTabNavigation(e, btn));
-            });
-        }, 100);
+        // Tab navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => this.handleTabNavigation(e, btn));
+        });
 
         // Action buttons
         document.getElementById('refreshBtn')?.addEventListener('click', () => this.refreshData());
@@ -256,8 +207,8 @@ class AdminDashboard {
                 <td><strong>${user.points.toLocaleString('ar-EG')}</strong></td>
                 <td>${new Date(user.joinDate).toLocaleDateString('ar-EG')}</td>
                 <td>
-                    <button class="btn btn-sm btn-secondary" onclick="adminDash.editUser(${user.id})" title="تعديل" style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center;"><div style="width: 16px; height: 16px;">${AdminIcons.edit}</div></button>
-                    <button class="btn btn-sm btn-danger" onclick="adminDash.deleteUser(${user.id})" title="حذف" style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center;"><div style="width: 16px; height: 16px;">${AdminIcons.trash}</div></button>
+                    <button class="btn btn-sm btn-secondary" onclick="adminDash.editUser(${user.id})">تعديل</button>
+                    <button class="btn btn-sm btn-danger" onclick="adminDash.deleteUser(${user.id})">حذف</button>
                 </td>
             </tr>
         `).join('');
@@ -367,10 +318,10 @@ class AdminDashboard {
                 <td>${new Date(report.date).toLocaleDateString('ar-EG')}</td>
                 <td>
                     ${report.status === 'pending' ? `
-                        <button class="btn btn-sm btn-success" onclick="adminDash.approveReport(${report.id})" title="موافقة" style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center;"><div style="width: 16px; height: 16px;">${AdminIcons.check}</div></button>
-                        <button class="btn btn-sm btn-danger" onclick="adminDash.rejectReport(${report.id})" title="رفض" style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center;"><div style="width: 16px; height: 16px;">${AdminIcons.close}</div></button>
+                        <button class="btn btn-sm btn-success" onclick="adminDash.approveReport(${report.id})">موافقة</button>
+                        <button class="btn btn-sm btn-danger" onclick="adminDash.rejectReport(${report.id})">رفض</button>
                     ` : ''}
-                    <button class="btn btn-sm btn-secondary" onclick="adminDash.viewReport(${report.id})" title="عرض" style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center;"><div style="width: 16px; height: 16px;">${AdminIcons.eye}</div></button>
+                    <button class="btn btn-sm btn-secondary" onclick="adminDash.viewReport(${report.id})">عرض</button>
                 </td>
             </tr>
         `).join('');
