@@ -33,7 +33,6 @@
         .wallet-info { position: relative; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--color-muted); border-radius: 2rem; cursor: pointer; }
         .wallet-tooltip { display: none; position: absolute; top: 100%; right: 0; background: var(--color-surface); color: var(--color-text); padding: 0.75rem 1rem; border-radius: 0.5rem; box-shadow: var(--shadow); border: 1px solid var(--color-border); margin-top: 0.5rem; white-space: nowrap; z-index: 100; }
         .wallet-info:hover .wallet-tooltip { display: block; }
-        .impersonation-banner { background: #fee2e2; color: #991b1b; padding: 0.75rem; text-align: center; font-weight: bold; border-bottom: 1px solid #f87171; }
         .reply-item { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; background: var(--color-muted); }
         .reply-admin { border-right: 4px solid var(--color-accent); }
         .reply-user { border-right: 4px solid var(--color-success); }
@@ -43,29 +42,16 @@
         .ticket-card { cursor: pointer; transition: transform 0.2s; }
         .ticket-card:hover { transform: translateY(-5px); }
         .view-ticket-btn { margin-top: 1rem; width: 100%; }
-        
-        /* System Status Indicator */
-        .system-status { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; background: var(--color-muted); border-radius: 2rem; font-size: 0.85rem; font-weight: 600; cursor: default; }
-        
-        /* Avatar Menu Styles */
         .menu-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; transition: all 0.2s; font-size: 0.9rem; font-weight: 600; }
         .menu-item:hover { background: var(--hover-bg); color: var(--color-accent); }
-        .menu-item svg { opacity: 0.7; }
-        .nav-link { color: var(--color-text); text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
-        .nav-link:hover { color: var(--color-accent); }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; position: relative; }
         .status-dot::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; animation: statusPulse 2s infinite; }
         .status-online { background-color: #22c55e; }
         .status-online::after { background-color: #22c55e; }
-        .status-slow { background-color: #eab308; }
-        .status-slow::after { background-color: #eab308; }
-        .status-maintenance { background-color: #ef4444; }
-        .status-maintenance::after { background-color: #ef4444; }
         @keyframes statusPulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
     </style>
 </head>
 <body>
-    <div id="impersonationBanner" class="impersonation-banner" style="display: none;">أنت تتصفح الآن كعميل (وضع التمثيل للمسؤولين)</div>
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo" style="display: flex; align-items: center; gap: 1.5rem;">
@@ -73,536 +59,170 @@
                     <img src="/assets/images/logo.png" alt="Logo" class="logo-image">
                     <span>لوحة العميل</span>
                 </div>
-                <a href="rewards.html" class="nav-link" style="margin-right: 1rem;">مركز المساعدة</a>
+                <a href="rewards.html" class="nav-link" style="margin-right: 1rem; color: var(--color-text); text-decoration: none; font-weight: 600;">مركز المساعدة</a>
             </div>
             <div style="display: flex; align-items: center; gap: 1rem;">
-                <div class="system-status" title="حالة النظام: يعمل بشكل جيد">
+                <div class="system-status" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; background: var(--color-muted); border-radius: 2rem; font-size: 0.85rem; font-weight: 600;">
                     <span class="status-dot status-online"></span>
                     <span>النظام شغال</span>
                 </div>
-                <button class="theme-toggle" aria-label="Toggle theme">
-                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                <button class="theme-toggle" aria-label="Toggle theme" style="background: none; border: 1px solid var(--color-border); border-radius: 0.5rem; padding: 0.5rem; cursor: pointer; color: var(--color-text);">
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
                 <div class="wallet-info" id="walletBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path></svg>
                     <span id="pointsCount">0</span>
                     <div class="wallet-tooltip">رصيدك الحالي: <strong id="pointsTooltip">0</strong> نقطة</div>
                 </div>
-                <div class="notification-wrapper" style="position: relative; display: flex; align-items: center;">
-                    <button id="notificationBtn" class="notification-btn" style="background: none; border: 1px solid var(--color-border); border-radius: 0.5rem; padding: 0.5rem; cursor: pointer; color: var(--color-text); display: flex; align-items: center; justify-content: center;">
+                <div class="notification-wrapper" style="position: relative;">
+                    <button id="notificationBtn" style="background: none; border: 1px solid var(--color-border); border-radius: 0.5rem; padding: 0.5rem; cursor: pointer; color: var(--color-text);">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                         <span id="notificationBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--color-danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--color-surface);">0</span>
                     </button>
                     <div id="notificationDropdown" style="display: none; position: absolute; top: 100%; left: 0; width: 300px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.5rem; box-shadow: var(--shadow); z-index: 1001; margin-top: 0.5rem; max-height: 400px; overflow-y: auto;">
                         <div style="padding: 1rem; border-bottom: 1px solid var(--color-border); font-weight: 600; display: flex; justify-content: space-between; align-items: center;"><span>الإشعارات</span><button id="clearNotifications" style="font-size: 0.8rem; color: var(--color-accent); background: none; border: none; cursor: pointer;">مسح الكل</button></div>
-                        <div id="notificationsList" style="padding: 0.5rem;"></div>
+                        <div id="notificationsList"></div>
                     </div>
                 </div>
                 <div style="position: relative;">
-                    <div class="profile-nav-item" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" id="profileNavBtn">
+                    <div id="profileNavBtn" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                         <img id="navAvatar" src="" style="width: 32px; height: 32px; border-radius: 50%; display: none; object-fit: cover;">
-                        <div style="width: 32px; height: 32px; background: var(--color-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;" id="userInitial">U</div>
+                        <div id="userInitial" style="width: 32px; height: 32px; background: var(--color-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">U</div>
                     </div>
                     <div id="userAvatarMenu" style="display: none; position: absolute; top: 100%; left: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.5rem; box-shadow: var(--shadow); min-width: 180px; z-index: 1001; margin-top: 0.5rem; overflow: hidden;">
-                        <a href="#profile" class="menu-item" data-tab="profile">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                            الملف الشخصي
-                        </a>
-                        <a href="#profile" class="menu-item" data-tab="profile">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                            الإعدادات
-                        </a>
-                        <a href="#profile" class="menu-item" data-tab="profile">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            تغيير كلمة المرور
-                        </a>
+                        <a href="#" class="menu-item" data-tab="profile">الملف الشخصي</a>
                         <hr style="border: 0; border-top: 1px solid var(--color-border); margin: 0;">
-                        <a href="#" id="signOutBtn" class="menu-item" style="color: var(--color-danger);">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                            تسجيل الخروج
-                        </a>
+                        <a href="#" id="signOutLink" class="menu-item" style="color: var(--color-danger);">تسجيل الخروج</a>
                     </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <main class="dashboard-container" style="margin-top: 2rem;">
+    <main class="dashboard-container" style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+        <div id="welcomeUser" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 2rem;">مرحباً بك</div>
+        
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="tickets">تذاكري</div>
             <div class="nav-tab" data-tab="rewards">المكافآت والنقاط</div>
-            <div class="nav-tab" data-tab="profile">الملف الشخصي</div>
+            <div class="nav-tab" data-tab="profile" id="profileTab">الملف الشخصي</div>
         </div>
-        
-        <div id="ticketsTab" class="tab-content active">
-            <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+
+        <!-- Tickets Tab -->
+        <div id="ticketsTabContent" class="tab-content active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h1>تذاكري</h1>
-                <button class="btn btn-primary" id="openCreateTicket">إنشاء تذكرة جديدة</button>
+                <button id="openCreateTicket" class="btn btn-primary">إنشاء تذكرة جديدة</button>
             </div>
-            <div class="stats-grid">
-                <div class="stat-card"><div class="stat-content"><p class="stat-label">إجمالي التذاكر</p><p class="stat-value" id="userTotalTickets">0</p></div></div>
-                <div class="stat-card"><div class="stat-content"><p class="stat-label">قيد المعالجة</p><p class="stat-value" id="userInProgressTickets" style="color: var(--color-accent);">0</p></div></div>
-                <div class="stat-card"><div class="stat-content"><p class="stat-label">المحلولة</p><p class="stat-value" id="userResolvedTickets" style="color: var(--color-success);">0</p></div></div>
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div class="stat-card" style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); text-align: center;">
+                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">إجمالي التذاكر</p>
+                    <p id="userTotalTickets" style="font-size: 2rem; font-weight: 800;">0</p>
+                </div>
+                <div class="stat-card" style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); text-align: center;">
+                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">قيد المعالجة</p>
+                    <p id="userInProgressTickets" style="font-size: 2rem; font-weight: 800; color: var(--color-accent);">0</p>
+                </div>
+                <div class="stat-card" style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); text-align: center;">
+                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">المحلولة</p>
+                    <p id="userResolvedTickets" style="font-size: 2rem; font-weight: 800; color: var(--color-success);">0</p>
+                </div>
             </div>
-            <div id="userTicketsList" class="tickets-grid"></div>
+            <div id="userTicketsList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;"></div>
         </div>
 
-        <div id="rewardsTab" class="tab-content">
-            <div class="page-header"><h1>المكافآت والنقاط</h1></div>
-            
-            <!-- Wallet Section -->
-            <div class="stats-grid" style="margin-bottom: 2rem;">
-                <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">إجمالي النقاط</p>
-                        <p class="stat-value" id="rewardsTotalPoints">0</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">النقاط المتاحة</p>
-                        <p class="stat-value" id="rewardsAvailablePoints" style="color: var(--color-success);">0</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">قيد المراجعة</p>
-                        <p class="stat-value" id="rewardsPendingPoints" style="color: var(--color-warning);">0</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">مستوى العضوية</p>
-                        <p class="stat-value" id="rewardsMemberLevel" style="color: var(--color-accent);">-</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pro Badge Info -->
-            <div id="proBadgeInfo" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem; display: none;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <svg viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                    <div>
-                        <h3 style="margin: 0; font-size: 1.1rem;">شارة Pro مفعلة! بالروعاية على نظامنا</h3>
-                        <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">لقد وصلت إلى 1000 نقطة وأنت الآن عضو Pro متميز!</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Progress to Pro -->
-            <div style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem; border: 1px solid var(--color-border);">
-                <h3>التقدم نحو عضوية Pro</h3>
-                <div style="margin-top: 1rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>النقاط الحالية</span>
-                        <span><strong id="currentProPoints">0</strong> / 1000</span>
-                    </div>
-                    <div style="width: 100%; height: 8px; background: var(--color-muted); border-radius: 4px; overflow: hidden;">
-                        <div id="proProgressBar" style="height: 100%; background: linear-gradient(90deg, #fbbf24, #f59e0b); width: 0%; transition: width 0.3s ease;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reports Section -->
-            <div style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); margin-bottom: 2rem;">
-                <h3>البلاغات المقدمة</h3>
-                <div id="reportsListContainer" style="margin-top: 1rem;">
-                    <p class="empty-state">لا توجد بلاغات حتى الآن</p>
-                </div>
-            </div>
-
-            <!-- Report Form -->
-            <div style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border);">
-                <h3>إبلاغ عن مشكلة جديدة</h3>
-                <form id="newReportForm" style="margin-top: 1rem;">
-                    <div class="form-group">
-                        <label>نوع المشكلة</label>
-                        <select id="reportProblemType" class="form-control" required>
-                            <option value="">اختر نوع المشكلة</option>
-                            <option value="bug">خطأ برمجي (Bug)</option>
-                            <option value="performance">مشكلة في الأداء</option>
-                            <option value="ui">مشكلة في الواجهة</option>
-                            <option value="security">مشكلة أمان</option>
-                            <option value="feature">اقتراح ميزة جديدة</option>
-                            <option value="other">أخرى</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>درجة الخطورة</label>
-                        <select id="reportSeverity" class="form-control" required>
-                            <option value="">اختر درجة الخطورة</option>
-                            <option value="low">منخفضة (10 نقاط)</option>
-                            <option value="medium">متوسطة (25 نقطة)</option>
-                            <option value="high">عالية (50 نقطة)</option>
-                            <option value="critical">حرجة (100 نقطة)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>عنوان المشكلة</label>
-                        <input type="text" id="reportTitle" class="form-control" placeholder="اكتب عنواناً واضحاً" required>
-                    </div>
-                    <div class="form-group">
-                        <label>وصف تفصيلي</label>
-                        <textarea id="reportDescription" class="form-control" style="min-height: 120px;" placeholder="اشرح المشكلة بالتفصيل..." required></textarea>
-                    </div>
-                    <div style="display: flex; gap: 1rem;">
-                        <span id="estimatedReportPoints" style="padding: 0.75rem 1rem; background: var(--color-muted); border-radius: 0.5rem; font-weight: 600; color: var(--color-accent);">0 نقطة</span>
-                        <button type="submit" class="btn btn-primary" style="flex: 1;">إرسال البلاغ</button>
-                    </div>
-                </form>
-            </div>
+        <!-- Rewards Tab -->
+        <div id="rewardsTabContent" class="tab-content">
+            <h1>المكافآت والنقاط</h1>
+            <p>سيتم عرض تفاصيل المكافآت والنقاط هنا.</p>
         </div>
 
-        <div id="profileTab" class="tab-content">
-            <div class="page-header"><h1>الملف الشخصي</h1></div>
+        <!-- Profile Tab -->
+        <div id="profileTabContent" class="tab-content">
             <div class="profile-section">
-                <div class="avatar-upload">
-                    <img id="profileAvatarPreview" src="/assets/images/logo.png" class="avatar-preview">
-                    <label for="avatarInput" class="avatar-edit-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </label>
-                    <input type="file" id="avatarInput" style="display: none;" accept="image/*">
-                </div>
-                <form id="profileForm" class="profile-form">
-                    <div class="form-group"><label>الاسم الكامل</label><input type="text" id="profileFullName" class="form-control" required></div>
-                    <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="profileEmail" class="form-control" disabled></div>
-                    <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="profilePhone" class="form-control" placeholder="أدخل رقم هاتفك"></div>
+                <h2>تعديل الملف الشخصي</h2>
+                <form id="profileForm" style="margin-top: 1.5rem;">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">الاسم الكامل</label>
+                        <input type="text" id="profileFullName" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">رقم الهاتف</label>
+                        <input type="tel" id="profilePhone" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;">
+                    </div>
                     <button type="submit" class="btn btn-primary" style="width: 100%;">حفظ التغييرات</button>
                 </form>
                 <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--color-border);">
-                <h3>تغيير كلمة المرور</h3>
-                <form id="changePasswordForm" style="margin-top: 1rem;">
-                    <div class="form-group"><label>كلمة المرور الجديدة</label><input type="password" id="newPassword" class="form-control" required minlength="6"></div>
-                    <div class="form-group"><label>تأكيد كلمة المرور</label><input type="password" id="confirmPassword" class="form-control" required minlength="6"></div>
-                    <button type="submit" class="btn btn-secondary" style="width: 100%;">تحديث كلمة المرور</button>
+                <h2>تغيير كلمة المرور</h2>
+                <form id="changePasswordForm" style="margin-top: 1.5rem;">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">كلمة المرور الجديدة</label>
+                        <input type="password" id="newPassword" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">تأكيد كلمة المرور</label>
+                        <input type="password" id="confirmPassword" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">تحديث كلمة المرور</button>
                 </form>
             </div>
         </div>
     </main>
 
-    <!-- Modal إنشاء تذكرة -->
+    <!-- Create Ticket Modal -->
     <div id="createTicketModal" class="modal">
         <div class="modal-content">
             <h2>إنشاء تذكرة جديدة</h2>
-            <form id="createTicketForm" style="margin-top: 1.5rem;">
-                <div class="form-group"><label>العنوان</label><input type="text" id="ticketTitle" class="form-control" required></div>
-                <div class="form-group"><label>الوصف</label><textarea id="ticketDescription" class="form-control" style="min-height: 120px;" required></textarea></div>
-                <div class="form-group">
-                    <label>الأولوية</label>
-                    <select id="ticketPriority" class="form-control">
+            <form id="userCreateTicketForm" style="margin-top: 1.5rem;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">العنوان</label>
+                    <input type="text" id="userTicketTitle" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">الوصف</label>
+                    <textarea id="userTicketDescription" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; min-height: 100px;" required></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">الأولوية</label>
+                    <select id="userTicketPriority" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;">
                         <option value="low">منخفضة</option>
                         <option value="medium" selected>متوسطة</option>
                         <option value="high">عالية</option>
                     </select>
                 </div>
-                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                    <button type="button" class="btn btn-secondary" style="flex: 1;" id="closeCreateTicket">إلغاء</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 2;">إنشاء التذكرة</button>
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn btn-secondary close-modal" style="flex: 1;">إلغاء</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 2;">إرسال التذكرة</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal تفاصيل التذكرة -->
+    <!-- Ticket Detail Modal -->
     <div id="ticketDetailModal" class="modal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <h2 id="detailTicketTitle">تفاصيل التذكرة</h2>
-                    <p id="detailTicketMeta" style="font-size: 0.9rem; color: var(--color-text-secondary); margin-top: 0.5rem;"></p>
-                </div>
-                <span id="detailTicketStatus" class="status-badge"></span>
+        <div class="modal-content" style="max-width: 800px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 id="detailTicketTitle">تفاصيل التذكرة</h2>
+                <span id="detailTicketNumber" style="color: var(--color-text-secondary);">#000</span>
             </div>
-            <div id="detailTicketDescription" style="margin: 1.5rem 0; padding: 1rem; background: var(--color-muted); border-radius: 0.5rem; white-space: pre-wrap;"></div>
-            <hr style="border: 0; border-top: 1px solid var(--color-border); margin: 1.5rem 0;">
+            <div id="detailTicketStatus" style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.85rem; margin-bottom: 1rem;"></div>
+            <p id="detailTicketDescription" style="margin-bottom: 2rem; line-height: 1.6;"></p>
+            
+            <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--color-border);">
+            
             <h3>الردود</h3>
-            <div id="detailRepliesList" style="margin: 1rem 0; max-height: 300px; overflow-y: auto; padding: 0.5rem;"></div>
+            <div id="detailRepliesList" style="margin: 1.5rem 0; max-height: 300px; overflow-y: auto; padding: 1rem; background: var(--color-muted); border-radius: 0.5rem;"></div>
+            
             <form id="detailReplyForm">
-                <textarea id="detailReplyMessage" style="width: 100%; min-height: 100px; margin-bottom: 1rem; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;" placeholder="اكتب ردك هنا..." required></textarea>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">إرسال الرد</button>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <textarea id="detailReplyMessage" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; min-height: 80px;" placeholder="اكتب ردك هنا..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">إرسال الرد</button>
             </form>
-            <button class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;" id="closeDetailModal">إغلاق</button>
+            <button class="btn btn-secondary close-modal" style="margin-top: 1.5rem; width: 100%;">إغلاق</button>
         </div>
     </div>
 
-   <script type="module">
-import {
-    requireAuth,
-    logout,
-    updateProfile,
-    uploadAvatar,
-    updatePassword
-} from './auth-client.js';
-
-import {
-    fetchUserTickets,
-    createTicket,
-    fetchTicketStats,
-    subscribeToTickets,
-    fetchTicketReplies,
-    addTicketReply
-} from './tickets-service.js';
-
-import {
-    fetchNotifications,
-    markAllAsRead,
-    subscribeToNotifications
-} from './notifications-service.js';
-
-import { initRewardsDashboard } from './rewards-dashboard.js';
-import { supabase } from './api-config.js';
-import * as ProBadge from './pro-badge.js';
-
-const { addProBadgeToElement, injectProBadgeStyles } = ProBadge;
-
-/* =====================================================
-   AUTH
-===================================================== */
-if (window.__AUTH_CHECKED__) {
-    console.warn('[Auth] already checked');
-} else {
-    window.__AUTH_CHECKED__ = true;
-}
-
-let user = await requireAuth('customer');
-if (!user) {
-    window.location.replace('sign-in.html');
-    throw new Error('Not authenticated');
-}
-
-
-if (user.isImpersonated) {
-    const banner = document.getElementById('impersonationBanner');
-    if (banner) banner.style.display = 'block';
-}
-
-/* =====================================================
-   UI INIT
-===================================================== */
-
-injectProBadgeStyles();
-updateUIWithUserData();
-initRewardsDashboard(user);
-
-/* =====================================================
-   PROFILE UI
-===================================================== */
-
-function updateUIWithUserData() {
-    const profile = user.profile || {};
-    const name = profile.full_name || user.email;
-
-    const initial = document.getElementById('userInitial');
-    if (initial) initial.textContent = name.charAt(0).toUpperCase();
-
-    setValue('profileEmail', profile.email || user.email);
-    setValue('profileFullName', profile.full_name || '');
-    setValue('profilePhone', profile.phone || '');
-
-    setText('pointsCount', profile.points || 0);
-    setText('pointsTooltip', profile.points || 0);
-
-    if (profile.avatar_url) {
-        setImage('navAvatar', profile.avatar_url, true);
-        setImage('profileAvatarPreview', profile.avatar_url);
-        hide('userInitial');
-    }
-
-    if (profile.is_pro || profile.points >= 1000) {
-        addProBadgeToElement(document.querySelector('.page-header h1'), true);
-        addProBadgeToElement(document.querySelector('.nav-logo span'), true);
-    }
-}
-
-/* =====================================================
-   EVENTS – SAFE HELPERS
-===================================================== */
-
-function $(id) { return document.getElementById(id); }
-function setText(id, v) { const el = $(id); if (el) el.textContent = v; }
-function setValue(id, v) { const el = $(id); if (el) el.value = v; }
-function hide(id) { const el = $(id); if (el) el.style.display = 'none'; }
-function setImage(id, src, show = false) {
-    const el = $(id);
-    if (!el) return;
-    el.src = src;
-    if (show) el.style.display = 'block';
-}
-
-/* =====================================================
-   LOGOUT (ONE HANDLER ONLY)
-===================================================== */
-
-const signOutBtn = $('signOutBtn');
-if (signOutBtn) {
-    signOutBtn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        await logout();
-        window.location.replace('sign-in.html');
-    });
-}
-
-/* =====================================================
-   TABS
-===================================================== */
-
-document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document
-            .querySelectorAll('.nav-tab, .tab-content')
-            .forEach(el => el.classList.remove('active'));
-
-        tab.classList.add('active');
-        const target = $(tab.dataset.tab + 'Tab');
-        if (target) target.classList.add('active');
-    });
-});
-
-/* =====================================================
-   MODALS (SAFE)
-===================================================== */
-
-document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('click', e => {
-        if (e.target === modal) modal.classList.remove('active');
-    });
-});
-
-/* =====================================================
-   CREATE TICKET
-===================================================== */
-
-const createModal = $('createTicketModal');
-$('openCreateTicket')?.addEventListener('click', () => createModal.classList.add('active'));
-$('closeCreateTicket')?.addEventListener('click', () => createModal.classList.remove('active'));
-
-$('createTicketForm')?.addEventListener('submit', async e => {
-    e.preventDefault();
-
-    await createTicket({
-        title: $('ticketTitle').value,
-        description: $('ticketDescription').value,
-        priority: $('ticketPriority').value
-    });
-
-    createModal.classList.remove('active');
-    e.target.reset();
-    renderTickets();
-});
-
-/* =====================================================
-   TICKETS
-===================================================== */
-
-async function renderTickets() {
-    const list = $('userTicketsList');
-    if (!list) return;
-
-    const tickets = await fetchUserTickets();
-    list.innerHTML = '';
-
-    if (!tickets.length) {
-        list.innerHTML = '<p style="text-align:center;">لا توجد تذاكر</p>';
-        return;
-    }
-
-    tickets.forEach(t => {
-        const el = document.createElement('div');
-        el.className = 'ticket-card';
-        el.innerHTML = `
-            <h3>${t.title}</h3>
-            <button class="view-ticket-btn">عرض التذكرة</button>
-        `;
-
-        el.querySelector('.view-ticket-btn')
-          .addEventListener('click', e => {
-              e.stopPropagation();
-              openTicketDetail(t);
-          });
-
-        list.appendChild(el);
-    });
-
-    const stats = await fetchTicketStats();
-    setText('userTotalTickets', stats.total);
-    setText('userInProgressTickets', stats.inProgress);
-    setText('userResolvedTickets', stats.resolved);
-}
-
-/* =====================================================
-   TICKET DETAILS
-===================================================== */
-
-let currentTicket = null;
-
-function openTicketDetail(ticket) {
-    currentTicket = ticket;
-    $('ticketDetailModal')?.classList.add('active');
-    loadReplies(ticket.id);
-}
-
-async function loadReplies(id) {
-    const list = $('detailRepliesList');
-    if (!list) return;
-
-    const replies = await fetchTicketReplies(id);
-    list.innerHTML = '';
-
-    replies.forEach(r => {
-        const div = document.createElement('div');
-        div.className = 'reply-item';
-        div.textContent = r.message;
-        list.appendChild(div);
-    });
-}
-
-$('detailReplyForm')?.addEventListener('submit', async e => {
-    e.preventDefault();
-    await addTicketReply(currentTicket.id, $('detailReplyMessage').value);
-    $('detailReplyMessage').value = '';
-    loadReplies(currentTicket.id);
-});
-
-/* =====================================================
-   PROFILE
-===================================================== */
-
-$('profileForm')?.addEventListener('submit', async e => {
-    e.preventDefault();
-    await updateProfile({
-        full_name: $('profileFullName').value,
-        phone: $('profilePhone').value
-    });
-    alert('تم حفظ التغييرات');
-});
-
-$('changePasswordForm')?.addEventListener('submit', async e => {
-    e.preventDefault();
-    if ($('newPassword').value !== $('confirmPassword').value)
-        return alert('كلمات المرور غير متطابقة');
-
-    await updatePassword($('newPassword').value);
-    alert('تم تحديث كلمة المرور');
-});
-
-/* =====================================================
-   NOTIFICATIONS
-===================================================== */
-
-$('notificationBtn')?.addEventListener('click', async e => {
-    e.stopPropagation();
-    await markAllAsRead();
-});
-
-/* =====================================================
-   INIT
-===================================================== */
-
-subscribeToTickets(renderTickets);
-subscribeToNotifications(user.id, fetchNotifications);
-renderTickets();
-</script>
-
+    <script type="module" src="customer-dashboard.js"></script>
 </body>
 </html>

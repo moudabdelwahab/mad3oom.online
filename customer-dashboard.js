@@ -45,7 +45,6 @@ import {
         const restrictedElements = [
             'openCreateTicket',
             'userCreateTicketForm',
-            'newReportForm',
             'profileTab'
         ];
 
@@ -53,39 +52,15 @@ import {
             const el = document.getElementById(id);
             if (!el) return;
 
-            if (el.tagName === 'FORM' || el.tagName === 'BUTTON' || el.classList.contains('nav-tab')) {
-                el.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    alert('هذه الميزة غير متاحة في وضع الضيف. يرجى إنشاء حساب.');
-                }, true);
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                alert('هذه الميزة غير متاحة في وضع الضيف. يرجى إنشاء حساب.');
+            }, true);
 
-                if (el.tagName === 'BUTTON' || el.classList.contains('nav-tab')) {
-                    el.style.opacity = '0.5';
-                    el.style.pointerEvents = 'auto';
-                }
-            } else {
-                el.style.display = 'none';
-            }
+            el.style.opacity = '0.5';
+            el.style.pointerEvents = 'auto';
         });
-
-        const dashboardContainer = document.querySelector('.dashboard-container');
-        if (dashboardContainer) {
-            const guestAlert = document.createElement('div');
-            guestAlert.style.cssText = `
-                background: var(--hover-bg);
-                color: var(--color-accent);
-                padding: 1rem;
-                border-radius: 0.5rem;
-                margin-bottom: 1rem;
-                border: 1px solid var(--color-accent);
-                text-align: center;
-                font-weight: 600;
-            `;
-            guestAlert.innerHTML =
-                'أنت في وضع الضيف. يمكنك التصفح فقط. <a href="sign-up.html" style="text-decoration: underline;">أنشئ حساباً الآن</a>';
-            dashboardContainer.prepend(guestAlert);
-        }
     }
 
     /* ================= TABS LOGIC ================= */
@@ -95,7 +70,10 @@ import {
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            if (isGuest && tab.id === 'profileTab') return;
+            if (isGuest && tab.id === 'profileTab') {
+                alert('هذه الميزة غير متاحة في وضع الضيف.');
+                return;
+            }
 
             const target = tab.getAttribute('data-tab');
             
@@ -103,21 +81,48 @@ import {
             contents.forEach(c => c.classList.remove('active'));
 
             tab.classList.add('active');
-            const targetContent = document.getElementById(target + 'TabContent') || document.getElementById(target);
+            const targetContent = document.getElementById(target + 'TabContent');
             if (targetContent) targetContent.classList.add('active');
         });
     });
 
+    /* ================= PROFILE MENU LOGIC ================= */
+
+    const profileNavBtn = document.getElementById('profileNavBtn');
+    const userAvatarMenu = document.getElementById('userAvatarMenu');
+
+    if (profileNavBtn && userAvatarMenu) {
+        profileNavBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userAvatarMenu.style.display = userAvatarMenu.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.addEventListener('click', () => {
+            userAvatarMenu.style.display = 'none';
+        });
+
+        userAvatarMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (e.target.getAttribute('data-tab')) {
+                const tabName = e.target.getAttribute('data-tab');
+                const tabEl = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
+                if (tabEl) tabEl.click();
+                userAvatarMenu.style.display = 'none';
+            }
+        });
+    }
+
     /* ================= MODALS LOGIC ================= */
 
-    const openModalBtns = document.querySelectorAll('[id^="open"]');
-    openModalBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const modalId = btn.id.replace('open', '').toLowerCase() + 'Modal';
-            const modal = document.getElementById(modalId) || document.getElementById(btn.id.replace('open', 'user') + 'Modal');
-            if (modal) modal.classList.add('active');
+    const openCreateTicketBtn = document.getElementById('openCreateTicket');
+    const createTicketModal = document.getElementById('createTicketModal');
+    
+    if (openCreateTicketBtn && createTicketModal) {
+        openCreateTicketBtn.addEventListener('click', () => {
+            if (isGuest) return;
+            createTicketModal.classList.add('active');
         });
-    });
+    }
 
     const closeModalBtns = document.querySelectorAll('.close-modal, .modal');
     closeModalBtns.forEach(btn => {
@@ -144,7 +149,6 @@ import {
 
     const profileForm = document.getElementById('profileForm');
     if (profileForm) {
-        // تعبئة البيانات الحالية
         const fullNameInput = document.getElementById('profileFullName');
         const phoneInput = document.getElementById('profilePhone');
         if (fullNameInput) fullNameInput.value = user.profile?.full_name || '';
@@ -243,7 +247,6 @@ import {
         const stats = await fetchTicketStats();
         const elements = {
             'userTotalTickets': stats.total,
-            'userOpenTickets': stats.open,
             'userInProgressTickets': stats.inProgress,
             'userResolvedTickets': stats.resolved
         };
@@ -272,23 +275,21 @@ import {
         tickets.forEach(t => {
             const el = document.createElement('div');
             el.className = 'ticket-card';
+            el.style.cssText = 'background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); cursor: pointer;';
             el.innerHTML = `
-                <div class="ticket-card-header">
-                    <span class="ticket-number">#${t.ticket_number || '---'}</span>
-                    <span class="ticket-status status-${t.status}">${statusLabels[t.status] || t.status}</span>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                    <span style="color: var(--color-text-secondary); font-size: 0.85rem;">#${t.ticket_number || '---'}</span>
+                    <span style="padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.75rem; background: var(--color-muted);">${statusLabels[t.status] || t.status}</span>
                 </div>
-                <div class="ticket-card-body">
-                    <h3 class="ticket-title">${t.title}</h3>
-                    <p class="ticket-description">${t.description.slice(0, 100)}${t.description.length > 100 ? '...' : ''}</p>
+                <h3 style="margin-bottom: 0.5rem;">${t.title}</h3>
+                <p style="color: var(--color-text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">${t.description.slice(0, 80)}${t.description.length > 80 ? '...' : ''}</p>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--color-accent); font-weight: 600;">${priorityLabels[t.priority] || t.priority}</span>
+                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">${new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
                 </div>
-                <div class="ticket-card-footer">
-                    <span class="ticket-priority priority-${t.priority}">${priorityLabels[t.priority] || t.priority}</span>
-                    <span class="ticket-date">${new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
-                </div>
-                <button class="btn btn-outline view-ticket-btn" style="margin-top: 1rem; width: 100%;">عرض التفاصيل</button>
             `;
             
-            el.querySelector('.view-ticket-btn').addEventListener('click', () => openTicketDetail(t));
+            el.addEventListener('click', () => openTicketDetail(t));
             list.appendChild(el);
         });
     }
@@ -300,7 +301,11 @@ import {
 
         document.getElementById('detailTicketTitle').textContent = ticket.title;
         document.getElementById('detailTicketNumber').textContent = `#${ticket.ticket_number}`;
-        document.getElementById('detailTicketStatus').textContent = ticket.status;
+        
+        const statusEl = document.getElementById('detailTicketStatus');
+        statusEl.textContent = ticket.status;
+        statusEl.style.background = 'var(--color-muted)';
+        
         document.getElementById('detailTicketDescription').textContent = ticket.description;
 
         modal.classList.add('active');
@@ -312,13 +317,18 @@ import {
         if (!list) return;
 
         const replies = await fetchTicketReplies(ticketId);
+        if (replies.length === 0) {
+            list.innerHTML = '<p style="text-align: center; color: var(--color-text-secondary);">لا توجد ردود بعد</p>';
+            return;
+        }
+
         list.innerHTML = replies.map(r => `
-            <div class="reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'}">
+            <div class="reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'}" style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 0.5rem; background: var(--color-surface);">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.8rem;">
                     <strong>${r.profiles?.full_name || 'مستخدم'}</strong>
-                    <span>${new Date(r.created_at).toLocaleString('ar-EG')}</span>
+                    <span style="color: var(--color-text-muted);">${new Date(r.created_at).toLocaleString('ar-EG')}</span>
                 </div>
-                <div>${r.message}</div>
+                <div style="font-size: 0.9rem;">${r.message}</div>
             </div>
         `).join('');
         list.scrollTop = list.scrollHeight;
@@ -361,22 +371,6 @@ import {
             }
         });
     }
-
-    /* ================= FILTERS ================= */
-
-    const searchInput = document.getElementById('userTicketSearch');
-    const statusFilter = document.getElementById('userStatusFilter');
-    const priorityFilter = document.getElementById('userPriorityFilter');
-
-    [searchInput, statusFilter, priorityFilter].forEach(el => {
-        el?.addEventListener('input', () => {
-            renderTickets({
-                search: searchInput?.value,
-                status: statusFilter?.value,
-                priority: priorityFilter?.value
-            });
-        });
-    });
 
     /* ================= INIT ================= */
 
