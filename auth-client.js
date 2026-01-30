@@ -46,7 +46,7 @@ export async function signIn(email, password) {
         .from('profiles')
         .select('*')
         .eq('id', result.data.user.id)
-        .single();
+        .maybeSingle();
 
     // فحص الحظر
     if (isUserBanned(profile)) {
@@ -97,15 +97,16 @@ export async function getCurrentUser() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-    if (profileError || !profile) return null;
+    // إذا لم يوجد بروفايل، نعتبره مستخدم عادي (customer) بشكل افتراضي
+    const safeProfile = profile || { id: user.id, role: 'customer', email: user.email };
 
-    if (isUserBanned(profile)) {
-        return { banned: true, profile };
+    if (isUserBanned(safeProfile)) {
+        return { banned: true, profile: safeProfile };
     }
 
-    return { ...user, profile };
+    return { ...user, profile: safeProfile };
 }
 
 /* =========================================================
@@ -138,7 +139,7 @@ export async function requireAuth(requiredRole = null) {
             .from('profiles')
             .select('*')
             .eq('id', impersonateId)
-            .single();
+            .maybeSingle();
 
         if (targetProfile) {
             return {
@@ -151,7 +152,11 @@ export async function requireAuth(requiredRole = null) {
 
     // Role check
     if (requiredRole === 'admin' && !isAdmin) return null;
-    if (requiredRole === 'customer' && isAdmin && !impersonateId) return null;
+    if (requiredRole === 'customer' && isAdmin && !impersonateId) {
+        // إذا كان أدمن يحاول دخول لوحة العميل بدون impersonation، نسمح له لكنه سيرى بياناته كأدمن
+        // أو يمكن منعه حسب رغبة العميل، هنا سنسمح له لضمان عدم حدوث Loop
+        return user;
+    }
 
     return user;
 }
@@ -168,7 +173,7 @@ export async function adminImpersonateUser(userId) {
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
     if (profile?.role !== 'admin') return false;
 
@@ -189,8 +194,8 @@ export async function updateProfile(updates) {
 
     const { data, error } = await supabase
         .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
+        .upsert({ id: user.id, ...updates })
+        .select();
 
     if (!error) {
         await logActivity('profile_updated', updates);
@@ -254,6 +259,7 @@ export async function signInAsGuest() {
     const guestUser = {
         id: guestId,
         email: `${guestId}@mad3oom.guest`,
+        isGuest: true,
         profile: {
             id: guestId,
             full_name: 'زائر',
@@ -271,30 +277,28 @@ export async function signInAsGuest() {
  */
 export async function autoRedirect() {
     const guestSession = localStorage.getItem('mad3oom-guest-session');
+    const isAuthPage = window.location.pathname.includes('sign-in.html') || 
+                      window.location.pathname.includes('sign-up.html') || 
+                      window.location.pathname === '/' || 
+                      window.location.pathname.endsWith('index.html');
+
     if (guestSession) {
-        if (window.location.pathname.includes('sign-in.html') || 
-            window.location.pathname.includes('sign-up.html') || 
-            window.location.pathname === '/' || 
-            window.location.pathname.endsWith('index.html')) {
+        if (isAuthPage) {
             window.location.replace('customer-dashboard.html');
         }
         return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
         const { data: profile } = await supabase
             .from('profiles')
             .select('role')
-            .eq('id', user.id)
-            .single();
+            .eq('id', session.user.id)
+            .maybeSingle();
         
         const role = profile?.role || 'customer';
         const isAdmin = role === 'admin' || role === 'support';
-        const isAuthPage = window.location.pathname.includes('sign-in.html') || 
-                          window.location.pathname.includes('sign-up.html') || 
-                          window.location.pathname === '/' || 
-                          window.location.pathname.endsWith('index.html');
 
         if (isAuthPage) {
             const target = isAdmin ? 'admin-dashboard.html' : 'customer-dashboard.html';
