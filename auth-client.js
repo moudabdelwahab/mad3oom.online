@@ -101,10 +101,20 @@ export async function signUp(email, password) {
  * تسجيل الخروج
  */
 export async function logout() {
+    console.log('[AuthDebug] Logging out...');
     await logActivity('logout');
     localStorage.removeItem('mad3oom-guest-session');
-    document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
-    document.cookie = "sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
+    
+    // تنظيف الكوكيز بشكل شامل
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+        document.cookie = name + "=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
+    }
+    
+    console.log('[AuthDebug] Cookies cleared, signing out from Supabase.');
     return await supabase.auth.signOut();
 }
 
@@ -113,8 +123,15 @@ export async function logout() {
  * الحصول على المستخدم الحالي مع البروفايل الخاص به
  */
 export async function getCurrentUser() {
+    console.log('[AuthDebug] Getting current user...');
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) return null;
+    
+    if (authError || !user) {
+        console.log('[AuthDebug] No auth user found or error:', authError);
+        return null;
+    }
+
+    console.log('[AuthDebug] Auth user found:', user.id, user.email);
 
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -123,10 +140,10 @@ export async function getCurrentUser() {
         .single();
 
     if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        // إذا فشل جلب البروفايل، لا نفترض أنه عميل (customer) بل نعتبر الجلسة غير مكتملة
+        console.error('[AuthDebug] Error fetching profile:', profileError);
         return null;
     }
+    console.log('[AuthDebug] Profile found, role:', profile.role);
 
     // إذا كان المستخدم محظوراً أثناء الجلسة، قم بتسجيل خروجه
     if (isUserBanned(profile)) {
@@ -149,23 +166,34 @@ export async function currentSession() {
  * التوجيه التلقائي بناءً على حالة الجلسة والدور
  */
 export async function autoRedirect() {
+    console.log('[AuthDebug] autoRedirect called on:', window.location.pathname);
     const user = await getCurrentUser();
-    if (!user) return;
+    if (!user) {
+        console.log('[AuthDebug] autoRedirect: No user, staying on page.');
+        return;
+    }
 
     const userRole = user.profile?.role || 'customer';
     const currentPath = window.location.pathname;
+    console.log('[AuthDebug] autoRedirect: User role is', userRole);
 
     const isAuthPage = currentPath.endsWith('index.html') || 
                        currentPath === '/' || 
                        currentPath.endsWith('/') ||
-                       currentPath.endsWith('sign-in.html') || 
-                       currentPath.endsWith('sign-up.html');
+                       currentPath.includes('sign-in.html') || 
+                       currentPath.includes('sign-up.html');
 
     if (isAuthPage) {
         const targetPage = (userRole === 'admin' || userRole === 'support') ? 'admin-dashboard.html' : 'customer-dashboard.html';
-        // تجنب التوجيه إذا كنا بالفعل في الصفحة المستهدفة
-        if (!currentPath.includes(targetPage)) {
+        console.log('[AuthDebug] autoRedirect: On auth page, target is', targetPage);
+        
+        // التحقق من أننا لسنا بالفعل في الصفحة المستهدفة لتجنب التكرار
+        const normalizedPath = currentPath.split('/').pop() || 'index.html';
+        if (normalizedPath !== targetPage) {
+            console.log('[AuthDebug] autoRedirect: Redirecting to', targetPage);
             window.location.replace(targetPage);
+        } else {
+            console.log('[AuthDebug] autoRedirect: Already on target page, no redirect needed.');
         }
     }
 }
@@ -210,11 +238,14 @@ export async function signInAsGuest() {
 
 export async function requireAuth(requiredRole = 'user') {
     const currentPath = window.location.pathname;
+    console.log(`[AuthDebug] requireAuth('${requiredRole}') called on:`, currentPath);
+    
     const isSignInPage = currentPath.includes('sign-in.html');
 
     // التحقق من وجود جلسة ضيف أولاً
     const guestSessionJson = localStorage.getItem('mad3oom-guest-session');
     if (guestSessionJson) {
+        console.log('[AuthDebug] Guest session found.');
         const guestSession = JSON.parse(guestSessionJson);
         return guestSession;
     }
@@ -222,7 +253,9 @@ export async function requireAuth(requiredRole = 'user') {
     const user = await getCurrentUser();
 
     if (!user) {
+        console.log('[AuthDebug] No user found in requireAuth.');
         if (!isSignInPage) {
+            console.log('[AuthDebug] Redirecting to sign-in.html');
             window.location.replace('sign-in.html');
         }
         return null;
@@ -230,11 +263,13 @@ export async function requireAuth(requiredRole = 'user') {
 
     const userRole = user.profile?.role || 'customer';
     const isAdminOrSupport = (userRole === 'admin' || userRole === 'support');
+    console.log('[AuthDebug] User role:', userRole, 'isAdminOrSupport:', isAdminOrSupport);
 
     const urlParams = new URLSearchParams(window.location.search);
     const impersonateId = urlParams.get('impersonate');
     
     if (impersonateId && isAdminOrSupport) {
+        console.log('[AuthDebug] Impersonation active for:', impersonateId);
         const { data: targetProfile } = await supabase.from('profiles').select('*').eq('id', impersonateId).single();
         if (targetProfile) {
             return { id: impersonateId, profile: targetProfile, isImpersonated: true };
@@ -244,6 +279,7 @@ export async function requireAuth(requiredRole = 'user') {
     // منطق التوجيه بناءً على الدور المطلوب والدور الحالي
     if (requiredRole === 'admin' || requiredRole === 'support') {
         if (!isAdminOrSupport) {
+            console.log('[AuthDebug] Access denied for admin/support role. Redirecting to customer-dashboard.');
             if (!currentPath.includes('customer-dashboard.html')) {
                 window.location.replace('customer-dashboard.html');
             }
@@ -251,6 +287,7 @@ export async function requireAuth(requiredRole = 'user') {
         }
     } else if (requiredRole === 'customer') {
         if (isAdminOrSupport && !impersonateId) {
+            console.log('[AuthDebug] Admin/Support trying to access customer page. Redirecting to admin-dashboard.');
             if (!currentPath.includes('admin-dashboard.html')) {
                 window.location.replace('admin-dashboard.html');
             }
@@ -258,6 +295,7 @@ export async function requireAuth(requiredRole = 'user') {
         }
     }
 
+    console.log('[AuthDebug] Access granted.');
     return user;
 }
 

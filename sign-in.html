@@ -201,19 +201,23 @@ form.addEventListener('submit', async (e) => {
     const password = passwordInput.value;
 
     try {
+        console.log('[AuthDebug] Attempting sign in for:', email);
         const { error } = await signIn(email, password);
         if (error) throw error;
 
+        console.log('[AuthDebug] Sign in successful, fetching user data...');
         successMessage.style.display = 'block';
 
         let user = await getCurrentUser();
         if (!user || !user.profile) {
+            console.log('[AuthDebug] Profile not ready, waiting 1.5s...');
             await new Promise(r => setTimeout(r, 1500));
             user = await getCurrentUser();
         }
 
         const userRole = user?.profile?.role || 'customer';
         const targetPage = (userRole === 'admin' || userRole === 'support') ? 'admin-dashboard.html' : 'customer-dashboard.html';
+        console.log('[AuthDebug] Sign in complete. Role:', userRole, 'Redirecting to:', targetPage);
         window.location.replace(targetPage);
 
     } catch (err) {
