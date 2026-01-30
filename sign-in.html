@@ -201,6 +201,10 @@
 
 <script type="module">
 import { supabase } from './api-config.js';
+import { signIn, signInAsGuest, getCurrentUser, autoRedirect } from './auth-client.js';
+
+// التوجيه التلقائي إذا كان مسجل دخول بالفعل
+autoRedirect();
 
 const form = document.getElementById('signInForm');
 const submitBtn = document.getElementById('loginBtn');

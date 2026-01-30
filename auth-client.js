@@ -241,3 +241,64 @@ export async function updatePassword(newPassword) {
 export async function updateEmail(newEmail) {
     return await supabase.auth.updateUser({ email: newEmail });
 }
+
+/* =========================================================
+   Guest & Redirection
+   ========================================================= */
+
+/**
+ * تسجيل الدخول كضيف
+ */
+export async function signInAsGuest() {
+    const guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
+    const guestUser = {
+        id: guestId,
+        email: `${guestId}@mad3oom.guest`,
+        profile: {
+            id: guestId,
+            full_name: 'زائر',
+            role: 'customer',
+            is_guest: true
+        }
+    };
+    localStorage.setItem('mad3oom-guest-session', JSON.stringify(guestUser));
+    await logActivity('guest_login', { guest_id: guestId });
+    return guestUser;
+}
+
+/**
+ * التوجيه التلقائي بناءً على حالة المصادقة
+ */
+export async function autoRedirect() {
+    const guestSession = localStorage.getItem('mad3oom-guest-session');
+    if (guestSession) {
+        if (window.location.pathname.includes('sign-in.html') || 
+            window.location.pathname.includes('sign-up.html') || 
+            window.location.pathname === '/' || 
+            window.location.pathname.endsWith('index.html')) {
+            window.location.replace('customer-dashboard.html');
+        }
+        return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+        
+        const role = profile?.role || 'customer';
+        const isAdmin = role === 'admin' || role === 'support';
+        const isAuthPage = window.location.pathname.includes('sign-in.html') || 
+                          window.location.pathname.includes('sign-up.html') || 
+                          window.location.pathname === '/' || 
+                          window.location.pathname.endsWith('index.html');
+
+        if (isAuthPage) {
+            const target = isAdmin ? 'admin-dashboard.html' : 'customer-dashboard.html';
+            window.location.replace(target);
+        }
+    }
+}
