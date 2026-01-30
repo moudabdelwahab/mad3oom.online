@@ -1,137 +1,97 @@
 import { supabase } from './api-config.js';
 import { logActivity } from './activity-service.js';
 
+/* =========================================================
+   Helpers
+========================================================= */
+
 /**
- * التحقق مما إذا كان المستخدم محظوراً
+ * التحقق هل المستخدم محظور
  */
 export function isUserBanned(profile) {
     if (!profile) return false;
+
     if (profile.ban_status === 'permanent') return true;
+
     if (profile.ban_status === 'temporary' && profile.ban_until) {
-        const banUntil = new Date(profile.ban_until);
-        if (banUntil > new Date()) return true;
+        return new Date(profile.ban_until) > new Date();
     }
+
     return false;
 }
 
+/* =========================================================
+   Auth Core
+========================================================= */
+
 /**
- * تسجيل الدخول باستخدام البريد الإلكتروني وكلمة المرور
+ * تسجيل الدخول
  */
 export async function signIn(email, password) {
-    const result = await supabase.auth.signInWithPassword({
-        email,
-        password
-    });
+    const result = await supabase.auth.signInWithPassword({ email, password });
 
     if (result.error) return result;
 
-    // ⛔ منع الدخول لو الإيميل مش متفعل
+    // تأكيد الإيميل
     if (!result.data.user.email_confirmed_at) {
         await supabase.auth.signOut();
         return {
             data: null,
-            error: { message: 'يرجى تأكيد بريدك الإلكتروني أولاً لتتمكن من تسجيل الدخول.' }
+            error: { message: 'يرجى تأكيد البريد الإلكتروني أولاً.' }
         };
     }
 
-    // جلب البروفايل للتحقق من الحظر
+    // جلب البروفايل
     const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', result.data.user.id)
         .single();
 
+    // فحص الحظر
     if (isUserBanned(profile)) {
         await supabase.auth.signOut();
-        let message = '';
-        
-        if (profile.ban_status === 'permanent') {
-            message = 'تم حظر حسابك بشكل دائم.';
-        } else if (profile.ban_status === 'temporary') {
-            const banDate = new Date(profile.ban_until).toLocaleString('ar-EG', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            message = `تم حظر حسابك مؤقتاً حتى تاريخ: ${banDate}.`;
-        }
-
-        if (profile.ban_reason) {
-            message += `\nالسبب: ${profile.ban_reason}`;
-        }
-        
-        message += '\nيرجى التواصل مع الإدارة لفك الحظر.';
-        
         return {
             data: null,
-            error: { message }
+            error: { message: 'تم حظر هذا الحساب. يرجى التواصل مع الإدارة.' }
         };
     }
 
-    // حفظ الجلسة في كوكيز لضمان استمراريتها
-    const session = result.data.session;
-    if (session) {
-        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=${session.expires_in}; SameSite=Lax`;
-        document.cookie = `sb-refresh-token=${session.refresh_token}; path=/; max-age=31536000; SameSite=Lax`;
-    }
-
-    // تسجيل نشاط الدخول
     await logActivity('login', { email });
 
     return result;
 }
 
-
 /**
- * إنشاء حساب جديد
+ * إنشاء حساب
  */
 export async function signUp(email, password) {
-    console.log('Attempting sign up for:', email);
-    const result = await supabase.auth.signUp({
-        email,
-        password
-    });
-    if (result.error) console.error('Sign up error details:', result.error);
-    return result;
+    return await supabase.auth.signUp({ email, password });
 }
 
 /**
  * تسجيل الخروج
  */
 export async function logout() {
-    console.log('[AuthDebug] Logging out...');
-    await logActivity('logout');
+    try {
+        await logActivity('logout');
+    } catch (e) {}
+
     localStorage.removeItem('mad3oom-guest-session');
-    
-    // تنظيف الكوكيز بشكل شامل
-    const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i];
-        const eqPos = cookie.indexOf("=");
-        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-        document.cookie = name + "=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
-    }
-    
-    console.log('[AuthDebug] Cookies cleared, signing out from Supabase.');
+
     return await supabase.auth.signOut();
 }
 
+/* =========================================================
+   Session & User
+========================================================= */
 
 /**
- * الحصول على المستخدم الحالي مع البروفايل الخاص به
+ * جلب المستخدم الحالي (❌ بدون Redirect)
  */
 export async function getCurrentUser() {
-    console.log('[AuthDebug] Getting current user...');
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-        console.log('[AuthDebug] No auth user found or error:', authError);
-        return null;
-    }
-
-    console.log('[AuthDebug] Auth user found:', user.id, user.email);
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) return null;
 
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -139,172 +99,93 @@ export async function getCurrentUser() {
         .eq('id', user.id)
         .single();
 
-    if (profileError) {
-        console.error('[AuthDebug] Error fetching profile:', profileError);
-        return null;
-    }
-    console.log('[AuthDebug] Profile found, role:', profile.role);
+    if (profileError || !profile) return null;
 
-    // إذا كان المستخدم محظوراً أثناء الجلسة، قم بتسجيل خروجه
     if (isUserBanned(profile)) {
-        await logout();
-        window.location.replace('sign-in.html?error=banned');
-        return null;
+        return { banned: true, profile };
     }
 
     return { ...user, profile };
 }
 
-/**
- * وظيفة بديلة لـ getCurrentUser تستخدم في index.html
- */
-export async function currentSession() {
-    return await getCurrentUser();
-}
+/* =========================================================
+   Authorization (NO REDIRECTS HERE)
+========================================================= */
 
 /**
- * التوجيه التلقائي بناءً على حالة الجلسة والدور
+ * حماية الصفحات
+ * ❌ لا Redirect
+ * ✔️ ترجع user أو null فقط
  */
-export async function autoRedirect() {
-    console.log('[AuthDebug] autoRedirect called on:', window.location.pathname);
-    const user = await getCurrentUser();
-    if (!user) {
-        console.log('[AuthDebug] autoRedirect: No user, staying on page.');
-        return;
-    }
-
-    const userRole = user.profile?.role || 'customer';
-    const currentPath = window.location.pathname;
-    console.log('[AuthDebug] autoRedirect: User role is', userRole);
-
-    const isAuthPage = currentPath.endsWith('index.html') || 
-                       currentPath === '/' || 
-                       currentPath.endsWith('/') ||
-                       currentPath.includes('sign-in.html') || 
-                       currentPath.includes('sign-up.html');
-
-    if (isAuthPage) {
-        const targetPage = (userRole === 'admin' || userRole === 'support') ? 'admin-dashboard.html' : 'customer-dashboard.html';
-        console.log('[AuthDebug] autoRedirect: On auth page, target is', targetPage);
-        
-        // التحقق من أننا لسنا بالفعل في الصفحة المستهدفة لتجنب التكرار
-        const normalizedPath = currentPath.split('/').pop() || 'index.html';
-        if (normalizedPath !== targetPage) {
-            console.log('[AuthDebug] autoRedirect: Redirecting to', targetPage);
-            window.location.replace(targetPage);
-        } else {
-            console.log('[AuthDebug] autoRedirect: Already on target page, no redirect needed.');
-        }
-    }
-}
-
-/**
- * ميزة دخول الإدمن على حساب العميل
- */
-export async function adminImpersonateUser(userId) {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    
-    if (profile?.role !== 'admin') {
-        throw new Error('Unauthorized');
-    }
-
-    // Activity logged in admin-dashboard.html before calling this
-    const impersonateUrl = `${window.location.origin}/customer-dashboard.html?impersonate=${userId}`;
-    window.open(impersonateUrl, '_blank');
-}
-
-/**
- * تسجيل الدخول كضيف
- */
-export async function signInAsGuest() {
-    // نستخدم معرف ثابت للضيف أو ننشئ جلسة وهمية
-    const guestSession = {
-        user: { id: 'guest-user', email: 'guest@mad3oom.online' },
-        profile: { 
-            id: 'guest-user', 
-            email: 'guest@mad3oom.online', 
-            role: 'guest',
-            full_name: 'زائر',
-            membership_level: 'زائر'
-        },
-        isGuest: true
-    };
-    
-    localStorage.setItem('mad3oom-guest-session', JSON.stringify(guestSession));
-    await logActivity('guest_login');
-    return { data: guestSession, error: null };
-}
-
-export async function requireAuth(requiredRole = 'user') {
-    const currentPath = window.location.pathname;
-    console.log(`[AuthDebug] requireAuth('${requiredRole}') called on:`, currentPath);
-    
-    const isSignInPage = currentPath.includes('sign-in.html');
-
-    // التحقق من وجود جلسة ضيف أولاً
-    const guestSessionJson = localStorage.getItem('mad3oom-guest-session');
-    if (guestSessionJson) {
-        console.log('[AuthDebug] Guest session found.');
-        const guestSession = JSON.parse(guestSessionJson);
-        return guestSession;
-    }
+export async function requireAuth(requiredRole = null) {
+    // Guest
+    const guestSession = localStorage.getItem('mad3oom-guest-session');
+    if (guestSession) return JSON.parse(guestSession);
 
     const user = await getCurrentUser();
+    if (!user) return null;
+    if (user.banned) return { banned: true };
 
-    if (!user) {
-        console.log('[AuthDebug] No user found in requireAuth.');
-        if (!isSignInPage) {
-            console.log('[AuthDebug] Redirecting to sign-in.html');
-            window.location.replace('sign-in.html');
-        }
-        return null;
-    }
+    const role = user.profile?.role || 'customer';
+    const isAdmin = role === 'admin' || role === 'support';
 
-    const userRole = user.profile?.role || 'customer';
-    const isAdminOrSupport = (userRole === 'admin' || userRole === 'support');
-    console.log('[AuthDebug] User role:', userRole, 'isAdminOrSupport:', isAdminOrSupport);
+    // impersonation
+    const params = new URLSearchParams(window.location.search);
+    const impersonateId = params.get('impersonate');
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const impersonateId = urlParams.get('impersonate');
-    
-    if (impersonateId && isAdminOrSupport) {
-        console.log('[AuthDebug] Impersonation active for:', impersonateId);
-        const { data: targetProfile } = await supabase.from('profiles').select('*').eq('id', impersonateId).single();
+    if (impersonateId && isAdmin) {
+        const { data: targetProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', impersonateId)
+            .single();
+
         if (targetProfile) {
-            return { id: impersonateId, profile: targetProfile, isImpersonated: true };
+            return {
+                id: impersonateId,
+                profile: targetProfile,
+                isImpersonated: true
+            };
         }
     }
 
-    // منطق التوجيه بناءً على الدور المطلوب والدور الحالي
-    if (requiredRole === 'admin' || requiredRole === 'support') {
-        if (!isAdminOrSupport) {
-            console.log('[AuthDebug] Access denied for admin/support role. Redirecting to customer-dashboard.');
-            if (!currentPath.includes('customer-dashboard.html')) {
-                window.location.replace('customer-dashboard.html');
-            }
-            return null;
-        }
-    } else if (requiredRole === 'customer') {
-        if (isAdminOrSupport && !impersonateId) {
-            console.log('[AuthDebug] Admin/Support trying to access customer page. Redirecting to admin-dashboard.');
-            if (!currentPath.includes('admin-dashboard.html')) {
-                window.location.replace('admin-dashboard.html');
-            }
-            return null;
-        }
-    }
+    // Role check
+    if (requiredRole === 'admin' && !isAdmin) return null;
+    if (requiredRole === 'customer' && isAdmin && !impersonateId) return null;
 
-    console.log('[AuthDebug] Access granted.');
     return user;
 }
 
-/**
- * تحديث بيانات البروفايل
- */
+/* =========================================================
+   Impersonation (ONE redirect only)
+========================================================= */
+
+export async function adminImpersonateUser(userId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (profile?.role !== 'admin') return false;
+
+    window.location.replace(
+        `/customer-dashboard.html?impersonate=${userId}`
+    );
+
+    return true;
+}
+
+/* =========================================================
+   Profile
+========================================================= */
+
 export async function updateProfile(updates) {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('No user logged in');
+    if (!user) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
         .from('profiles')
@@ -318,125 +199,45 @@ export async function updateProfile(updates) {
     return { data, error };
 }
 
-/**
- * تحديث بروفايل مستخدم آخر (للأدمن فقط)
- */
-export async function adminUpdateUserProfile(userId, updates) {
-    // جلب البيانات القديمة
-    const { data: oldProfile } = await supabase.from('profiles').select('*').eq('id', userId).single();
+/* =========================================================
+   Admin Utilities
+========================================================= */
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', userId);
-
-    if (!error) {
-        // تصفية البيانات القديمة لتشمل فقط الحقول التي تم تحديثها
-        const oldData = {};
-        if (oldProfile) {
-            Object.keys(updates).forEach(key => {
-                oldData[key] = oldProfile[key];
-            });
-        }
-
-        await logActivity('admin_updated_user', { 
-            target_user_id: userId, 
-            old_data: oldData,
-            new_data: updates 
-        });
-    }
-
-    return { data, error };
-}
-
-/**
- * تحديث رتبة المستخدم (للأدمن فقط)
- */
 export async function adminUpdateUserRole(userId, newRole) {
-    // جلب الرتبة القديمة
-    const { data: oldProfile } = await supabase.from('profiles').select('role').eq('id', userId).single();
-
-    // 1. تحديث جدول Profiles
     const { data, error } = await supabase
         .from('profiles')
         .update({ role: newRole })
         .eq('id', userId);
 
-    if (error) return { data, error };
-
-    // 2. تحديث Auth Metadata لضمان عمل السياسات الأمنية
-    const { error: authError } = await supabase.auth.admin.updateUserById(
-        userId,
-        { user_metadata: { role: newRole } }
-    ).catch(() => ({ error: null })); // تجاهل الخطأ إذا لم تكن الصلاحيات كافية
-
     if (!error) {
-        await logActivity('admin_updated_role', { 
-            target_user_id: userId, 
-            old_data: { role: oldProfile?.role },
+        await logActivity('admin_updated_role', {
+            target_user_id: userId,
             new_data: { role: newRole }
         });
     }
 
-    return { data, error: error || authError };
-}
-
-/**
- * رفع صورة البروفايل
- */
-export async function uploadAvatar(file) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    const { data, error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: true
-        });
-
-    if (uploadError) throw uploadError;
-
-    const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-    return publicUrl;
-}
-
-/**
- * إرسال بريد إعادة تعيين كلمة المرور
- */
-export async function resetPasswordEmail(email) {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/reset-password.html',
-    });
     return { data, error };
 }
 
-/**
- * تحديث كلمة المرور
- */
+/* =========================================================
+   Password & Email
+========================================================= */
+
+export async function resetPasswordEmail(email) {
+    return await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password.html`
+    });
+}
+
 export async function updatePassword(newPassword) {
     const { data, error } = await supabase.auth.updateUser({
         password: newPassword
     });
-    if (!error) {
-        await logActivity('password_changed');
-    }
+
+    if (!error) await logActivity('password_changed');
     return { data, error };
 }
 
-/**
- * تحديث البريد الإلكتروني
- */
 export async function updateEmail(newEmail) {
-    const { data, error } = await supabase.auth.updateUser({
-        email: newEmail
-    });
-    return { data, error };
+    return await supabase.auth.updateUser({ email: newEmail });
 }
