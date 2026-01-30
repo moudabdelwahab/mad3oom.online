@@ -301,8 +301,9 @@
 </head>
 <body class="admin-body">
     <nav class="admin-nav">
-        <div class="nav-cont            <div class="nav-right">
-                <img src="/assets/images/logo.png" alt="مدعوم" class="admin-logo">
+       <div class="nav-container">
+    <div class="nav-right">
+        <img src="/assets/images/logo.png" alt="مدعوم" class="admin-logo">
                 <span class="admin-title">لوحة الإدارة</span>
             </div>
             <div class="nav-left">
@@ -342,7 +343,6 @@
                         </div>
                     </div>
                 </div>
-            </div>"0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                             <span class="notif-badge" id="notifCount" style="display:none;">0</span>
                         </button>
                     </div>
@@ -352,7 +352,6 @@
                             <img id="navAvatar" src="" class="nav-avatar" style="display: none;">
                         </button>
                     </div>
-                    <button onclick="logout()" class="btn btn-danger btn-sm">خروج</button>
                 </div>
             </div>
         </div>
@@ -705,7 +704,7 @@
             setupEventListeners();
             try {
                 // السماح للأدمن والدعم الفني بدخول لوحة الإدارة
-                user = await requireAuth('support');
+user = await requireAuth('admin');
                 if (!user) return; 
                 
                 updateUIWithUserData();
@@ -715,13 +714,12 @@
                 renderLogs();
                 await initAdminRewards();
                 subscribeToTickets(() => renderTickets());
-            } catch (err) { 
-                console.error('Init error:', err);
-                if (!window.location.pathname.includes('sign-in.html')) {
-                    window.location.replace('sign-in.html'); 
-                }
-            }
-        }
+            }catch (err) {
+  console.error('Init error:', err);
+  // ❌ ممنوع redirect هنا
+}
+}
+
 
         function updateUIWithUserData() {
             if (user) {
@@ -1202,7 +1200,9 @@
         window.impersonateUser = async (id) => { 
             const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
             import('./activity-service.js').then(m => m.logActivity('impersonate', { target_user_id: id, target_email: targetUser?.email }));
-            await adminImpersonateUser(id); 
+            await adminImpersonateUser(id);
+location.href = 'customer-dashboard.html';
+
         };
         window.logout = async () => { await logout(); window.location.replace('sign-in.html'); };
 
