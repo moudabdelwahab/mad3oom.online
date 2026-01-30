@@ -213,7 +213,7 @@ form.addEventListener('submit', async (e) => {
         }
 
         const userRole = user?.profile?.role || 'customer';
-        const targetPage = userRole === 'admin' ? 'admin-dashboard.html' : 'customer-dashboard.html';
+        const targetPage = (userRole === 'admin' || userRole === 'support') ? 'admin-dashboard.html' : 'customer-dashboard.html';
         window.location.replace(targetPage);
 
     } catch (err) {

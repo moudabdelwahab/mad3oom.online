@@ -715,7 +715,10 @@
                 subscribeToTickets(() => renderTickets());
             } catch (err) { 
                 console.error('Init error:', err);
-                window.location.replace('sign-in.html'); 
+                // لتجنب حلقة التكرار، نتحقق مما إذا كنا بالفعل في صفحة تسجيل الدخول
+                if (!window.location.pathname.includes('sign-in.html')) {
+                    window.location.replace('sign-in.html'); 
+                }
             }
         }
 

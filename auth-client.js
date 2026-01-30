@@ -162,7 +162,7 @@ export async function autoRedirect() {
                        currentPath.endsWith('sign-up.html');
 
     if (isAuthPage) {
-        const targetPage = userRole === 'admin' ? 'admin-dashboard.html' : 'customer-dashboard.html';
+        const targetPage = (userRole === 'admin' || userRole === 'support') ? 'admin-dashboard.html' : 'customer-dashboard.html';
         // تجنب التوجيه إذا كنا بالفعل في الصفحة المستهدفة
         if (!currentPath.includes(targetPage)) {
             window.location.replace(targetPage);
@@ -248,8 +248,10 @@ export async function requireAuth(requiredRole = 'user') {
     }
 
     if (requiredRole === 'customer' && (userRole === 'admin' || userRole === 'support') && !impersonateId) {
-        window.location.replace('admin-dashboard.html');
-        return null;
+        if (!window.location.pathname.includes('customer-dashboard.html')) {
+            window.location.replace('admin-dashboard.html');
+            return null;
+        }
     }
 
     return user;

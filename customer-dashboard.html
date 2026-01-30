@@ -344,7 +344,12 @@
                 document.getElementById('impersonationBanner').style.display = 'block'; 
                 document.getElementById('signOutBtn').style.display = 'none'; 
             }
-        } catch (err) { window.location.replace('sign-in.html'); }
+        } catch (err) { 
+            console.error('Auth error:', err);
+            if (!window.location.pathname.includes('sign-in.html')) {
+                window.location.replace('sign-in.html'); 
+            }
+        }
 
         function updateUIWithUserData() {
             if (user) {
