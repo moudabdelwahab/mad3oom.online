@@ -48,13 +48,16 @@
             color: var(--color-text);
             margin: 0;
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         /* ==================== Navigation Bar ==================== */
         .admin-nav {
             background: var(--color-primary);
             border-bottom: 1px solid var(--color-border);
-            padding: 1rem 0;
+            padding: 0.75rem 0;
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -77,15 +80,121 @@
         }
 
         .admin-logo {
-            height: 40px !important;
+            height: 35px !important;
             width: auto !important;
             object-fit: contain;
         }
 
         .admin-title {
             font-weight: 800;
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             color: #FFFFFF;
+        }
+
+        /* ==================== Sidebar ==================== */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 280px;
+            height: 100%;
+            background: var(--color-sidebar-bg);
+            color: white;
+            z-index: 2000;
+            transition: all 0.3s ease;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1999;
+            display: none;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        .sidebar-header {
+            padding: 2rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-close {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .sidebar-menu {
+            padding: 1rem 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.2s;
+            font-weight: 600;
+            border-right: 4px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: white;
+            border-right-color: var(--color-accent);
+        }
+
+        .sidebar-item.active {
+            background: rgba(0, 119, 204, 0.15);
+            color: white;
+            border-right-color: var(--color-accent);
+        }
+
+        .sidebar-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* ==================== Menu Toggle Button ==================== */
+        .menu-toggle {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: white;
         }
 
         /* ==================== Admin Badge ==================== */
@@ -197,40 +306,6 @@
         .btn-success { background: var(--color-success); color: #FFFFFF; }
         .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 0.4rem; }
 
-        /* ==================== Tabs ==================== */
-        .admin-tabs {
-            display: flex;
-            gap: 0.75rem;
-            margin: 2rem 0;
-            background: var(--color-surface);
-            padding: 0.5rem;
-            border-radius: 1rem;
-            border: 1px solid var(--color-border);
-            overflow-x: auto;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .tab-btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            background: transparent;
-            color: var(--color-text-secondary);
-            cursor: pointer;
-            font-weight: 700;
-            font-family: 'Cairo', sans-serif;
-            border-radius: 0.75rem;
-            transition: all 0.3s;
-            white-space: nowrap;
-        }
-
-        .tab-btn.active {
-            color: #FFFFFF;
-            background: var(--color-accent);
-            box-shadow: 0 4px 12px rgba(0, 119, 204, 0.3);
-        }
-
-        .tab-btn:hover:not(.active) { background: var(--color-muted); }
-
         /* ==================== Tables ==================== */
         .table-container {
             background: var(--color-surface);
@@ -264,55 +339,117 @@
         .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--color-text); }
         .form-control { width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; font-family: 'Cairo', sans-serif; background: var(--color-surface); color: var(--color-text); font-size: 1rem; }
         .form-control:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1); }
-        
-        /* System Status Indicator */
-        .system-status { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 2rem; font-size: 0.85rem; font-weight: 600; color: white; cursor: default; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; position: relative; }
-        .status-dot::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; animation: statusPulse 2s infinite; }
-        .status-online { background-color: #22c55e; }
-        .status-online::after { background-color: #22c55e; }
-        .status-slow { background-color: #eab308; }
-        .status-slow::after { background-color: #eab308; }
-        .status-maintenance { background-color: #ef4444; }
-        .status-maintenance::after { background-color: #ef4444; }
-        @keyframes statusPulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
-        
-        /* Avatar Menu Styles */
-        .menu-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; transition: all 0.2s; font-size: 0.9rem; font-weight: 600; }
-        .menu-item:hover { background: var(--color-muted); color: var(--color-accent); }
-        .menu-item svg { opacity: 0.7; }
 
-        /* ==================== Status Badges ==================== */
-        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-        .status-open { background: var(--color-warning); color: white; }
-        .status-resolved { background: var(--color-success); color: white; }
-        .status-in-progress { background: var(--color-accent); color: white; }
-        .status-pending { background: var(--color-warning); color: white; }
-        .status-approved { background: var(--color-success); color: white; }
-        .status-rejected { background: var(--color-danger); color: white; }
+        .admin-main {
+            flex: 1;
+            padding: 2rem 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
 
-        /* ==================== Main Container ==================== */
-        .admin-main { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
-        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-open { background: #FFF3CD; color: #856404; }
+        .status-resolved { background: #D4EDDA; color: #155724; }
+        .status-closed { background: #F8D7DA; color: #721C24; }
 
-        .action-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .action-btns { display: flex; gap: 0.5rem; }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--color-text);
+            text-decoration: none;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .menu-item:hover { background: var(--color-muted); }
+        .menu-item svg { width: 18px; height: 18px; color: var(--color-text-secondary); }
+
+        @media (max-width: 768px) {
+            .nav-container { padding: 0 1rem; }
+            .admin-title { display: none; }
+            .system-status { display: none; }
+        }
     </style>
 </head>
 <body class="admin-body">
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <img src="/assets/images/logo.png" alt="مدعوم" style="height: 30px;">
+                <span style="font-weight: 800; font-size: 1.1rem;">لوحة الإدارة</span>
+            </div>
+            <button class="sidebar-close" id="sidebarClose">&times;</button>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="tickets.html" class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 012-2h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5z"></path></svg>
+                إدارة التذاكر
+            </a>
+            <a href="rewards.html" class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V6a2 2 0 10-2 2h2z"></path><circle cx="12" cy="12" r="9"></circle></svg>
+                إدارة المكافآت
+            </a>
+            <a href="users.html" class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75"></path></svg>
+                المستخدمين
+            </a>
+            <a href="banned.html" class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                المحظورين
+            </a>
+            <a href="stats.html" class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10m-6 10V4M6 20v-6"></path></svg>
+                الإحصائيات
+            </a>
+            <a href="activity-log.html" class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                سجل النشاطات
+            </a>
+            <a href="profile.html" class="sidebar-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                الملف الشخصي
+            </a>
+        </nav>
+        <div style="padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <a href="#" id="sidebarSignOut" class="sidebar-item" style="color: var(--color-danger); padding: 0.75rem 0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
     <nav class="admin-nav">
-       <div class="nav-container">
-    <div class="nav-right">
-        <img src="/assets/images/logo.png" alt="مدعوم" class="admin-logo">
+        <div class="nav-container">
+            <div class="nav-right">
+                <button class="menu-toggle" id="menuToggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+                <img src="/assets/images/logo.png" alt="مدعوم" class="admin-logo">
                 <span class="admin-title">لوحة الإدارة</span>
             </div>
             <div class="nav-left">
-                <div class="system-status" title="حالة النظام: يعمل بشكل جيد" style="margin-left: 1rem;">
-                    <span class="status-dot status-online"></span>
+                <div class="system-status" title="حالة النظام: يعمل بشكل جيد" style="margin-left: 1rem; display: flex; align-items: center; gap: 0.5rem; color: white; font-size: 0.85rem;">
+                    <span style="width: 8px; height: 8px; background: #4CAF50; border-radius: 50%;"></span>
                     <span>النظام شغال</span>
                 </div>
                 <div class="nav-actions">
-                    <div class="admin-badge">
+                    <div class="admin-badge" id="adminBadgeContainer" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"></path></svg>
                         ADMIN
                     </div>
@@ -323,34 +460,16 @@
                     <div style="position: relative;">
                         <div class="avatar-circle" id="adminAvatarBtn" style="cursor: pointer;">A</div>
                         <div id="adminAvatarMenu" style="display: none; position: absolute; top: 100%; left: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 0.5rem; box-shadow: var(--shadow); min-width: 180px; z-index: 1001; margin-top: 0.5rem; overflow: hidden;">
-                            <a href="#profile" class="menu-item" data-tab="profile">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <a href="profile.html" class="menu-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                                 الملف الشخصي
-                            </a>
-                            <a href="#settings" class="menu-item" data-tab="settings">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                                الإعدادات
-                            </a>
-                            <a href="#password" class="menu-item" data-tab="password">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                تغيير كلمة المرور
                             </a>
                             <hr style="border: 0; border-top: 1px solid var(--color-border); margin: 0;">
                             <a href="#" id="adminSignOut" class="menu-item" style="color: var(--color-danger);">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                                 تسجيل الخروج
                             </a>
                         </div>
-                    </div>
-                </div>
-                            <span class="notif-badge" id="notifCount" style="display:none;">0</span>
-                        </button>
-                    </div>
-                    <div class="user-profile-dropdown">
-                        <button id="profileBtn" class="nav-btn" style="padding: 2px; border-radius: 50%;">
-                            <div class="avatar-circle" id="adminInitial">A</div>
-                            <img id="navAvatar" src="" class="nav-avatar" style="display: none;">
-                        </button>
                     </div>
                 </div>
             </div>
@@ -358,85 +477,8 @@
     </nav>
 
     <main class="admin-main">
-        <div class="admin-tabs">
-            <button class="tab-btn active" data-tab="ticketsTab">إدارة التذاكر</button>
-            <button class="tab-btn" data-tab="rewardsTab">إدارة المكافآت</button>
-            <button class="tab-btn" data-tab="usersTab">المستخدمين</button>
-            <button class="tab-btn" data-tab="bannedTab">المحظورين</button>
-            <button class="tab-btn" data-tab="statsTab">الإحصائيات</button>
-            <button class="tab-btn" data-tab="logsTab">سجل النشاطات</button>
-            <button class="tab-btn" data-tab="profileTab">الملف الشخصي</button>
-        </div>
-        <!-- Stats Tab -->
-        <div id="statsTab" class="tab-content" style="display: none;">
-            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                <div class="stat-card" style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">إجمالي التذاكر</div>
-                    <div id="totalTicketsCount" style="font-size: 2rem; font-weight: bold; color: var(--color-primary);">0</div>
-                </div>
-                <div class="stat-card" style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">إجمالي البلاغات</div>
-                    <div id="totalReportsCount" style="font-size: 2rem; font-weight: bold; color: #217346;">0</div>
-                </div>
-                <div class="stat-card" style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">متوسط سرعة الاستجابة</div>
-                    <div id="avgResponseTime" style="font-size: 1.5rem; font-weight: bold; color: #d32f2f;">--</div>
-                </div>
-                <div class="stat-card" style="text-align: center; padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">تذاكر قيد الانتظار</div>
-                    <div id="pendingTicketsCount" style="font-size: 2rem; font-weight: bold; color: #f57c00;">0</div>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
-                <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 2px solid var(--color-primary); padding-bottom: 0.5rem;">أكثر الموظفين استجابة</h3>
-                    <div class="table-container">
-                        <table style="font-size: 0.85rem;">
-                            <thead>
-                                <tr>
-                                    <th>الموظف</th>
-                                    <th>عدد الردود</th>
-                                    <th>آخر رد</th>
-                                </tr>
-                            </thead>
-                            <tbody id="topRespondersBody">
-                                <!-- Data will be loaded here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 2px solid #217346; padding-bottom: 0.5rem;">حالة البلاغات</h3>
-                    <div id="reportsStatusChart" style="height: 200px; display: flex; align-items: center; justify-content: center; background: #f9f9f9; border-radius: 4px;">
-                        <!-- Simple status summary -->
-                        <div id="reportsStatusSummary" style="width: 100%; padding: 1rem;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <h3 style="margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 2px solid #d32f2f; padding-bottom: 0.5rem;">آخر الردود على التذاكر</h3>
-                <div class="table-container">
-                    <table style="font-size: 0.85rem;">
-                        <thead>
-                            <tr>
-                                <th>الموظف</th>
-                                <th>التذكرة</th>
-                                <th>الرد</th>
-                                <th>التوقيت</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recentRepliesBody">
-                            <!-- Data will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tickets Tab -->
-        <div id="ticketsTab" class="tab-content" style="display: block;">
+        <!-- Default Content: Tickets (as per original dashboard) -->
+        <div id="ticketsTab" class="tab-content">
             <div class="stats-grid">
                 <div class="stat-card">
                     <p class="stat-label">إجمالي التذاكر</p>
@@ -468,258 +510,45 @@
                 </table>
             </div>
         </div>
-
-        <!-- Rewards Tab -->
-        <div id="rewardsTab" class="tab-content" style="display: none;">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <p class="stat-label">بلاغات معلقة</p>
-                    <h2 id="admPendingReports" class="stat-value">0</h2>
-                </div>
-                <div class="stat-card">
-                    <p class="stat-label">بلاغات مقبولة</p>
-                    <h2 id="admApprovedReports" class="stat-value" style="color: var(--color-success);">0</h2>
-                </div>
-                <div class="stat-card">
-                    <p class="stat-label">بلاغات مرفوضة</p>
-                    <h2 id="admRejectedReports" class="stat-value" style="color: var(--color-danger);">0</h2>
-                </div>
-                <div class="stat-card">
-                    <p class="stat-label">أعضاء Pro</p>
-                    <h2 id="admProUsers" class="stat-value" style="color: var(--color-accent);">0</h2>
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                <input type="text" id="reportsSearch" class="form-control" placeholder="بحث في البلاغات..." style="flex: 1;">
-                <select id="reportsStatusFilter" class="form-control" style="width: 200px;">
-                    <option value="all">جميع الحالات</option>
-                    <option value="pending">معلقة</option>
-                    <option value="approved">مقبولة</option>
-                    <option value="rejected">مرفوضة</option>
-                </select>
-            </div>
-
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>المستخدم</th>
-                            <th>العنوان</th>
-                            <th>النوع</th>
-                            <th>الخطورة</th>
-                            <th>الحالة</th>
-                            <th>النقاط</th>
-                            <th>التاريخ</th>
-                            <th>الإجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reportsTableBody">
-                        <tr><td colspan="8" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Users Tab -->
-        <div id="usersTab" class="tab-content" style="display: none;">
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>الاسم</th>
-                            <th>البريد</th>
-                            <th>النقاط</th>
-                            <th>الرتبة</th>
-                            <th>التاريخ</th>
-                            <th>الإجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <tr><td colspan="6" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Banned Tab -->
-        <div id="bannedTab" class="tab-content" style="display: none;">
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>الاسم</th>
-                            <th>البريد</th>
-                            <th>الحالة</th>
-                            <th>الإجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bannedUsersBody">
-                        <tr><td colspan="4" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Logs Tab -->
-        <div id="logsTab" class="tab-content" style="display: none;">
-            <div class="filters-bar" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; background: var(--color-surface); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--color-border);">
-                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
-                    <label class="form-label" style="font-size: 0.85rem;">نوع المستخدم</label>
-                    <select id="logRoleFilter" class="form-control">
-                        <option value="all">الكل</option>
-                        <option value="admin">إدارة</option>
-                        <option value="user">أعضاء</option>
-                    </select>
-                </div>
-                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
-                    <label class="form-label" style="font-size: 0.85rem;">نوع النشاط</label>
-                    <select id="logActionFilter" class="form-control">
-                        <option value="all">الكل</option>
-                        <option value="login">تسجيل دخول</option>
-                        <option value="logout">تسجيل خروج</option>
-                        <option value="ticket_created">إنشاء تذكرة</option>
-                        <option value="report_submitted">بلاغ مكافأة</option>
-                        <option value="impersonate">تقمص شخصية</option>
-                        <option value="ban_user">حظر مستخدم</option>
-                        <option value="unban_user">فك حظر</option>
-                    </select>
-                </div>
-                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 100px;">
-                    <label class="form-label" style="font-size: 0.85rem;">عدد السجلات</label>
-                    <select id="logLimitFilter" class="form-control">
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50" selected>50</option>
-                        <option value="100">100</option>
-                        <option value="200">200</option>
-                        <option value="all">الكل</option>
-                    </select>
-                </div>
-                <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
-                    <button id="exportExcelBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #217346; color: white; border: none; border-radius: 4px; cursor: pointer;">Excel</button>
-                    <button id="exportPdfBtn" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">PDF</button>
-                </div>
-            </div>
-            <div class="table-container">
-                <table style="font-size: 0.9rem;">
-                    <thead>
-                        <tr>
-                            <th>المستخدم</th>
-                            <th>النشاط</th>
-                            <th>الجهاز / المتصفح</th>
-                            <th>الموقع / IP</th>
-                            <th>التاريخ والوقت</th>
-                            <th>الإجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logsTableBody">
-                        <!-- Logs will be loaded here -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Log Details Modal -->
-        <div id="logDetailsModal" class="modal">
-            <div class="modal-content" style="max-width: 700px;">
-                <div class="modal-header">
-                    <h3>تفاصيل النشاط 👁️</h3>
-                    <button class="close-modal" onclick="document.getElementById('logDetailsModal').classList.remove('active')">&times;</button>
-                </div>
-                <div id="logDetailsContent" style="padding: 1.5rem;">
-                    <!-- Details will be loaded here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Profile Tab -->
-        <div id="profileTab" class="tab-content" style="display: none;">
-            <div class="stat-card" style="max-width: 600px; margin: 0 auto;">
-                <h3>تعديل الملف الشخصي</h3>
-                <form id="profileForm" style="margin-top: 1.5rem;">
-                    <div class="form-group">
-                        <label class="form-label">الاسم الكامل</label>
-                        <input type="text" id="profileFullName" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">رقم الهاتف</label>
-                        <input type="tel" id="profilePhone" class="form-control">
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width:100%;">حفظ التغييرات</button>
-                </form>
-            </div>
-        </div>
     </main>
-
-    <!-- Modals -->
-    <div id="pointsModal" class="modal">
-        <div class="modal-content">
-            <h3>تعديل النقاط</h3>
-            <form id="pointsForm">
-                <input type="hidden" id="pointsUserId">
-                <div class="form-group">
-                    <label class="form-label">النقاط الجديدة</label>
-                    <input type="number" id="newPoints" class="form-control">
-                </div>
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('pointsModal').classList.remove('active')">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">تحديث</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="roleModal" class="modal">
-        <div class="modal-content">
-            <h3>تعديل الرتبة</h3>
-            <form id="roleForm">
-                <input type="hidden" id="roleUserId">
-                <div class="form-group">
-                    <label class="form-label">الرتبة الجديدة</label>
-                    <select id="newRole" class="form-control">
-                        <option value="user">عضو (User)</option>
-                        <option value="admin">إدارة (Admin)</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('roleModal').classList.remove('active')">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">تحديث</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <script type="module">
         import { supabase } from './api-config.js';
-        import { requireAuth, logout, updateProfile, adminImpersonateUser, adminUpdateUserRole } from './auth-client.js';
+        import { requireAuth, logout, adminImpersonateUser } from './auth-client.js';
         import { fetchTicketStats, subscribeToTickets } from './tickets-service.js';
-        import { initAdminRewards } from './admin-rewards.js';
-        import { calculateMembershipLevel } from './rewards-service.js';
-        import { fetchActivityLogs, formatActivityMessage } from './activity-service.js';
         
         let user = null;
 
         async function init() {
+            setupSidebar();
             setupEventListeners();
             try {
-                // السماح للأدمن والدعم الفني بدخول لوحة الإدارة
-user = await requireAuth('admin');
+                user = await requireAuth('admin');
                 if (!user) return; 
                 
                 updateUIWithUserData();
                 renderTickets();
-                renderUsers();
-                renderBannedUsers();
-                renderLogs();
-                await initAdminRewards();
                 subscribeToTickets(() => renderTickets());
-            }catch (err) {
-  console.error('Init error:', err);
-  // ❌ ممنوع redirect هنا
-}
-}
+            } catch (err) {
+                console.error('Init error:', err);
+            }
+        }
 
+        function setupSidebar() {
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarClose = document.getElementById('sidebarClose');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+            };
+
+            menuToggle.addEventListener('click', toggleSidebar);
+            sidebarClose.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+        }
 
         function updateUIWithUserData() {
             if (user) {
@@ -727,9 +556,11 @@ user = await requireAuth('admin');
                 document.getElementById('adminInitial').textContent = (profile.full_name || user.email).charAt(0).toUpperCase();
                 if (profile.role === 'admin') document.getElementById('adminBadgeContainer').style.display = 'block';
                 if (profile.avatar_url) {
-                    document.getElementById('navAvatar').src = profile.avatar_url;
-                    document.getElementById('navAvatar').style.display = 'block';
-                    document.getElementById('adminInitial').style.display = 'none';
+                    const navAvatar = document.createElement('img');
+                    navAvatar.src = profile.avatar_url;
+                    navAvatar.className = 'nav-avatar';
+                    document.getElementById('adminAvatarBtn').innerHTML = '';
+                    document.getElementById('adminAvatarBtn').appendChild(navAvatar);
                 }
             }
         }
@@ -753,573 +584,39 @@ user = await requireAuth('admin');
             document.getElementById('admResolved').textContent = stats.resolved;
         }
 
-        async function renderUsers() {
-            const body = document.getElementById('usersTableBody');
-            const { data: users } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-            body.innerHTML = users?.map(u => `
-                <tr>
-                    <td>${u.full_name || 'بدون اسم'}</td>
-                    <td>${u.email}</td>
-                    <td>${u.points || 0}</td>
-                    <td>${u.role === 'admin' ? 'إدارة' : 'عضو'}</td>
-                    <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="btn btn-warning btn-sm" onclick="openPointsModal('${u.id}', ${u.points || 0})">نقاط</button>
-                            <button class="btn btn-primary btn-sm" onclick="openRoleModal('${u.id}', '${u.role || 'user'}')">رتبة</button>
-                            <button class="btn btn-success btn-sm" onclick="impersonateUser('${u.id}')">دخول</button>
-                            ${u.ban_status === 'none' || !u.ban_status ? 
-                                `<button class="btn btn-danger btn-sm" onclick="banUser('${u.id}')">حظر</button>` : 
-                                `<button class="btn btn-secondary btn-sm" onclick="unbanUser('${u.id}')">فك الحظر</button>`
-                            }
-                        </div>
-                    </td>
-                </tr>
-            `).join('') || '<tr><td colspan="6">لا يوجد مستخدمين</td></tr>';
-        }
-
-        async function renderBannedUsers() {
-            const body = document.getElementById('bannedUsersBody');
-            const { data: users } = await supabase.from('profiles').select('*').neq('ban_status', 'none');
-            body.innerHTML = users?.map(u => `
-                <tr>
-                    <td>${u.full_name}</td>
-                    <td>${u.email}</td>
-                    <td>${u.ban_status}</td>
-                    <td><button class="btn btn-secondary btn-sm" onclick="unbanUser('${u.id}')">فك الحظر</button></td>
-                </tr>
-            `).join('') || '<tr><td colspan="4">لا يوجد محظورين</td></tr>';
-        }
-
-        async function renderLogs() {
-            const body = document.getElementById('logsTableBody');
-            const filters = {
-                role: document.getElementById('logRoleFilter').value,
-                action: document.getElementById('logActionFilter').value
-            };
-            const limit = document.getElementById('logLimitFilter').value;
-            
-            try {
-                const logs = await fetchActivityLogs(filters, limit);
-                window.currentLogs = logs; // حفظ السجلات الحالية للتصدير
-                body.innerHTML = logs?.map(l => {
-                    const location = l.location_info ? `${l.location_info.country || ''} - ${l.location_info.city || ''}` : 'غير متوفر';
-                    const userRole = l.profiles?.role || l.user_role;
-                    const roleLabel = userRole === 'admin' ? '<span class="status-badge status-resolved" style="background:#003366">إدارة</span>' : '<span class="status-badge status-open" style="background:#777">عضو</span>';
-                    
-                    return `
-                        <tr>
-                            <td>
-                                <div style="font-weight:600;">${l.profiles?.full_name || 'مستخدم'}</div>
-                                <div style="font-size:0.75rem; color:var(--color-text-secondary);">${l.profiles?.email || ''}</div>
-                                <div style="margin-top:0.25rem;">${roleLabel}</div>
-                            </td>
-                            <td>${formatActivityMessage(l)}</td>
-                            <td><small>${l.device_info || 'غير متوفر'}</small></td>
-                            <td>
-                                <div>${l.ip_address || '---'}</div>
-                                <div style="font-size:0.75rem; color:var(--color-text-secondary);">${location}</div>
-                            </td>
-                            <td>
-                                <div>${new Date(l.created_at).toLocaleDateString('ar-EG')}</div>
-                                <div style="font-size:0.75rem; color:var(--color-text-secondary);">${new Date(l.created_at).toLocaleTimeString('ar-EG')}</div>
-                            </td>
-                            <td>
-                                <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="showLogDetails('${l.id}')">👁️ عرض</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('') || '<tr><td colspan="6" style="text-align:center;">لا توجد سجلات مطابقة</td></tr>';
-            } catch (err) {
-                body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--color-danger);">خطأ في تحميل السجلات</td></tr>';
-            }
-        }
-
-        function exportToExcel() {
-            if (!window.currentLogs || window.currentLogs.length === 0) return alert('لا توجد بيانات لتصديرها');
-            
-            const data = window.currentLogs.map(l => ({
-                'المستخدم': l.profiles?.full_name || l.profiles?.email || 'مستخدم',
-                'البريد الإلكتروني': l.profiles?.email || '',
-                'الرتبة': l.profiles?.role === 'admin' ? 'إدارة' : 'عضو',
-                'النشاط': formatActivityMessage(l).replace(/<\/?[^>]+(>|$)/g, ""),
-                'الجهاز/المتصفح': l.device_info || 'غير متوفر',
-                'IP': l.ip_address || '---',
-                'الموقع': l.location_info ? `${l.location_info.country || ''} - ${l.location_info.city || ''}` : 'غير متوفر',
-                'التاريخ والوقت': new Date(l.created_at).toLocaleString('ar-EG')
-            }));
-
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Activity Logs");
-            XLSX.writeFile(wb, `Activity_Logs_${new Date().toISOString().split('T')[0]}.xlsx`);
-        }
-
-        function exportToPdf() {
-            if (!window.currentLogs || window.currentLogs.length === 0) return alert('لا توجد بيانات لتصديرها');
-            
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'mm', 'a4');
-            
-            // إضافة الخط العربي (اختياري، هنا سنستخدم الخط الافتراضي مع دعم النصوص)
-            doc.text("سجل النشاطات - منصة مدعوم", 150, 10, { align: 'center' });
-
-            const tableData = window.currentLogs.map(l => [
-                l.profiles?.full_name || l.profiles?.email || 'مستخدم',
-                l.profiles?.role === 'admin' ? 'إدارة' : 'عضو',
-                formatActivityMessage(l).replace(/<\/?[^>]+(>|$)/g, ""),
-                l.device_info || 'غير متوفر',
-                l.ip_address || '---',
-                new Date(l.created_at).toLocaleString('ar-EG')
-            ]);
-
-            doc.autoTable({
-                head: [['المستخدم', 'الرتبة', 'النشاط', 'الجهاز', 'IP', 'التاريخ']],
-                body: tableData,
-                styles: { font: 'helvetica', halign: 'right' },
-                headStyles: { fillColor: [0, 51, 102] }
-            });
-
-            doc.save(`Activity_Logs_${new Date().toISOString().split('T')[0]}.pdf`);
-        }
-
-        window.showLogDetails = (logId) => {
-            const log = window.currentLogs.find(l => l.id === logId);
-            if (!log) return;
-
-            const content = document.getElementById('logDetailsContent');
-            const details = log.details || {};
-            const location = log.location_info ? `${log.location_info.country || ''} - ${log.location_info.city || ''}` : 'غير متوفر';
-            
-            let sessionHtml = '';
-            if (log.session_duration) {
-                const mins = Math.floor(log.session_duration / 60);
-                const secs = log.session_duration % 60;
-                sessionHtml = `<div style="margin-bottom: 1rem;"><strong>مدة الجلسة:</strong> ${mins} دقيقة و ${secs} ثانية</div>`;
-            }
-
-            let changesHtml = '';
-            if (details.old_data || details.new_data) {
-                changesHtml = `
-                    <div style="margin-top: 1.5rem; border-top: 1px solid var(--color-border); padding-top: 1rem;">
-                        <h4 style="margin-bottom: 1rem; color: var(--color-primary);">التغييرات (قبل / بعد)</h4>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div style="background: #fff5f5; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #feb2b2;">
-                                <div style="font-weight: bold; color: #c53030; margin-bottom: 0.5rem;">قبل:</div>
-                                <pre style="font-size: 0.8rem; white-space: pre-wrap;">${JSON.stringify(details.old_data || {}, null, 2)}</pre>
-                            </div>
-                            <div style="background: #f0fff4; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #9ae6b4;">
-                                <div style="font-weight: bold; color: #2f855a; margin-bottom: 0.5rem;">بعد:</div>
-                                <pre style="font-size: 0.8rem; white-space: pre-wrap;">${JSON.stringify(details.new_data || {}, null, 2)}</pre>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            content.innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                    <div>
-                        <div style="margin-bottom: 0.5rem;"><strong>المستخدم:</strong> ${log.profiles?.full_name || 'مستخدم'}</div>
-                        <div style="margin-bottom: 0.5rem;"><strong>البريد:</strong> ${log.profiles?.email || ''}</div>
-                        <div style="margin-bottom: 0.5rem;"><strong>الرتبة:</strong> ${log.profiles?.role === 'admin' ? 'إدارة' : 'عضو'}</div>
-                    </div>
-                    <div>
-                        <div style="margin-bottom: 0.5rem;"><strong>التاريخ:</strong> ${new Date(log.created_at).toLocaleDateString('ar-EG')}</div>
-                        <div style="margin-bottom: 0.5rem;"><strong>الوقت:</strong> ${new Date(log.created_at).toLocaleTimeString('ar-EG')}</div>
-                        <div style="margin-bottom: 0.5rem;"><strong>النشاط:</strong> ${log.action}</div>
-                    </div>
-                </div>
-                
-                <div style="background: var(--color-muted); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                    <div style="margin-bottom: 0.5rem;"><strong>IP Address:</strong> ${log.ip_address || 'غير متوفر'}</div>
-                    <div style="margin-bottom: 0.5rem;"><strong>الموقع:</strong> ${location}</div>
-                    <div style="margin-bottom: 0.5rem;"><strong>الجهاز:</strong> ${log.device_info || 'غير متوفر'}</div>
-                    <div style="margin-bottom: 0.5rem; word-break: break-all;"><strong>User Agent:</strong> <small>${log.user_agent || 'غير متوفر'}</small></div>
-                    ${sessionHtml}
-                </div>
-
-                <div style="margin-bottom: 1rem;">
-                    <strong>وصف النشاط:</strong>
-                    <div style="margin-top: 0.5rem; padding: 0.75rem; background: #f8fafc; border-right: 4px solid var(--color-primary);">
-                        ${formatActivityMessage(log)}
-                    </div>
-                </div>
-
-                ${changesHtml}
-            `;
-
-            document.getElementById('logDetailsModal').classList.add('active');
-        };
-
         function setupEventListeners() {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.onclick = () => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-                    btn.classList.add('active');
-                    document.getElementById(btn.dataset.tab).style.display = 'block';
-                    if (btn.dataset.tab === 'logsTab') renderLogs();
-                    if (btn.dataset.tab === 'statsTab') renderStats();
-                };
-            });
-
-            document.getElementById('logRoleFilter').onchange = renderLogs;
-            document.getElementById('logActionFilter').onchange = renderLogs;
-            document.getElementById('logLimitFilter').onchange = renderLogs;
-            document.getElementById('exportExcelBtn').onclick = exportToExcel;
-            document.getElementById('exportPdfBtn').onclick = exportToPdf;
-
-            document.getElementById('pointsForm').onsubmit = async (e) => {
-                e.preventDefault();
-                const id = document.getElementById('pointsUserId').value;
-                const points = parseInt(document.getElementById('newPoints').value);
+            const adminAvatarBtn = document.getElementById('adminAvatarBtn');
+            const adminAvatarMenu = document.getElementById('adminAvatarMenu');
+            
+            if (adminAvatarBtn && adminAvatarMenu) {
+                adminAvatarBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    adminAvatarMenu.style.display = adminAvatarMenu.style.display === 'block' ? 'none' : 'block';
+                });
                 
-                try {
-                    const membershipLevel = calculateMembershipLevel(points);
-                    const isPro = points >= 1000;
+                document.addEventListener('click', () => {
+                    adminAvatarMenu.style.display = 'none';
+                });
+            }
 
-                    // جلب البيانات القديمة قبل التحديث
-                    const { data: oldProfile } = await supabase.from('profiles').select('points').eq('id', id).single();
-
-                    // تحديث ملف المستخدم
-                    const { error: profileError } = await supabase.from('profiles')
-                        .update({ 
-                            points: points
-                        })
-                        .eq('id', id);
-                    
-                    if (profileError) throw profileError;
-
-                    // تحديث المحفظة
-                    const { error: walletError } = await supabase.from('user_wallets')
-                        .upsert({ 
-                            user_id: id, 
-                            total_points: points, 
-                            available_points: points,
-                            membership_level: membershipLevel,
-                            is_pro: isPro,
-                            updated_at: new Date().toISOString()
-                        }, { onConflict: 'user_id' });
-                    
-                    if (walletError) throw walletError;
-
-                    // تسجيل النشاط مع البيانات قبل وبعد
-                    import('./activity-service.js').then(m => m.logActivity('admin_updated_points', { 
-                        target_user_id: id,
-                        old_data: { points: oldProfile?.points },
-                        new_data: { points: points }
-                    }));
-
-                    alert('تم تحديث النقاط والمحفظة بنجاح');
-                    document.getElementById('pointsModal').classList.remove('active');
-                    renderUsers();
-                } catch (error) {
-                    console.error('Error updating points:', error);
-                    alert('حدث خطأ أثناء التحديث: ' + error.message);
-                }
-            };
-
-            document.getElementById('roleForm').onsubmit = async (e) => {
+            const signoutAction = async (e) => {
                 e.preventDefault();
-                const id = document.getElementById('roleUserId').value;
-                const role = document.getElementById('newRole').value;
-                await adminUpdateUserRole(id, role);
-                alert('تم التحديث');
-                document.getElementById('roleModal').classList.remove('active');
-                renderUsers();
+                await logout();
+                window.location.replace('sign-in.html');
             };
 
-            document.getElementById('profileForm').onsubmit = async (e) => {
-                e.preventDefault();
-                const fullName = document.getElementById('profileFullName').value;
-                const phone = document.getElementById('profilePhone').value;
-                await updateProfile({ full_name: fullName, phone });
-                alert('تم حفظ التغييرات');
-            };
+            document.getElementById('adminSignOut').addEventListener('click', signoutAction);
+            document.getElementById('sidebarSignOut').addEventListener('click', signoutAction);
         }
-
-        window.openPointsModal = (id, points) => {
-            document.getElementById('pointsUserId').value = id;
-            document.getElementById('newPoints').value = points;
-            document.getElementById('pointsModal').classList.add('active');
-        };
-
-        window.openRoleModal = (id, role) => {
-            document.getElementById('roleUserId').value = id;
-            document.getElementById('newRole').value = role;
-            document.getElementById('roleModal').classList.add('active');
-        };
-
-        window.banUser = async (id) => {
-            if (confirm('هل أنت متأكد من حظر هذا المستخدم؟')) {
-                const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
-                const { error } = await supabase.from('profiles').update({ ban_status: 'permanent' }).eq('id', id);
-                if (error) alert('خطأ في الحظر: ' + error.message);
-                else {
-                    import('./activity-service.js').then(m => m.logActivity('ban_user', { target_user_id: id, target_email: targetUser?.email }));
-                    alert('تم حظر المستخدم');
-                    renderUsers();
-                    renderBannedUsers();
-                }
-            }
-        };
-
-        async function renderStats() {
-            try {
-                // 1. جلب إجمالي التذاكر والبلاغات
-                const { count: ticketsCount } = await supabase.from('tickets').select('*', { count: 'exact', head: true });
-                const { count: reportsCount } = await supabase.from('user_reports').select('*', { count: 'exact', head: true });
-                const { count: pendingTickets } = await supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'open');
-
-                document.getElementById('totalTicketsCount').innerText = ticketsCount || 0;
-                document.getElementById('totalReportsCount').innerText = reportsCount || 0;
-                document.getElementById('pendingTicketsCount').innerText = pendingTickets || 0;
-
-                // 2. جلب الردود لحساب سرعة الاستجابة وأكثر الموظفين استجابة
-                const { data: replies, error: repliesError } = await supabase
-                    .from('ticket_replies')
-                    .select(`
-                        *,
-                        profiles:user_id (full_name, role),
-                        tickets:ticket_id (created_at, title)
-                    `)
-                    .order('created_at', { ascending: false });
-
-                if (repliesError) throw repliesError;
-
-                // حساب متوسط سرعة الاستجابة (الفرق بين إنشاء التذكرة وأول رد عليها)
-                const firstReplies = {};
-                replies.forEach(r => {
-                    if (!firstReplies[r.ticket_id] || new Date(r.created_at) < new Date(firstReplies[r.ticket_id].created_at)) {
-                        firstReplies[r.ticket_id] = r;
-                    }
-                });
-
-                let totalDiff = 0;
-                let count = 0;
-                Object.values(firstReplies).forEach(r => {
-                    if (r.tickets && r.tickets.created_at) {
-                        const diff = new Date(r.created_at) - new Date(r.tickets.created_at);
-                        totalDiff += diff;
-                        count++;
-                    }
-                });
-
-                if (count > 0) {
-                    const avgMs = totalDiff / count;
-                    const hours = Math.floor(avgMs / (1000 * 60 * 60));
-                    const mins = Math.floor((avgMs % (1000 * 60 * 60)) / (1000 * 60));
-                    document.getElementById('avgResponseTime').innerText = `${hours}س ${mins}د`;
-                } else {
-                    document.getElementById('avgResponseTime').innerText = 'لا توجد بيانات';
-                }
-
-                // أكثر الموظفين استجابة
-                const responders = {};
-                replies.forEach(r => {
-                    if (r.profiles && r.profiles.role === 'admin') {
-                        const name = r.profiles.full_name || 'موظف';
-                        if (!responders[name]) responders[name] = { count: 0, last: r.created_at };
-                        responders[name].count++;
-                        if (new Date(r.created_at) > new Date(responders[name].last)) {
-                            responders[name].last = r.created_at;
-                        }
-                    }
-                });
-
-                const topRespondersBody = document.getElementById('topRespondersBody');
-                topRespondersBody.innerHTML = Object.entries(responders)
-                    .sort((a, b) => b[1].count - a[1].count)
-                    .slice(0, 5)
-                    .map(([name, data]) => `
-                        <tr>
-                            <td>${name}</td>
-                            <td><span class="status-badge status-resolved">${data.count} رد</span></td>
-                            <td>${new Date(data.last).toLocaleDateString('ar-EG')}</td>
-                        </tr>
-                    `).join('') || '<tr><td colspan="3" style="text-align:center;">لا توجد بيانات</td></tr>';
-
-                // آخر الردود
-                const recentRepliesBody = document.getElementById('recentRepliesBody');
-                recentRepliesBody.innerHTML = replies.slice(0, 5).map(r => `
-                    <tr>
-                        <td>${r.profiles?.full_name || '---'}</td>
-                        <td>${r.tickets?.title || '---'}</td>
-                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.message}</td>
-                        <td>${new Date(r.created_at).toLocaleString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</td>
-                    </tr>
-                `).join('') || '<tr><td colspan="4" style="text-align:center;">لا توجد ردود حديثة</td></tr>';
-
-                // حالة البلاغات
-                const { data: reports } = await supabase.from('user_reports').select('status');
-                const statusCounts = { pending: 0, approved: 0, rejected: 0 };
-                reports?.forEach(r => statusCounts[r.status]++);
-
-                const summary = document.getElementById('reportsStatusSummary');
-                summary.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>قيد الانتظار:</span> <strong>${statusCounts.pending}</strong>
-                    </div>
-                    <div style="width: 100%; background: #eee; height: 8px; border-radius: 4px; margin-bottom: 1rem;">
-                        <div style="width: ${(statusCounts.pending / (reports?.length || 1)) * 100}%; background: #f57c00; height: 100%; border-radius: 4px;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>مقبولة:</span> <strong>${statusCounts.approved}</strong>
-                    </div>
-                    <div style="width: 100%; background: #eee; height: 8px; border-radius: 4px; margin-bottom: 1rem;">
-                        <div style="width: ${(statusCounts.approved / (reports?.length || 1)) * 100}%; background: #217346; height: 100%; border-radius: 4px;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span>مرفوضة:</span> <strong>${statusCounts.rejected}</strong>
-                    </div>
-                    <div style="width: 100%; background: #eee; height: 8px; border-radius: 4px;">
-                        <div style="width: ${(statusCounts.rejected / (reports?.length || 1)) * 100}%; background: #d32f2f; height: 100%; border-radius: 4px;"></div>
-                    </div>
-                `;
-
-            } catch (err) {
-                console.error('Error rendering stats:', err);
-            }
-        }
-
-        window.unbanUser = async (id) => {
-            if (confirm('هل تريد فك الحظر عن هذا المستخدم؟')) {
-                const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
-                const { error } = await supabase.from('profiles').update({ ban_status: 'none' }).eq('id', id);
-                if (error) alert('خطأ في فك الحظر: ' + error.message);
-                else {
-                    import('./activity-service.js').then(m => m.logActivity('unban_user', { target_user_id: id, target_email: targetUser?.email }));
-                    alert('تم فك الحظر');
-                    renderUsers();
-                    renderBannedUsers();
-                }
-            }
-        };
 
         window.impersonateUser = async (id) => { 
             const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
             import('./activity-service.js').then(m => m.logActivity('impersonate', { target_user_id: id, target_email: targetUser?.email }));
             await adminImpersonateUser(id);
-location.href = 'customer-dashboard.html';
-
-        };
-        window.logout = async () => { await logout(); window.location.replace('sign-in.html'); };
-
-        // Avatar Menu Logic
-        const adminAvatarBtn = document.getElementById('adminAvatarBtn');
-        const adminAvatarMenu = document.getElementById('adminAvatarMenu');
-        
-        if (adminAvatarBtn && adminAvatarMenu) {
-            adminAvatarBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                adminAvatarMenu.style.display = adminAvatarMenu.style.display === 'block' ? 'none' : 'block';
-            });
-            
-            document.addEventListener('click', () => {
-                adminAvatarMenu.style.display = 'none';
-            });
-            
-            adminAvatarMenu.querySelectorAll('.menu-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const tab = item.getAttribute('data-tab');
-                    if (tab) {
-                        // If it's a tab link, trigger the tab switch
-                        const tabBtn = document.querySelector(`[data-tab="${tab}Tab"]`);
-                        if (tabBtn) tabBtn.click();
-                    }
-                });
-            });
-        }
-
-        const adminSignOut = document.getElementById('adminSignOut');
-        if (adminSignOut) {
-            adminSignOut.addEventListener('click', async (e) => {
-                e.preventDefault();
-                await logout();
-                window.location.replace('sign-in.html');
-            });
-        }
-
-        // Helper for notifications used in admin-rewards.js
-        window.showNotification = (message, type = 'info') => {
-            alert(message); // Simple alert for now, can be improved to a toast
+            location.href = 'customer-dashboard.html';
         };
 
         init();
-
-        // Robot "Mad3oom" Logic
-        const chatTrigger = document.getElementById('chatTrigger');
-        const robotAvatar = document.getElementById('robotAvatar');
-        const robotBubble = document.getElementById('robotBubble');
-        const robotText = document.getElementById('robotText');
-        const driver = window.driver.js.driver;
-
-        const tourDriver = driver({
-            showProgress: true,
-            nextBtnText: 'التالي',
-            prevBtnText: 'السابق',
-            doneBtnText: 'تم',
-            steps: [
-                { element: '.admin-tabs', popover: { title: 'أدوات الإدارة', description: 'من هنا يمكنك التحكم في التذاكر، المكافآت، المستخدمين، وسجلات النشاط.', side: "bottom", align: 'start' }},
-                { element: '.stats-grid', popover: { title: 'نظرة عامة', description: 'إحصائيات سريعة حول حالة النظام وعدد التذاكر النشطة.', side: "top", align: 'start' }},
-                { element: '.nav-actions', popover: { title: 'التنبيهات والإعدادات', description: 'تابع الإشعارات الفورية وتحكم في إعدادات مظهر لوحة التحكم.', side: "bottom", align: 'start' }},
-                { element: '[data-tab="logsTab"]', popover: { title: 'سجل النشاطات', description: 'راقب كافة العمليات التي تتم على المنصة لضمان الأمان والشفافية.', side: "bottom", align: 'start' }}
-            ]
-        });
-
-        function toggleRobot(show) {
-            if (show) {
-                chatTrigger.style.display = 'none';
-                robotAvatar.classList.add('active');
-                setTimeout(() => {
-                    robotBubble.classList.add('visible');
-                }, 500);
-            } else {
-                robotBubble.classList.remove('visible');
-                setTimeout(() => {
-                    robotAvatar.classList.remove('active');
-                    chatTrigger.style.display = 'flex';
-                }, 500);
-            }
-        }
-
-        chatTrigger.addEventListener('click', () => {
-            robotText.textContent = "أهلاً بك يا مدير! أنا مدعوم، هل تحتاج لمساعدة في فهم أدوات لوحة الإدارة؟";
-            toggleRobot(true);
-        });
-
-        window.startTour = function() {
-            robotBubble.classList.remove('visible');
-            tourDriver.drive();
-        };
-
-        robotAvatar.addEventListener('click', () => {
-            toggleRobot(false);
-        });
     </script>
-    <!-- Robot Assistant "Mad3oom" -->
-    <div class="robot-container" id="robotContainer">
-        <div class="speech-bubble" id="robotBubble">
-            <div class="robot-header">
-                <span class="robot-status"></span>
-                <span class="robot-name">مدعوم</span>
-            </div>
-            <p class="robot-text" id="robotText"></p>
-            <button class="tour-btn" onclick="startTour()">ابدأ الجولة التعريفية</button>
-        </div>
-        
-        <div class="robot-avatar" id="robotAvatar">
-            <img src="assets/images/mad3oom-robot.png" alt="مدعوم">
-        </div>
-
-        <div class="chat-trigger" id="chatTrigger">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v8H3v-8a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-1-1-1.73a2 2 0 0 1 2-2M9 13a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m6 0a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2M7.5 18a1.5 1.5 0 0 0 0 3h9a1.5 1.5 0 0 0 0-3h-9z"/>
-            </svg>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
 </body>
 </html>
