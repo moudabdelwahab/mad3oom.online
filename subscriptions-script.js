@@ -29,7 +29,7 @@ function scrollToSection(sectionId) {
 // Contact sales function
 function contactSales() {
     // This can be extended to open a contact form or redirect to contact page
-    alert('يرجى التواصل معنا عبر البريد الإلكتروني: support@mahmoud.com');
+    alert('يرجى التواصل معنا عبر البريد الإلكتروني: support@mad3oom.online');
 }
 
 // Initialize on page load
