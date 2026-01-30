@@ -1,0 +1,54 @@
+import { supabase } from '../../api-config.js';
+import { checkAdminAuth, updateAdminUI } from './auth.js';
+import { initSidebar } from './sidebar.js';
+import { subscribeToTickets } from '../../tickets-service.js';
+import { adminImpersonateUser } from '../../auth-client.js';
+
+let user = null;
+
+async function init() {
+    initSidebar();
+    user = await checkAdminAuth();
+    if (!user) return;
+
+    updateAdminUI(user);
+    renderTickets();
+    subscribeToTickets(() => renderTickets());
+}
+
+async function renderTickets() {
+    const body = document.getElementById('admTicketsBody');
+    if (!body) return;
+
+    const { data: tickets } = await supabase
+        .from('tickets')
+        .select('*, profiles(full_name, email)')
+        .order('created_at', { ascending: false });
+
+    body.innerHTML = tickets?.map(t => `
+        <tr>
+            <td>${t.profiles?.full_name || 'مستخدم'}</td>
+            <td>${t.title}</td>
+            <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+            <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
+            <td><button class="btn btn-primary btn-sm impersonate-btn" data-user-id="${t.user_id}">دخول</button></td>
+        </tr>
+    `).join('') || '<tr><td colspan="5">لا توجد تذاكر</td></tr>';
+
+    document.querySelectorAll('.impersonate-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const userId = btn.getAttribute('data-user-id');
+            await impersonateUser(userId);
+        });
+    });
+}
+
+async function impersonateUser(id) { 
+    const { data: targetUser } = await supabase.from('profiles').select('email').eq('id', id).single();
+    const activityModule = await import('../../activity-service.js');
+    activityModule.logActivity('impersonate', { target_user_id: id, target_email: targetUser?.email });
+    await adminImpersonateUser(id);
+    location.href = '../customer-dashboard.html';
+}
+
+init();
