@@ -326,367 +326,283 @@
         </div>
     </div>
 
-    <script type="module">
-        import { requireAuth, logout, updateProfile, uploadAvatar, updatePassword } from './auth-client.js';
-        import { fetchUserTickets, createTicket, fetchTicketStats, subscribeToTickets, fetchTicketReplies, addTicketReply } from './tickets-service.js';
-        import { fetchNotifications, markAllAsRead, subscribeToNotifications } from './notifications-service.js';
-        import { initRewardsDashboard } from './rewards-dashboard.js';
-        import { supabase } from './api-config.js';
-        // استيراد دوال شارة Pro
-        import * as ProBadge from './pro-badge.js';
-        const { addProBadgeToElement, injectProBadgeStyles } = ProBadge;
+   <script type="module">
+import {
+    requireAuth,
+    logout,
+    updateProfile,
+    uploadAvatar,
+    updatePassword
+} from './auth-client.js';
 
-        let user;
-        try {
-            user = await requireAuth('customer');
-            if (!user) return; // requireAuth handles redirection
-            if (user.isImpersonated) { 
-                document.getElementById('impersonationBanner').style.display = 'block'; 
-                document.getElementById('signOutBtn').style.display = 'none'; 
-            }
-        } catch (err) { 
-            console.error('Auth error:', err);
-            if (!window.location.pathname.includes('sign-in.html')) {
-                window.location.replace('sign-in.html'); 
-            }
-        }
+import {
+    fetchUserTickets,
+    createTicket,
+    fetchTicketStats,
+    subscribeToTickets,
+    fetchTicketReplies,
+    addTicketReply
+} from './tickets-service.js';
 
-        function updateUIWithUserData() {
-            if (user) {
-                const profile = user.profile || {};
-                const name = profile.full_name || user.email;
-                document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
-                document.getElementById('profileEmail').value = profile.email || user.email;
-                document.getElementById('profileFullName').value = profile.full_name || '';
-                document.getElementById('profilePhone').value = profile.phone || '';
-                document.getElementById('pointsCount').textContent = profile.points || 0;
-                document.getElementById('pointsTooltip').textContent = profile.points || 0;
-                
-                if (profile.avatar_url) {
-                    document.getElementById('navAvatar').src = profile.avatar_url;
-                    document.getElementById('navAvatar').style.display = 'block';
-                    document.getElementById('userInitial').style.display = 'none';
-                    document.getElementById('profileAvatarPreview').src = profile.avatar_url;
-                }
+import {
+    fetchNotifications,
+    markAllAsRead,
+    subscribeToNotifications
+} from './notifications-service.js';
 
-                // إضافة شارة Pro إذا كان المستخدم Pro
-                if (profile.is_pro || (profile.points >= 1000)) {
-                    const profileHeader = document.querySelector('.page-header h1');
-                    if (profileHeader) addProBadgeToElement(profileHeader, true);
-                    
-                    const navLogo = document.querySelector('.nav-logo span');
-                    if (navLogo) addProBadgeToElement(navLogo, true);
-                }
-            }
-        }
-        updateUIWithUserData();
-        injectProBadgeStyles();
-        
-        // تهيئة نظام المكافآت
-        if (user) {
-            initRewardsDashboard(user);
-        }
+import { initRewardsDashboard } from './rewards-dashboard.js';
+import { supabase } from './api-config.js';
+import * as ProBadge from './pro-badge.js';
 
-        // الاستماع لتحديثات النقاط من Supabase
-        if (user && user.id) {
-            supabase
-                .channel('profile-updates')
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'profiles',
-                    filter: `id=eq.${user.id}`
-                }, (payload) => {
-                    if (payload.new.points !== undefined) {
-                        user.profile.points = payload.new.points;
-                        // استدعاء loadWalletData لضمان تحديث جميع عناصر الواجهة بما في ذلك مستوى العضوية
-                        import('./rewards-dashboard.js').then(m => m.loadWalletData(user.id));
-                    }
-                })
-                .subscribe();
-        }
+const { addProBadgeToElement, injectProBadgeStyles } = ProBadge;
 
-        // Avatar Menu Logic
-        const profileNavBtn = document.getElementById('profileNavBtn');
-        const userAvatarMenu = document.getElementById('userAvatarMenu');
-        
-        if (profileNavBtn && userAvatarMenu) {
-            profileNavBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                userAvatarMenu.style.display = userAvatarMenu.style.display === 'block' ? 'none' : 'block';
-            });
-            
-            document.addEventListener('click', () => {
-                userAvatarMenu.style.display = 'none';
-            });
-            
-            userAvatarMenu.querySelectorAll('.menu-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const tab = item.getAttribute('data-tab');
-                    if (tab) {
-                        const tabBtn = document.querySelector(`[data-tab="${tab}"]`);
-                        if (tabBtn) tabBtn.click();
-                    }
-                });
-            });
-        }
+/* =====================================================
+   AUTH
+===================================================== */
+if (window.__AUTH_CHECKED__) {
+    console.warn('[Auth] already checked');
+} else {
+    window.__AUTH_CHECKED__ = true;
+}
 
-        const signOutBtn = document.getElementById('signOutBtn');
-        if (signOutBtn) {
-            signOutBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                await logout();
-                window.location.replace('sign-in.html');
-            });
-        }
+let user = await requireAuth('customer');
+if (!user) {
+    window.location.replace('sign-in.html');
+    throw new Error('Not authenticated');
+}
 
-        // تبديل التبويبات
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.onclick = () => {
-                document.querySelectorAll('.nav-tab, .tab-content').forEach(el => el.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
-            };
-        });
 
-        // إدارة المودال (إنشاء تذكرة)
-        const createModal = document.getElementById('createTicketModal');
-        document.getElementById('openCreateTicket').onclick = () => createModal.classList.add('active');
-        document.getElementById('closeCreateTicket').onclick = () => createModal.classList.remove('active');
+if (user.isImpersonated) {
+    const banner = document.getElementById('impersonationBanner');
+    if (banner) banner.style.display = 'block';
+}
 
-        document.getElementById('createTicketForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.disabled = true;
-            try {
-                await createTicket({
-                    title: document.getElementById('ticketTitle').value,
-                    description: document.getElementById('ticketDescription').value,
-                    priority: document.getElementById('ticketPriority').value
-                });
-                createModal.classList.remove('active');
-                e.target.reset();
-                renderTickets();
-            } catch (err) { alert('خطأ في إنشاء التذكرة: ' + err.message); }
-            finally { btn.disabled = false; }
-        };
+/* =====================================================
+   UI INIT
+===================================================== */
 
-        async function renderTickets() {
-            const list = document.getElementById('userTicketsList');
-            const tickets = await fetchUserTickets();
-            list.innerHTML = tickets.length ? '' : '<p style="text-align:center; padding: 2rem;">لا توجد تذاكر</p>';
-            tickets.forEach(t => {
-                const el = document.createElement('div');
-                el.className = 'ticket-card';
-                el.innerHTML = `
-                    <div class="ticket-card-header">
-                        <span class="ticket-number">#${t.ticket_number}</span>
-                        <span class="ticket-status status-${t.status}">${t.status === 'open' ? 'مفتوحة' : t.status === 'in-progress' ? 'قيد المعالجة' : 'محلولة'}</span>
-                    </div>
-                    <div class="ticket-card-body">
-                        <h3 class="ticket-title">${t.title}</h3>
-                        <p style="font-size:0.85rem; color:var(--color-text-secondary); margin-top:0.5rem;">${t.description.substring(0, 60)}...</p>
-                        <button class="btn btn-secondary btn-sm view-ticket-btn">عرض التذكرة</button>
-                    </div>
-                `;
-                el.onclick = () => openTicketDetail(t);
-                list.appendChild(el);
-            });
-            const stats = await fetchTicketStats();
-            document.getElementById('userTotalTickets').textContent = stats.total;
-            document.getElementById('userInProgressTickets').textContent = stats.inProgress;
-            document.getElementById('userResolvedTickets').textContent = stats.resolved;
-        }
+injectProBadgeStyles();
+updateUIWithUserData();
+initRewardsDashboard(user);
 
-        let currentTicket = null;
-        async function openTicketDetail(ticket) {
-            currentTicket = ticket;
-            document.getElementById('detailTicketTitle').textContent = ticket.title;
-            document.getElementById('detailTicketDescription').textContent = ticket.description;
-            document.getElementById('detailTicketMeta').textContent = `تاريخ الإنشاء: ${new Date(ticket.created_at).toLocaleDateString('ar-EG')} | رقم التذكرة: #${ticket.ticket_number}`;
-            
-            const statusEl = document.getElementById('detailTicketStatus');
-            statusEl.className = `status-badge status-${ticket.status}`;
-            statusEl.textContent = ticket.status === 'open' ? 'مفتوحة' : ticket.status === 'in-progress' ? 'قيد المعالجة' : 'محلولة';
-            
-            document.getElementById('ticketDetailModal').classList.add('active');
-            loadReplies(ticket.id);
-        }
+/* =====================================================
+   PROFILE UI
+===================================================== */
 
-        async function loadReplies(ticketId) {
-            const list = document.getElementById('detailRepliesList');
-            list.innerHTML = '<p style="text-align:center;">جاري تحميل الردود...</p>';
-            const replies = await fetchTicketReplies(ticketId);
-            list.innerHTML = replies.length ? '' : '<p style="text-align:center; color:var(--color-text-secondary);">لا توجد ردود بعد</p>';
-            replies.filter(r => !r.is_internal).forEach(r => {
-                const div = document.createElement('div');
-                div.className = `reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'}`;
-                div.innerHTML = `<div style="font-size:0.8rem;margin-bottom:0.5rem;"><strong>${r.profiles?.full_name || 'مستخدم'}</strong> <span style="font-size:0.7rem; color:var(--color-text-secondary); float:left;">${new Date(r.created_at).toLocaleString('ar-EG')}</span></div><div>${r.message}</div>`;
-                list.appendChild(div);
-            });
-            list.scrollTop = list.scrollHeight;
-        }
+function updateUIWithUserData() {
+    const profile = user.profile || {};
+    const name = profile.full_name || user.email;
 
-        document.getElementById('closeDetailModal').onclick = () => document.getElementById('ticketDetailModal').classList.remove('active');
+    const initial = document.getElementById('userInitial');
+    if (initial) initial.textContent = name.charAt(0).toUpperCase();
 
-        document.getElementById('detailReplyForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const msg = document.getElementById('detailReplyMessage').value;
-            if (!msg || !currentTicket) return;
-            try {
-                await addTicketReply(currentTicket.id, msg);
-                document.getElementById('detailReplyMessage').value = '';
-                loadReplies(currentTicket.id);
-            } catch (err) { alert('خطأ في إرسال الرد'); }
-        };
+    setValue('profileEmail', profile.email || user.email);
+    setValue('profileFullName', profile.full_name || '');
+    setValue('profilePhone', profile.phone || '');
 
-        // تحديث البروفايل
-        document.getElementById('profileForm').onsubmit = async (e) => {
-            e.preventDefault();
-            try {
-                await updateProfile({
-                    full_name: document.getElementById('profileFullName').value,
-                    phone: document.getElementById('profilePhone').value
-                });
-                alert('تم تحديث البيانات بنجاح');
-                // تحديث بيانات المستخدم محلياً
-                user.profile.full_name = document.getElementById('profileFullName').value;
-                user.profile.phone = document.getElementById('profilePhone').value;
-                updateUIWithUserData();
-            } catch (err) { alert('خطأ في التحديث'); }
-        };
+    setText('pointsCount', profile.points || 0);
+    setText('pointsTooltip', profile.points || 0);
 
-        // تغيير كلمة المرور
-        document.getElementById('changePasswordForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const pass = document.getElementById('newPassword').value;
-            const confirm = document.getElementById('confirmPassword').value;
-            if (pass !== confirm) return alert('كلمات المرور غير متطابقة');
-            try {
-                await updatePassword(pass);
-                alert('تم تغيير كلمة المرور بنجاح');
-                e.target.reset();
-            } catch (err) { alert('خطأ في تغيير كلمة المرور'); }
-        };
+    if (profile.avatar_url) {
+        setImage('navAvatar', profile.avatar_url, true);
+        setImage('profileAvatarPreview', profile.avatar_url);
+        hide('userInitial');
+    }
 
-        // رفع الصورة
-        document.getElementById('avatarInput').onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            try {
-                const url = await uploadAvatar(file);
-                await updateProfile({ avatar_url: url });
-                user.profile.avatar_url = url;
-                updateUIWithUserData();
-                alert('تم تحديث صورة الملف الشخصي');
-            } catch (err) { alert('خطأ في رفع الصورة'); }
-        };
+    if (profile.is_pro || profile.points >= 1000) {
+        addProBadgeToElement(document.querySelector('.page-header h1'), true);
+        addProBadgeToElement(document.querySelector('.nav-logo span'), true);
+    }
+}
 
-        async function loadNotifications() {
-            const list = document.getElementById('notificationsList');
-            const badge = document.getElementById('notificationBadge');
-            const notes = await fetchNotifications();
-            const unread = notes.filter(n => !n.is_read).length;
-            badge.style.display = unread ? 'flex' : 'none';
-            badge.textContent = unread;
-            list.innerHTML = notes.length ? '' : '<p style="text-align:center;padding:1rem;">لا توجد إشعارات</p>';
-            notes.forEach(n => {
-                const div = document.createElement('div');
-                div.style.padding = '0.75rem'; div.style.borderBottom = '1px solid var(--color-border)';
-                div.innerHTML = `<div style="font-size:0.9rem; font-weight:${n.is_read ? 'normal' : 'bold'}">${n.message}</div>`;
-                list.appendChild(div);
-            });
-        }
+/* =====================================================
+   EVENTS – SAFE HELPERS
+===================================================== */
 
-        document.getElementById('notificationBtn').onclick = (e) => {
-            e.stopPropagation();
-            const dropdown = document.getElementById('notificationDropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-            if (dropdown.style.display === 'block') markAllAsRead().then(loadNotifications);
-        };
+function $(id) { return document.getElementById(id); }
+function setText(id, v) { const el = $(id); if (el) el.textContent = v; }
+function setValue(id, v) { const el = $(id); if (el) el.value = v; }
+function hide(id) { const el = $(id); if (el) el.style.display = 'none'; }
+function setImage(id, src, show = false) {
+    const el = $(id);
+    if (!el) return;
+    el.src = src;
+    if (show) el.style.display = 'block';
+}
 
-        document.getElementById('signOutBtn').onclick = async () => { await logout(); window.location.href = 'sign-in.html'; };
-        
-        if (user && user.id) {
-            subscribeToNotifications(user.id, loadNotifications);
-        }
-        subscribeToTickets(renderTickets);
-        renderTickets();
-        loadNotifications();
+/* =====================================================
+   LOGOUT (ONE HANDLER ONLY)
+===================================================== */
 
-        // Robot "Mad3oom" Logic
-        const chatTrigger = document.getElementById('chatTrigger');
-        const robotAvatar = document.getElementById('robotAvatar');
-        const robotBubble = document.getElementById('robotBubble');
-        const robotText = document.getElementById('robotText');
-        const driver = window.driver.js.driver;
+const signOutBtn = $('signOutBtn');
+if (signOutBtn) {
+    signOutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await logout();
+        window.location.replace('sign-in.html');
+    });
+}
 
-        const tourDriver = driver({
-            showProgress: true,
-            nextBtnText: 'التالي',
-            prevBtnText: 'السابق',
-            doneBtnText: 'تم',
-            steps: [
-                { element: '.nav-tabs', popover: { title: 'لوحة التحكم', description: 'من هنا يمكنك التنقل بين تذاكرك، نظام المكافآت، وملفك الشخصي.', side: "bottom", align: 'start' }},
-                { element: '#openCreateTicket', popover: { title: 'إنشاء تذكرة', description: 'هل تواجه مشكلة؟ اضغط هنا لفتح تذكرة دعم فني جديدة.', side: "left", align: 'start' }},
-                { element: '.stats-grid', popover: { title: 'إحصائياتك', description: 'تابع حالة تذاكرك وعدد النقاط التي جمعتها من خلال هذه البطاقات.', side: "top", align: 'start' }},
-                { element: '#walletBtn', popover: { title: 'المحفظة', description: 'هنا يظهر رصيد نقاطك الحالي، يمكنك استبدالها بمكافآت لاحقاً.', side: "bottom", align: 'start' }},
-                { element: '#notificationBtn', popover: { title: 'الإشعارات', description: 'ستصلك هنا تنبيهات فورية عند الرد على تذاكرك أو تحديث رصيدك.', side: "bottom", align: 'start' }}
-            ]
-        });
+/* =====================================================
+   TABS
+===================================================== */
 
-        function toggleRobot(show) {
-            if (show) {
-                chatTrigger.style.display = 'none';
-                robotAvatar.classList.add('active');
-                setTimeout(() => {
-                    robotBubble.classList.add('visible');
-                }, 500);
-            } else {
-                robotBubble.classList.remove('visible');
-                setTimeout(() => {
-                    robotAvatar.classList.remove('active');
-                    chatTrigger.style.display = 'flex';
-                }, 500);
-            }
-        }
+document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document
+            .querySelectorAll('.nav-tab, .tab-content')
+            .forEach(el => el.classList.remove('active'));
 
-        chatTrigger.addEventListener('click', () => {
-            robotText.textContent = "أهلاً بك في لوحتك الخاصة! أنا مدعوم، هل تود أن أشرح لك كيف تستخدم لوحة التحكم؟";
-            toggleRobot(true);
-        });
+        tab.classList.add('active');
+        const target = $(tab.dataset.tab + 'Tab');
+        if (target) target.classList.add('active');
+    });
+});
 
-        window.startTour = function() {
-            robotBubble.classList.remove('visible');
-            tourDriver.drive();
-        };
+/* =====================================================
+   MODALS (SAFE)
+===================================================== */
 
-        robotAvatar.addEventListener('click', () => {
-            toggleRobot(false);
-        });
-    </script>
-    <!-- Robot Assistant "Mad3oom" -->
-    <div class="robot-container" id="robotContainer">
-        <div class="speech-bubble" id="robotBubble">
-            <div class="robot-header">
-                <span class="robot-status"></span>
-                <span class="robot-name">مدعوم</span>
-            </div>
-            <p class="robot-text" id="robotText"></p>
-            <button class="tour-btn" onclick="startTour()">ابدأ الجولة التعريفية</button>
-        </div>
-        
-        <div class="robot-avatar" id="robotAvatar">
-            <img src="assets/images/mad3oom-robot.png" alt="مدعوم">
-        </div>
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', e => {
+        if (e.target === modal) modal.classList.remove('active');
+    });
+});
 
-        <div class="chat-trigger" id="chatTrigger">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7v8H3v-8a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-1-1-1.73a2 2 0 0 1 2-2M9 13a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m6 0a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2M7.5 18a1.5 1.5 0 0 0 0 3h9a1.5 1.5 0 0 0 0-3h-9z"/>
-            </svg>
-        </div>
-    </div>
+/* =====================================================
+   CREATE TICKET
+===================================================== */
 
-    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+const createModal = $('createTicketModal');
+$('openCreateTicket')?.addEventListener('click', () => createModal.classList.add('active'));
+$('closeCreateTicket')?.addEventListener('click', () => createModal.classList.remove('active'));
+
+$('createTicketForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+
+    await createTicket({
+        title: $('ticketTitle').value,
+        description: $('ticketDescription').value,
+        priority: $('ticketPriority').value
+    });
+
+    createModal.classList.remove('active');
+    e.target.reset();
+    renderTickets();
+});
+
+/* =====================================================
+   TICKETS
+===================================================== */
+
+async function renderTickets() {
+    const list = $('userTicketsList');
+    if (!list) return;
+
+    const tickets = await fetchUserTickets();
+    list.innerHTML = '';
+
+    if (!tickets.length) {
+        list.innerHTML = '<p style="text-align:center;">لا توجد تذاكر</p>';
+        return;
+    }
+
+    tickets.forEach(t => {
+        const el = document.createElement('div');
+        el.className = 'ticket-card';
+        el.innerHTML = `
+            <h3>${t.title}</h3>
+            <button class="view-ticket-btn">عرض التذكرة</button>
+        `;
+
+        el.querySelector('.view-ticket-btn')
+          .addEventListener('click', e => {
+              e.stopPropagation();
+              openTicketDetail(t);
+          });
+
+        list.appendChild(el);
+    });
+
+    const stats = await fetchTicketStats();
+    setText('userTotalTickets', stats.total);
+    setText('userInProgressTickets', stats.inProgress);
+    setText('userResolvedTickets', stats.resolved);
+}
+
+/* =====================================================
+   TICKET DETAILS
+===================================================== */
+
+let currentTicket = null;
+
+function openTicketDetail(ticket) {
+    currentTicket = ticket;
+    $('ticketDetailModal')?.classList.add('active');
+    loadReplies(ticket.id);
+}
+
+async function loadReplies(id) {
+    const list = $('detailRepliesList');
+    if (!list) return;
+
+    const replies = await fetchTicketReplies(id);
+    list.innerHTML = '';
+
+    replies.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'reply-item';
+        div.textContent = r.message;
+        list.appendChild(div);
+    });
+}
+
+$('detailReplyForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    await addTicketReply(currentTicket.id, $('detailReplyMessage').value);
+    $('detailReplyMessage').value = '';
+    loadReplies(currentTicket.id);
+});
+
+/* =====================================================
+   PROFILE
+===================================================== */
+
+$('profileForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    await updateProfile({
+        full_name: $('profileFullName').value,
+        phone: $('profilePhone').value
+    });
+    alert('تم حفظ التغييرات');
+});
+
+$('changePasswordForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    if ($('newPassword').value !== $('confirmPassword').value)
+        return alert('كلمات المرور غير متطابقة');
+
+    await updatePassword($('newPassword').value);
+    alert('تم تحديث كلمة المرور');
+});
+
+/* =====================================================
+   NOTIFICATIONS
+===================================================== */
+
+$('notificationBtn')?.addEventListener('click', async e => {
+    e.stopPropagation();
+    await markAllAsRead();
+});
+
+/* =====================================================
+   INIT
+===================================================== */
+
+subscribeToTickets(renderTickets);
+subscribeToNotifications(user.id, fetchNotifications);
+renderTickets();
+</script>
+
 </body>
 </html>
