@@ -1,7 +1,7 @@
-import { supabase } from '../../api-config.js';
+import { supabase } from '/api-config.js';
 import { checkAdminAuth, updateAdminUI } from './auth.js';
 import { initSidebar } from './sidebar.js';
-import { fetchTicketStats } from '../../tickets-service.js';
+import { fetchTicketStats } from '/tickets-service.js';
 
 let user = null;
 

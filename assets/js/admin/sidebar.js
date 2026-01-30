@@ -3,7 +3,7 @@ export function initSidebar() {
     if (!sidebarContainer) return;
 
     // Load sidebar HTML
-    fetch('../assets/components/sidebar.html')
+    fetch('/assets/components/sidebar.html')
         .then(response => response.text())
         .then(html => {
             sidebarContainer.innerHTML = html;

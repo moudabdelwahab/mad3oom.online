@@ -1,4 +1,4 @@
-import { supabase } from '../../api-config.js';
+import { supabase } from '/api-config.js';
 import { checkAdminAuth, updateAdminUI } from './auth.js';
 import { initSidebar } from './sidebar.js';
 

@@ -1,5 +1,5 @@
-import { supabase } from '../../api-config.js';
-import { requireAuth, logout } from '../../auth-client.js';
+import { supabase } from '/api-config.js';
+import { requireAuth, logout } from '/auth-client.js';
 
 export async function checkAdminAuth() {
     try {
