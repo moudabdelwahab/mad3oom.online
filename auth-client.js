@@ -209,6 +209,9 @@ export async function signInAsGuest() {
 }
 
 export async function requireAuth(requiredRole = 'user') {
+    const currentPath = window.location.pathname;
+    const isSignInPage = currentPath.includes('sign-in.html');
+
     // التحقق من وجود جلسة ضيف أولاً
     const guestSessionJson = localStorage.getItem('mad3oom-guest-session');
     if (guestSessionJson) {
@@ -219,37 +222,38 @@ export async function requireAuth(requiredRole = 'user') {
     const user = await getCurrentUser();
 
     if (!user) {
-        if (!window.location.pathname.endsWith('sign-in.html')) {
+        if (!isSignInPage) {
             window.location.replace('sign-in.html');
         }
         return null;
     }
 
     const userRole = user.profile?.role || 'customer';
+    const isAdminOrSupport = (userRole === 'admin' || userRole === 'support');
 
     const urlParams = new URLSearchParams(window.location.search);
     const impersonateId = urlParams.get('impersonate');
     
-    if (impersonateId && (userRole === 'admin' || userRole === 'support')) {
+    if (impersonateId && isAdminOrSupport) {
         const { data: targetProfile } = await supabase.from('profiles').select('*').eq('id', impersonateId).single();
         if (targetProfile) {
             return { id: impersonateId, profile: targetProfile, isImpersonated: true };
         }
     }
 
-    if (requiredRole === 'admin' && userRole !== 'admin') {
-        window.location.replace('customer-dashboard.html');
-        return null;
-    }
-
-    if (requiredRole === 'support' && userRole !== 'admin' && userRole !== 'support') {
-        window.location.replace('customer-dashboard.html');
-        return null;
-    }
-
-    if (requiredRole === 'customer' && (userRole === 'admin' || userRole === 'support') && !impersonateId) {
-        if (!window.location.pathname.includes('customer-dashboard.html')) {
-            window.location.replace('admin-dashboard.html');
+    // منطق التوجيه بناءً على الدور المطلوب والدور الحالي
+    if (requiredRole === 'admin' || requiredRole === 'support') {
+        if (!isAdminOrSupport) {
+            if (!currentPath.includes('customer-dashboard.html')) {
+                window.location.replace('customer-dashboard.html');
+            }
+            return null;
+        }
+    } else if (requiredRole === 'customer') {
+        if (isAdminOrSupport && !impersonateId) {
+            if (!currentPath.includes('admin-dashboard.html')) {
+                window.location.replace('admin-dashboard.html');
+            }
             return null;
         }
     }

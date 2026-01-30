@@ -704,8 +704,10 @@
         async function init() {
             setupEventListeners();
             try {
-                user = await requireAuth('admin');
-                if (!user) return; // requireAuth handles redirection
+                // السماح للأدمن والدعم الفني بدخول لوحة الإدارة
+                user = await requireAuth('support');
+                if (!user) return; 
+                
                 updateUIWithUserData();
                 renderTickets();
                 renderUsers();
@@ -715,7 +717,6 @@
                 subscribeToTickets(() => renderTickets());
             } catch (err) { 
                 console.error('Init error:', err);
-                // لتجنب حلقة التكرار، نتحقق مما إذا كنا بالفعل في صفحة تسجيل الدخول
                 if (!window.location.pathname.includes('sign-in.html')) {
                     window.location.replace('sign-in.html'); 
                 }
