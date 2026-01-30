@@ -59,7 +59,11 @@ export async function signIn(email, password) {
 
     await logActivity('login', { email });
 
-    return result;
+    // إضافة البروفايل للنتيجة لضمان استخدامه فوراً في التوجيه
+    return {
+        ...result,
+        profile: profile || { id: result.data.user.id, role: 'customer' }
+    };
 }
 
 /**

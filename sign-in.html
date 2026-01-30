@@ -246,22 +246,17 @@ form.addEventListener('submit', async (e) => {
 
     try {
         console.log('[AuthDebug] Attempting sign in for:', email);
-        const { error } = await signIn(email, password);
-        if (error) throw error;
+        const result = await signIn(email, password);
+        if (result.error) throw result.error;
 
-        console.log('[AuthDebug] Sign in successful, fetching user data...');
+        console.log('[AuthDebug] Sign in successful, redirecting based on role...');
         successMessage.style.display = 'block';
 
-        let user = await getCurrentUser();
-        if (!user || !user.profile) {
-            console.log('[AuthDebug] Profile not ready, waiting 1.5s...');
-            await new Promise(r => setTimeout(r, 1500));
-            user = await getCurrentUser();
-        }
-
-        const userRole = user?.profile?.role || 'customer';
+        // استخدام البروفايل العائد مباشرة من دالة signIn لضمان المزامنة
+        const userRole = result.profile?.role || 'customer';
         const targetPage = (userRole === 'admin' || userRole === 'support') ? 'admin-dashboard.html' : 'customer-dashboard.html';
-        console.log('[AuthDebug] Sign in complete. Role:', userRole, 'Redirecting to:', targetPage);
+        
+        console.log('[AuthDebug] Role detected:', userRole, 'Target:', targetPage);
         window.location.replace(targetPage);
 
     } catch (err) {
