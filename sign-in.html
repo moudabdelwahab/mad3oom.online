@@ -50,10 +50,7 @@
         })();
     </script>
 
-    <script type="module">
-        import { autoRedirect } from './auth-client.js';
-        autoRedirect();
-    </script>
+    
     <script src="theme-manager.js" defer></script>
 </head>
 
@@ -158,7 +155,6 @@
 </main>
 
 <script type="module">
-import { signIn, getCurrentUser, signInAsGuest } from './auth-client.js';
 import { supabase } from './api-config.js';
 
 const form = document.getElementById('signInForm');
