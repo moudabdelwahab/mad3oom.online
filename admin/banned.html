@@ -7,81 +7,38 @@
     <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="stylesheet" href="../styles.css">
     <link rel="stylesheet" href="../robot.css">
+    <link rel="stylesheet" href="../assets/js/admin/admin-style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --color-primary: #003366;
-            --color-accent: #0077CC;
-            --color-background: #F5F5F5;
-            --color-surface: #FFFFFF;
-            --color-text: #333333;
-            --color-text-secondary: #777777;
-            --color-border: #DDDDDD;
-            --color-sidebar-bg: #002244;
-            --color-danger: #D9534F;
-            --color-success: #2E8A3A;
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-        body { font-family: 'Cairo', sans-serif; background-color: var(--color-background); margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
-        .admin-main { flex: 1; padding: 2rem 1.5rem; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-        .table-container { background: var(--color-surface); border-radius: 1rem; border: 1px solid var(--color-border); overflow: hidden; margin-top: 1.5rem; box-shadow: var(--shadow-sm); }
-        .admin-table { width: 100%; border-collapse: collapse; text-align: right; }
-        .admin-table th { background: #F8FAFC; padding: 1rem; font-weight: 700; border-bottom: 1px solid var(--color-border); }
-        .admin-table td { padding: 1rem; border-bottom: 1px solid var(--color-border); }
-        .status-badge { padding: 0.25rem 0.75rem; border-radius: 2rem; font-size: 0.8rem; font-weight: 600; }
-        .status-danger { background: #FFEBEE; color: #C62828; }
-        
-        /* Sidebar styles */
-        .sidebar { position: fixed; top: 0; right: -280px; width: 280px; height: 100%; background: var(--color-sidebar-bg); color: white; z-index: 2000; transition: all 0.3s ease; box-shadow: -5px 0 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
-        .sidebar.active { right: 0; }
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1999; display: none; backdrop-filter: blur(2px); }
-        .sidebar-overlay.active { display: block; }
-        .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
-        .sidebar-close { background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
-        .sidebar-menu { padding: 1rem 0; flex: 1; overflow-y: auto; }
-        .sidebar-item { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.5rem; color: rgba(255,255,255,0.8); text-decoration: none; transition: all 0.2s; font-weight: 600; border-right: 4px solid transparent; }
-        .sidebar-item:hover, .sidebar-item.active { background: rgba(255,255,255,0.05); color: white; border-right-color: var(--color-accent); }
-        
-        /* Nav styles */
-        .admin-nav { background: var(--color-primary); border-bottom: 1px solid var(--color-border); padding: 0.75rem 0; position: sticky; top: 0; z-index: 1000; box-shadow: var(--shadow-sm); }
-        .nav-container { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-        .nav-right, .nav-left { display: flex; align-items: center; gap: 1rem; }
-        .admin-logo { height: 35px; width: auto; }
-        .admin-title { font-weight: 800; font-size: 1.1rem; color: #FFFFFF; }
-        .menu-toggle { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 0.5rem; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; }
-        .admin-badge { background: linear-gradient(135deg, var(--color-warning), #FFD700); color: #000; padding: 0.35rem 0.85rem; border-radius: 2rem; font-weight: 800; font-size: 0.75rem; }
-        .nav-btn { background: transparent; border: 1px solid rgba(255, 255, 255, 0.2); color: #FFFFFF; padding: 0.5rem; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; }
-        .avatar-circle { width: 35px; height: 35px; background: var(--color-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-        .nav-avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
-        .btn { padding: 0.5rem 1rem; border: none; border-radius: 0.4rem; font-weight: 600; cursor: pointer; font-family: 'Cairo'; transition: 0.3s; }
-        .btn-success { background: var(--color-success); color: white; }
-        .btn-sm { font-size: 0.8rem; }
-    </style>
 </head>
 <body>
     <div id="sidebar-container"></div>
 
     <main class="admin-main">
-        <header style="margin-bottom: 2rem;">
-            <h1 style="font-weight: 800; font-size: 1.75rem; margin: 0;">المستخدمين المحظورين</h1>
-            <p style="color: var(--color-text-secondary); margin-top: 0.5rem;">إدارة الحسابات المحظورة وإمكانية فك الحظر</p>
+        <header class="page-header">
+            <h1>المستخدمين المحظورين</h1>
+            <p>إدارة الحسابات التي تم تعليق وصولها إلى النظام</p>
         </header>
 
-        <div class="table-container">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>الاسم</th>
-                        <th>البريد الإلكتروني</th>
-                        <th>الحالة</th>
-                        <th>تاريخ التسجيل</th>
-                        <th>الإجراء</th>
-                    </tr>
-                </thead>
-                <tbody id="bannedBody">
-                    <tr><td colspan="5" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
-                </tbody>
-            </table>
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">قائمة الحظر</h2>
+            </div>
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>الحالة</th>
+                            <th>تاريخ التسجيل</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bannedBody">
+                        <tr><td colspan="5" style="text-align: center; padding: 3rem;">جاري تحميل البيانات...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 

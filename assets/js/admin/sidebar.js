@@ -17,6 +17,8 @@ function setupSidebarLogic() {
     const sidebar = document.getElementById('sidebar');
     const sidebarClose = document.getElementById('sidebarClose');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const adminAvatarBtn = document.getElementById('adminAvatarBtn');
+    const adminAvatarMenu = document.getElementById('adminAvatarMenu');
 
     if (!menuToggle || !sidebar) return;
 
@@ -25,19 +27,39 @@ function setupSidebarLogic() {
         sidebarOverlay.classList.toggle('active');
     };
 
-    menuToggle.addEventListener('click', toggleSidebar);
+    menuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSidebar();
+    });
+    
     if (sidebarClose) sidebarClose.addEventListener('click', toggleSidebar);
     if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
 
-    // Handle logout in sidebar
-    const sidebarSignOut = document.getElementById('sidebarSignOut');
-    if (sidebarSignOut) {
-        sidebarSignOut.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const { handleLogout } = await import('./auth.js');
-            await handleLogout();
+    // Avatar Menu Logic
+    if (adminAvatarBtn && adminAvatarMenu) {
+        adminAvatarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = adminAvatarMenu.style.display === 'block';
+            adminAvatarMenu.style.display = isVisible ? 'none' : 'block';
+        });
+
+        document.addEventListener('click', () => {
+            adminAvatarMenu.style.display = 'none';
         });
     }
+
+    // Handle logout
+    const adminSignOut = document.getElementById('adminSignOut');
+    const sidebarSignOut = document.getElementById('sidebarSignOut');
+    
+    const onLogout = async (e) => {
+        e.preventDefault();
+        const { handleLogout } = await import('./auth.js');
+        await handleLogout();
+    };
+
+    if (adminSignOut) adminSignOut.addEventListener('click', onLogout);
+    if (sidebarSignOut) sidebarSignOut.addEventListener('click', onLogout);
 }
 
 function highlightActiveLink() {
@@ -45,7 +67,8 @@ function highlightActiveLink() {
     const sidebarItems = document.querySelectorAll('.sidebar-item');
     
     sidebarItems.forEach(item => {
-        if (currentPath.includes(item.getAttribute('href'))) {
+        const href = item.getAttribute('href');
+        if (currentPath.endsWith(href) || (currentPath.endsWith('/') && href === 'dashboard.html')) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
