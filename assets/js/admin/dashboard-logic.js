@@ -1,11 +1,12 @@
 import { supabase } from '/api-config.js';
 import { requireAuth, logout, adminImpersonateUser } from '/auth-client.js';
 import { fetchTicketStats, subscribeToTickets } from '/tickets-service.js';
+import { initSidebar } from './sidebar.js';
 
 let user = null;
 
 async function init() {
-    setupSidebar();
+    initSidebar();
     setupEventListeners();
     try {
         user = await requireAuth('admin');
@@ -17,24 +18,6 @@ async function init() {
     } catch (err) {
         console.error('Init error:', err);
     }
-}
-
-function setupSidebar() {
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarClose = document.getElementById('sidebarClose');
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
-    
-    if (!menuToggle || !sidebar) return;
-
-    const toggleSidebar = () => {
-        sidebar.classList.toggle('active');
-        sidebarOverlay.classList.toggle('active');
-    };
-
-    menuToggle.addEventListener('click', toggleSidebar);
-    if (sidebarClose) sidebarClose.addEventListener('click', toggleSidebar);
-    if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
 }
 
 function updateUIWithUserData() {
@@ -92,31 +75,26 @@ async function renderTickets() {
 }
 
 function setupEventListeners() {
-    const adminAvatarBtn = document.getElementById('adminAvatarBtn');
-    const adminAvatarMenu = document.getElementById('adminAvatarMenu');
-    
-    if (adminAvatarBtn && adminAvatarMenu) {
-        adminAvatarBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            adminAvatarMenu.style.display = adminAvatarMenu.style.display === 'block' ? 'none' : 'block';
-        });
+    // We use event delegation or wait for sidebar to load for elements inside it
+    document.addEventListener('click', async (e) => {
+        // Avatar Menu Toggle
+        const avatarBtn = e.target.closest('#adminAvatarBtn');
+        const avatarMenu = document.getElementById('adminAvatarMenu');
         
-        document.addEventListener('click', () => {
-            adminAvatarMenu.style.display = 'none';
-        });
-    }
+        if (avatarBtn && avatarMenu) {
+            e.stopPropagation();
+            avatarMenu.style.display = avatarMenu.style.display === 'block' ? 'none' : 'block';
+        } else if (avatarMenu) {
+            avatarMenu.style.display = 'none';
+        }
 
-    const signoutAction = async (e) => {
-        e.preventDefault();
-        await logout();
-        window.location.replace('sign-in.html');
-    };
-
-    const adminSignOut = document.getElementById('adminSignOut');
-    const sidebarSignOut = document.getElementById('sidebarSignOut');
-
-    if (adminSignOut) adminSignOut.addEventListener('click', signoutAction);
-    if (sidebarSignOut) sidebarSignOut.addEventListener('click', signoutAction);
+        // Sign Out
+        if (e.target.id === 'adminSignOut' || e.target.id === 'sidebarSignOut' || e.target.closest('#sidebarSignOut')) {
+            e.preventDefault();
+            await logout();
+            window.location.replace('sign-in.html');
+        }
+    });
 }
 
 async function impersonateUser(id) { 

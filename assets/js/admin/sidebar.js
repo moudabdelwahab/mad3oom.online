@@ -68,7 +68,7 @@ function highlightActiveLink() {
     
     sidebarItems.forEach(item => {
         const href = item.getAttribute('href');
-        if (currentPath.endsWith(href) || (currentPath.endsWith('/') && href === 'dashboard.html')) {
+        if (currentPath.endsWith(href) || (currentPath.endsWith('/admin-dashboard.html') && href === '/admin-dashboard.html')) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
