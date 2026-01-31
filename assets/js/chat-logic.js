@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (user) {
             currentUser = user;
             const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-            if (profile && profile.role === 'admin') {
+            if (profile && profile.role === 'admin' && !window.isCustomerChat) {
                 isAdmin = true;
                 mainSidebar.style.display = 'flex';
                 loadAllSessions();

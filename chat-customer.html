@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المحادثة الفورية - منصة مدعوم</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --chat-bg: #f4f7f6;
+            --header-height: 70px;
+        }
+        body { 
+            font-family: 'Cairo', sans-serif; 
+            background-color: var(--chat-bg); 
+            margin: 0; 
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Layout Structure */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: #f0f2f5;
+        }
+
+        /* Navbar Styling */
+        .top-navbar {
+            height: var(--header-height);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            z-index: 90;
+        }
+
+        .nav-logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-logo-area img { height: 40px; }
+        .nav-logo-area span { font-weight: 800; color: var(--color-primary); font-size: 1.2rem; }
+
+        /* View Containers */
+        .view-container {
+            flex-grow: 1;
+            display: flex;
+            padding: 2rem;
+            overflow-y: auto;
+            justify-content: center;
+        }
+
+        /* Chat Window Styling */
+        .chat-wrapper {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .chat-header-blue {
+            background: #003366;
+            color: white;
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .bot-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .bot-avatar-circle {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .bot-avatar-circle img { width: 100%; height: 100%; object-fit: contain; }
+
+        .chat-body {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Message Bubbles */
+        .msg {
+            max-width: 75%;
+            padding: 0.9rem 1.25rem;
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .msg.sent {
+            align-self: flex-end;
+            background: var(--color-primary);
+            color: white;
+            border-bottom-left-radius: 0.2rem;
+        }
+
+        .msg.received {
+            align-self: flex-start;
+            background: #f1f0f0;
+            color: #333;
+            border-bottom-right-radius: 0.2rem;
+        }
+
+        .chat-footer {
+            padding: 1.25rem 2rem;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .input-box {
+            flex-grow: 1;
+            border: 1px solid #e0e0e0;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            outline: none;
+            font-family: inherit;
+            background: #f9f9f9;
+        }
+
+        .action-btn {
+            background: #003366;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .view-container { padding: 1rem; }
+            .chat-header-blue { padding: 1rem; }
+            .chat-footer { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Navbar -->
+            <nav class="top-navbar">
+                <div class="nav-logo-area">
+                    <img src="/assets/images/logo.png" alt="Logo">
+                    <span>منصة مدعوم</span>
+                </div>
+                <a href="/customer-dashboard.html" id="backLink" style="text-decoration: none; color: #666; font-weight: 600;">العودة للوحة التحكم</a>
+            </nav>
+
+            <!-- Chat Window View -->
+            <div id="chat-window-view" class="view-container">
+                <div class="chat-wrapper">
+                    <div class="chat-header-blue">
+                        <div class="bot-profile">
+                            <div class="bot-avatar-circle">
+                                <img src="/assets/images/mad3oom-robot.png" alt="Bot" id="chatHeaderImg">
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.1rem;" id="chatHeaderName">بوت مدعوم الذكي</h3>
+                                <span style="font-size: 0.8rem; opacity: 0.8;" id="chatHeaderStatus">متصل الآن - رد تلقائي</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-body" id="chatMessages">
+                        <!-- Messages -->
+                    </div>
+
+                    <div id="typingIndicator" style="padding: 0.5rem 2rem; font-size: 0.8rem; color: #666; display: none;">جاري الرد...</div>
+
+                    <div class="chat-footer">
+                        <input type="text" class="input-box" placeholder="اكتب رسالتك هنا..." id="chatInput">
+                        <button class="action-btn" id="sendBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(180deg);"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="/assets/js/chat-logic.js"></script>
+    <script>
+        // Force bot test mode for customers
+        window.isCustomerChat = true;
+    </script>
+</body>
+</html>
