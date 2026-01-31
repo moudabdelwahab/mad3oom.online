@@ -39,15 +39,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
             if (profile && profile.role === 'admin' && !window.isCustomerChat) {
                 isAdmin = true;
-                mainSidebar.style.display = 'flex';
+                if (mainSidebar) mainSidebar.style.display = 'flex';
                 loadAllSessions();
             } else {
                 setupUserChat();
             }
         } else {
-            const guest = localStorage.getItem('mad3oom-guest-session');
-            if (guest) {
-                currentUser = JSON.parse(guest);
+            // Check for guest in localStorage (from auth-client.js logic)
+            const guestData = localStorage.getItem('sb-guest-session');
+            if (guestData) {
+                currentUser = JSON.parse(guestData);
+                setupUserChat();
+            } else if (window.isCustomerChat) {
+                // If it's customer chat and no user/guest, we can allow anonymous chat or redirect
+                // For now, let's create a temporary guest ID if none exists to allow the chat to work
+                const tempGuestId = 'guest-' + Math.random().toString(36).substr(2, 9);
+                currentUser = { id: tempGuestId, email: 'guest@mad3oom.online', isGuest: true };
                 setupUserChat();
             } else {
                 window.location.href = '/sign-in.html';
@@ -138,22 +145,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function setupUserChat() {
-        backLink.innerText = 'العودة للرئيسية';
-        backLink.href = '/customer-dashboard.html';
-        
-        const { data: session } = await supabase.from('chat_sessions').select('id').eq('user_id', currentUser.id).eq('status', 'active').maybeSingle();
-        if (session) {
-            currentSessionId = session.id;
-        } else {
-            const { data: newS } = await supabase.from('chat_sessions').insert([{ user_id: currentUser.id }]).select().single();
-            currentSessionId = newS.id;
+        if (backLink) {
+            backLink.innerText = 'العودة للرئيسية';
+            backLink.href = '/customer-dashboard.html';
         }
         
-        views['chat-window'].classList.add('active');
+        // If user is a guest with a non-UUID string, we can't store it in a UUID column
+        // We'll use a fallback or just skip DB storage for non-auth guests for now to prevent errors
+        const isRealUser = currentUser.id && currentUser.id.length > 20; // Simple UUID check
+
+        if (isRealUser) {
+            const { data: session } = await supabase.from('chat_sessions').select('id').eq('user_id', currentUser.id).eq('status', 'active').maybeSingle();
+            if (session) {
+                currentSessionId = session.id;
+            } else {
+                const { data: newS, error } = await supabase.from('chat_sessions').insert([{ user_id: currentUser.id }]).select().single();
+                if (!error && newS) currentSessionId = newS.id;
+            }
+        } else {
+            // For guests, we use a local session ID to allow bot interaction without DB errors
+            currentSessionId = 'guest-session-' + currentUser.id;
+            isTestMode = true; // Treat as test mode to avoid DB inserts
+        }
+        
+        if (views['chat-window']) views['chat-window'].classList.add('active');
         loadMessages();
         
         // Auto welcome if new
-        if (chatMessages.children.length === 0 && botSettings?.is_enabled) {
+        if (chatMessages && chatMessages.children.length === 0 && botSettings?.is_enabled) {
             appendMessage(botSettings.welcome_message, 'received', new Date(), true);
         }
     }
