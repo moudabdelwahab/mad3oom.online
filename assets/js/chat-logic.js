@@ -12,69 +12,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     let botReplyCount = 0;
 
     // 1. الحصول على بيانات المستخدم الحالي
-    const { data: { user } } = await supabase.auth.getUser();
-    currentUser = user;
-
-    if (!currentUser) {
-        window.location.href = '/sign-in.html';
-        return;
+    async function initAuth() {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) {
+            console.error('Auth error:', error);
+            window.location.href = '/sign-in.html';
+            return;
+        }
+        currentUser = user;
     }
 
     // 2. تحميل إعدادات البوت
     async function loadBotSettings() {
-        const { data, error } = await supabase.from('bot_settings').select('*').single();
-        if (!error) botSettings = data;
-    }
-
-    // 3. إنشاء أو جلب جلسة المحادثة
-    async function getOrCreateSession() {
-        const { data: sessions, error } = await supabase
-            .from('chat_sessions')
-            .select('id')
-            .eq('user_id', currentUser.id)
-            .eq('status', 'active')
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-        if (sessions && sessions.length > 0) {
-            currentSessionId = sessions[0].id;
-            await loadMessages();
-        } else {
-            const { data: newSession, error: createError } = await supabase
-                .from('chat_sessions')
-                .insert([{ user_id: currentUser.id }])
-                .select()
-                .single();
-            if (newSession) {
-                currentSessionId = newSession.id;
-                // إرسال رسالة ترحيب تلقائية إذا كان البوت مفعلاً
-                if (botSettings && botSettings.is_enabled) {
-                    setTimeout(() => {
-                        sendBotReply(botSettings.welcome_message);
-                    }, 1000);
-                }
-            }
+        try {
+            const { data, error } = await supabase.from('bot_settings').select('*').limit(1).single();
+            if (error) throw error;
+            botSettings = data;
+            console.log('Bot settings loaded:', botSettings);
+        } catch (err) {
+            console.error('Error loading bot settings:', err);
+            // إعدادات افتراضية في حال فشل التحميل
+            botSettings = {
+                is_enabled: true,
+                welcome_message: 'أهلاً بك في منصة مدعوم! كيف يمكننا مساعدتك اليوم؟',
+                ticket_confirmation_message: 'تم فتح تذكرة دعم وسيتم التواصل معك قريبًا.',
+                trigger_keywords: ['مشكلة', 'عطل', 'مش شغال', 'problem', 'issue', 'help'],
+                response_delay_seconds: 2,
+                response_frequency: 'once'
+            };
         }
     }
 
-    // 4. تحميل الرسائل السابقة
-    async function loadMessages() {
-        const { data: messages, error } = await supabase
-            .from('chat_messages')
-            .select('*')
-            .eq('session_id', currentSessionId)
-            .order('created_at', { ascending: true });
-
-        if (messages) {
-            chatMessages.innerHTML = '';
-            messages.forEach(msg => {
-                appendMessage(msg.message_text, msg.is_bot_reply ? 'received' : 'sent', msg.created_at);
-                if (msg.is_bot_reply) botReplyCount++;
-            });
-        }
-    }
-
-    // 5. إضافة رسالة للواجهة
+    // 3. إضافة رسالة للواجهة
     function appendMessage(text, type, timestamp = new Date()) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type}`;
@@ -85,66 +54,125 @@ document.addEventListener('DOMContentLoaded', async () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // 6. إرسال رد البوت
-    async function sendBotReply(text, isTicket = false) {
+    // 4. إرسال رد البوت
+    async function sendBotReply(text) {
+        if (!botSettings || !botSettings.is_enabled) return;
+
         typingIndicator.style.display = 'block';
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        const delay = botSettings ? botSettings.response_delay_seconds * 1000 : 1000;
+        const delay = (botSettings.response_delay_seconds || 1) * 1000;
 
         setTimeout(async () => {
             typingIndicator.style.display = 'none';
             appendMessage(text, 'received');
             botReplyCount++;
             
-            await supabase.from('chat_messages').insert([{
-                session_id: currentSessionId,
-                message_text: text,
-                is_bot_reply: true
-            }]);
-
-            if (isTicket) {
-                // سيتم التعامل مع فتح التذكرة في دالة handleBotLogic
+            if (currentSessionId) {
+                await supabase.from('chat_messages').insert([{
+                    session_id: currentSessionId,
+                    message_text: text,
+                    is_bot_reply: true
+                }]);
             }
         }, delay);
     }
 
-    // 7. منطق البوت الذكي
+    // 5. إنشاء أو جلب جلسة المحادثة
+    async function getOrCreateSession() {
+        try {
+            const { data: sessions, error } = await supabase
+                .from('chat_sessions')
+                .select('id')
+                .eq('user_id', currentUser.id)
+                .eq('status', 'active')
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (sessions && sessions.length > 0) {
+                currentSessionId = sessions[0].id;
+                await loadMessages();
+            } else {
+                const { data: newSession, error: createError } = await supabase
+                    .from('chat_sessions')
+                    .insert([{ user_id: currentUser.id }])
+                    .select()
+                    .single();
+                
+                if (newSession) {
+                    currentSessionId = newSession.id;
+                    // إرسال رسالة ترحيب فورية للجلسة الجديدة
+                    if (botSettings && botSettings.is_enabled) {
+                        sendBotReply(botSettings.welcome_message);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Session error:', err);
+        }
+    }
+
+    // 6. تحميل الرسائل السابقة
+    async function loadMessages() {
+        const { data: messages, error } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('session_id', currentSessionId)
+            .order('created_at', { ascending: true });
+
+        if (messages && messages.length > 0) {
+            chatMessages.innerHTML = '';
+            messages.forEach(msg => {
+                appendMessage(msg.message_text, msg.is_bot_reply ? 'received' : 'sent', msg.created_at);
+                if (msg.is_bot_reply) botReplyCount++;
+            });
+        } else {
+            // إذا كانت الجلسة موجودة ولكن لا توجد رسائل، أرسل الترحيب
+            if (botSettings && botSettings.is_enabled) {
+                sendBotReply(botSettings.welcome_message);
+            }
+        }
+    }
+
+    // 7. منطق البوت الذكي عند إرسال رسالة
     async function handleBotLogic(userText) {
         if (!botSettings || !botSettings.is_enabled) return;
 
-        if (botSettings.response_frequency === 'once' && botReplyCount > 1) return; // 1 لأن الترحيب يعتبر أول رد
+        // التحقق من تكرار الرد إذا كان مضبوطاً على "مرة واحدة"
+        if (botSettings.response_frequency === 'once' && botReplyCount >= 2) return; // 2 لأن الترحيب هو الأول
         
         const lowerText = userText.toLowerCase();
         const triggerFound = botSettings.trigger_keywords.some(word => lowerText.includes(word.toLowerCase()));
 
         if (triggerFound) {
-            await sendBotReply(botSettings.ticket_confirmation_message, true);
+            await sendBotReply(botSettings.ticket_confirmation_message);
             await createAutoTicket(userText);
-        } else if (botSettings.response_frequency === 'always') {
-            // يمكن إضافة رد افتراضي هنا إذا لزم الأمر
         }
     }
 
     // 8. فتح تذكرة تلقائياً
     async function createAutoTicket(originalMessage) {
-        if (botSettings.advanced_prevent_duplicate_tickets) {
-            const { data: existing } = await supabase
-                .from('tickets')
-                .select('id')
-                .eq('user_id', currentUser.id)
-                .eq('status', 'open')
-                .limit(1);
-            if (existing && existing.length > 0) return;
-        }
+        try {
+            if (botSettings.advanced_prevent_duplicate_tickets) {
+                const { data: existing } = await supabase
+                    .from('tickets')
+                    .select('id')
+                    .eq('user_id', currentUser.id)
+                    .eq('status', 'open')
+                    .limit(1);
+                if (existing && existing.length > 0) return;
+            }
 
-        await supabase.from('tickets').insert([{
-            user_id: currentUser.id,
-            title: 'تذكرة تلقائية من المحادثة',
-            description: originalMessage,
-            status: 'open',
-            priority: 'medium'
-        }]);
+            await supabase.from('tickets').insert([{
+                user_id: currentUser.id,
+                title: 'تذكرة تلقائية من المحادثة',
+                description: originalMessage,
+                status: 'open',
+                priority: 'medium'
+            }]);
+        } catch (err) {
+            console.error('Ticket creation error:', err);
+        }
     }
 
     // 9. إرسال رسالة المستخدم
@@ -163,16 +191,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (!error) {
                 handleBotLogic(text);
+            } else {
+                console.error('Error sending message:', error);
             }
         }
     }
 
+    // الأحداث
     sendBtn.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
 
-    // البدء
+    // التشغيل التسلسلي لضمان الترتيب
+    await initAuth();
     await loadBotSettings();
     await getOrCreateSession();
 });
