@@ -1,5 +1,6 @@
 // customer-dashboard.js
 import { requireAuth, logout, updateProfile, updatePassword } from './auth-client.js';
+import { initCustomerSidebar } from './assets/js/customer-sidebar.js';
 import {
     fetchUserTickets,
     createTicket,
@@ -28,16 +29,46 @@ import {
 
     // تحديث واجهة المستخدم ببيانات المستخدم
     const welcomeEl = document.getElementById('welcomeUser');
-    if (welcomeEl) {
-        welcomeEl.textContent = isGuest
-            ? 'مرحباً بك (زائر)'
-            : `مرحباً، ${user.profile?.full_name || user.email?.split('@')[0] || 'مستخدم'}`;
-    }
+    const updateWelcomeText = () => {
+        if (welcomeEl) {
+            welcomeEl.textContent = isGuest
+                ? 'مرحباً بك (زائر)'
+                : `مرحباً، ${user.profile?.full_name || user.email?.split('@')[0] || 'مستخدم'}`;
+        }
+    };
+    updateWelcomeText();
 
-    const userInitial = document.getElementById('userInitial');
-    if (userInitial) {
-        userInitial.textContent = (user.profile?.full_name || user.email || 'U')[0].toUpperCase();
-    }
+    // Initialize Sidebar
+    initCustomerSidebar((tabName) => {
+        const tabEl = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
+        if (tabEl) tabEl.click();
+    });
+
+    // Update Sidebar User Info
+    const updateSidebarUserInfo = () => {
+        const customerInitial = document.getElementById('customerInitial');
+        if (customerInitial) {
+            customerInitial.textContent = (user.profile?.full_name || user.email || 'U')[0].toUpperCase();
+        }
+        
+        if (isGuest) {
+            const profileSidebarItem = document.getElementById('profileSidebarItem');
+            if (profileSidebarItem) {
+                profileSidebarItem.style.opacity = '0.5';
+                profileSidebarItem.style.pointerEvents = 'auto';
+                profileSidebarItem.addEventListener('click', (e) => {
+                    if (isGuest) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('هذه الميزة غير متاحة في وضع الضيف. يرجى إنشاء حساب.');
+                    }
+                }, true);
+            }
+        }
+    };
+
+    // Wait a bit for sidebar to load
+    setTimeout(updateSidebarUserInfo, 500);
 
     /* ================= GUEST MODE ================= */
 

@@ -186,6 +186,31 @@ body {
     padding: 0 var(--container-padding) 4rem;
 }
 
+/* Sidebar Layout for Customer Dashboard */
+body:has(.admin-main) {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-main {
+    flex: 1;
+    padding: 2.5rem 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.page-header {
+    margin-bottom: 2.5rem;
+}
+
+@media (max-width: 768px) {
+    .admin-main {
+        padding: 1.5rem 1rem;
+    }
+}
+
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
