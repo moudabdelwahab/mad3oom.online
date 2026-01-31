@@ -100,8 +100,80 @@
 
         <!-- Rewards Tab -->
         <div id="rewardsTabContent" class="tab-content">
-            <h1>المكافآت والنقاط</h1>
-            <p>سيتم عرض تفاصيل المكافآت والنقاط هنا.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1 style="margin: 0;">المكافآت والنقاط</h1>
+                <div id="proBadgeInfo" style="display: none; align-items: center; gap: 0.5rem; background: linear-gradient(45deg, #f59e0b, #ef4444); color: white; padding: 0.5rem 1rem; border-radius: 2rem; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+                    <span>PRO MEMBER</span>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
+            </div>
+
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div class="stat-card" style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); text-align: center;">
+                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">إجمالي النقاط</p>
+                    <p id="rewardsTotalPoints" style="font-size: 2rem; font-weight: 800; color: #fbbf24;">0</p>
+                </div>
+                <div class="stat-card" style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); text-align: center;">
+                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">النقاط المتاحة</p>
+                    <p id="rewardsAvailablePoints" style="font-size: 2rem; font-weight: 800; color: var(--color-success);">0</p>
+                </div>
+                <div class="stat-card" style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); text-align: center;">
+                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">نقاط قيد المراجعة</p>
+                    <p id="rewardsPendingPoints" style="font-size: 2rem; font-weight: 800; color: var(--color-accent);">0</p>
+                </div>
+                <div class="stat-card" style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); text-align: center;">
+                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">مستوى العضوية</p>
+                    <p id="rewardsMemberLevel" style="font-size: 1.5rem; font-weight: 800; margin-top: 0.5rem;">عضو جديد</p>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-top: 2rem;">
+                <!-- New Report Form -->
+                <div style="background: var(--color-surface); padding: 2rem; border-radius: 1rem; border: 1px solid var(--color-border);">
+                    <h2 style="margin-bottom: 1.5rem;">تقديم بلاغ عن مشكلة</h2>
+                    <form id="newReportForm">
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem;">نوع المشكلة</label>
+                            <select id="reportProblemType" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--color-border); background: var(--color-muted); color: var(--color-text);">
+                                <option value="bug">خطأ برمجى (Bug)</option>
+                                <option value="security">ثغرة أمنية</option>
+                                <option value="suggestion">اقتراح تحسين</option>
+                                <option value="other">أخرى</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem;">درجة الخطورة</label>
+                            <select id="reportSeverity" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--color-border); background: var(--color-muted); color: var(--color-text);">
+                                <option value="low">منخفضة (10 نقاط)</option>
+                                <option value="medium">متوسطة (25 نقطة)</option>
+                                <option value="high">عالية (50 نقطة)</option>
+                                <option value="critical">حرجة (100 نقطة)</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem;">العنوان</label>
+                            <input type="text" id="reportTitle" placeholder="عنوان مختصر للمشكلة" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--color-border); background: var(--color-muted); color: var(--color-text);">
+                        </div>
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem;">الوصف</label>
+                            <textarea id="reportDescription" rows="4" placeholder="اشرح المشكلة بالتفصيل وكيفية تكرارها..." style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--color-border); background: var(--color-muted); color: var(--color-text); resize: vertical;"></textarea>
+                        </div>
+                        <div style="background: var(--color-muted); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <span>النقاط المتوقعة:</span>
+                            <span id="estimatedReportPoints" style="font-weight: 700; color: var(--color-accent);">10 نقاط</span>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">إرسال البلاغ</button>
+                    </form>
+                </div>
+
+                <!-- Reports List -->
+                <div style="background: var(--color-surface); padding: 2rem; border-radius: 1rem; border: 1px solid var(--color-border);">
+                    <h2 style="margin-bottom: 1.5rem;">بلاغاتي السابقة</h2>
+                    <div id="reportsListContainer" style="max-height: 600px; overflow-y: auto; padding-left: 0.5rem;">
+                        <p class="empty-state">جاري تحميل البلاغات...</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Badges Tab -->

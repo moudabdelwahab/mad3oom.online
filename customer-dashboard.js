@@ -1,6 +1,7 @@
 // customer-dashboard.js
 import { requireAuth, logout, updateProfile, updatePassword } from './auth-client.js';
 import { initCustomerSidebar } from './assets/js/customer-sidebar.js';
+import { initRewardsDashboard } from './rewards-dashboard.js';
 import {
     fetchUserTickets,
     createTicket,
@@ -43,6 +44,25 @@ import {
         const tabEl = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
         if (tabEl) tabEl.click();
     });
+
+    // Initialize Rewards Dashboard
+    if (!isGuest) {
+        initRewardsDashboard(user);
+        
+        // Wallet Tooltip Logic
+        setTimeout(() => {
+            const walletInfo = document.getElementById('walletInfo');
+            const pointsTooltip = document.getElementById('pointsTooltip');
+            if (walletInfo && pointsTooltip) {
+                walletInfo.addEventListener('mouseenter', () => pointsTooltip.style.display = 'block');
+                walletInfo.addEventListener('mouseleave', () => pointsTooltip.style.display = 'none');
+                walletInfo.addEventListener('click', () => {
+                    const rewardsTab = document.querySelector('.nav-tab[data-tab="rewards"]');
+                    if (rewardsTab) rewardsTab.click();
+                });
+            }
+        }, 1000);
+    }
 
     // Badges Logic
     async function updateBadges() {
