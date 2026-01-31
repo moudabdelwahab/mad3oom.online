@@ -1,29 +1,16 @@
 /* ==================== Admin Dashboard - Professional Blue Palette ==================== */
+/* Variables are now inherited from styles.css to support dark mode */
 :root {
-    --color-primary: #003366;
-    --color-primary-variant: #0055AA;
-    --color-accent: #0077CC;
-    --color-background: #F5F5F5;
-    --color-surface: #FFFFFF;
-    --color-text: #333333;
-    --color-text-secondary: #777777;
-    --color-muted: #EEEEEE;
-    --color-success: #2E8A3A;
-    --color-warning: #E0A800;
-    --color-danger: #D9534F;
-    --color-border: #DDDDDD;
-    
-    /* Computed Colors */
-    --color-accent-hover: #0055AA;
-    --color-accent-dark: #0055AA;
-    --color-sidebar-bg: #002244;
-    --color-sidebar-active: #0077CC;
-    
     /* Shadows */
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     --shadow-glow: 0 0 20px rgba(0, 119, 204, 0.2);
+}
+
+[data-theme='dark'] {
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 body {
@@ -289,7 +276,7 @@ body {
 }
 
 .admin-table th {
-    background: #F8FAFC;
+    background: var(--color-muted);
     padding: 1.25rem 1rem;
     font-weight: 700;
     font-size: 0.9rem;
@@ -309,7 +296,7 @@ body {
 }
 
 .admin-table tr:hover {
-    background: #F9FAFB;
+    background: var(--hover-bg);
 }
 
 /* ==================== Status Badges ==================== */

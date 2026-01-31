@@ -27,9 +27,12 @@ function setupSidebarLogic(onTabChange) {
         sidebarOverlay.classList.toggle('active');
     };
 
-    menuToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleSidebar();
+    const menuToggles = [menuToggle, document.getElementById('mobileMenuToggle')].filter(Boolean);
+    menuToggles.forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSidebar();
+        });
     });
     
     if (sidebarClose) sidebarClose.addEventListener('click', toggleSidebar);

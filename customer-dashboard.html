@@ -21,14 +21,14 @@
     <script src="theme-manager.js" defer></script>
     <link rel="stylesheet" href="robot.css">
     <style>
-        .profile-section { background: var(--color-surface); padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-sm); margin-top: 2rem; }
+        .profile-section { background: var(--color-surface); padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-sm); margin-top: 2rem; border: 1px solid var(--color-border); }
         .nav-tabs { display: none; }
         .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem; }
         .modal.active { display: flex; }
-        .modal-content { background: var(--color-surface); padding: 2.5rem; border-radius: 1.25rem; width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: var(--shadow); border: 1px solid var(--color-border); }
+        .modal-content { background: var(--color-surface); padding: 2.5rem; border-radius: 1.25rem; width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: var(--shadow); border: 1px solid var(--color-border); color: var(--color-text); }
         .wallet-info { position: relative; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--color-muted); border-radius: 2rem; cursor: pointer; }
         .wallet-tooltip { display: none; position: absolute; top: 100%; right: 0; background: var(--color-surface); color: var(--color-text); padding: 0.75rem 1rem; border-radius: 0.5rem; box-shadow: var(--shadow); border: 1px solid var(--color-border); margin-top: 0.5rem; white-space: nowrap; z-index: 100; }
         .wallet-info:hover .wallet-tooltip { display: block; }
@@ -48,15 +48,23 @@
         .status-online { background-color: #22c55e; }
         .status-online::after { background-color: #22c55e; }
         @keyframes statusPulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
+        @media (max-width: 768px) {
+            #mobileMenuToggle { display: flex !important; }
+        }
     </style>
 </head>
 <body>
     <div id="sidebar-container"></div>
 
     <main class="admin-main">
-        <header class="page-header">
-            <h1 id="welcomeUser" style="font-weight: 800; font-size: 1.75rem; margin: 0;">مرحباً بك</h1>
-            <p style="color: var(--color-text-secondary); margin-top: 0.5rem;">لوحة تحكم العميل</p>
+        <header class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 id="welcomeUser" style="font-weight: 800; font-size: 1.75rem; margin: 0;">مرحباً بك</h1>
+                <p style="color: var(--color-text-secondary); margin-top: 0.5rem;">لوحة تحكم العميل</p>
+            </div>
+            <button class="menu-toggle" id="mobileMenuToggle" style="display: none; background: var(--color-primary); color: white; border: none; padding: 0.5rem; border-radius: 0.5rem; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
         </header>
 
         <div class="nav-tabs">
