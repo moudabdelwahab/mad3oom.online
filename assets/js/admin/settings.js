@@ -141,15 +141,21 @@ function setupEventListeners() {
 
         try {
             const fileExt = file.name.split('.').pop();
-            const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-            const filePath = `avatars/${fileName}`;
+            const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+            const filePath = fileName; // الرفع مباشرة في الـ bucket بدون مجلدات فرعية لتجنب مشاكل الصلاحيات
 
             // Upload image to Supabase Storage
-            const { error: uploadError } = await supabase.storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('avatars')
-                .upload(filePath, file);
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
 
-            if (uploadError) throw uploadError;
+            if (uploadError) {
+                console.error('Upload error details:', uploadError);
+                throw new Error(`فشل الرفع: ${uploadError.message}`);
+            }
 
             // Get public URL
             const { data: { publicUrl } } = supabase.storage
@@ -159,18 +165,29 @@ function setupEventListeners() {
             // Update profile
             const { error: updateError } = await supabase
                 .from('profiles')
-                .update({ avatar_url: publicUrl })
+                .update({ 
+                    avatar_url: publicUrl,
+                    updated_at: new Date().toISOString()
+                })
                 .eq('id', user.id);
 
             if (updateError) throw updateError;
 
+            // تحديث الواجهة المحلية
             updateAvatarUI(null, publicUrl);
-            // Update Navbar immediately
-            updateAdminUI({ ...user, profile: { ...user.profile, avatar_url: publicUrl } });
-            showAlert('تم تحديث صورة الملف الشخصي', 'success');
+            
+            // تحديث النافبار
+            if (typeof updateAdminUI === 'function') {
+                const updatedUser = { ...user };
+                if (!updatedUser.profile) updatedUser.profile = {};
+                updatedUser.profile.avatar_url = publicUrl;
+                updateAdminUI(updatedUser);
+            }
+
+            showAlert('تم تحديث صورة الملف الشخصي بنجاح', 'success');
         } catch (error) {
             console.error('Avatar upload error:', error);
-            showAlert('فشل رفع الصورة. تأكد من وجود bucket باسم avatars في Supabase', 'error');
+            showAlert(error.message || 'فشل رفع الصورة. يرجى المحاولة مرة أخرى.', 'error');
         } finally {
             btn.textContent = originalText;
             btn.disabled = false;
