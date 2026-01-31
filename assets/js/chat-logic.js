@@ -373,6 +373,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // UI Events
+    // Fix for input focus issues
+    document.querySelector('.chat-footer')?.addEventListener('click', () => {
+        chatInput.focus();
+    });
+    
     sendBtn.onclick = sendMessage;
     chatInput.onkeypress = (e) => e.key === 'Enter' && sendMessage();
     closeChatBtn.onclick = () => {
