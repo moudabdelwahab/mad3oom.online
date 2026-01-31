@@ -374,15 +374,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // UI Events
     // Fix for input focus issues
-    chatInput?.addEventListener('click', (e) => {
+    const handleInputFocus = (e) => {
         e.stopPropagation();
         chatInput.focus();
-        console.log('Chat input clicked and focused');
+        // Ensure the input is not readonly or disabled
+        chatInput.removeAttribute('readonly');
+        chatInput.disabled = false;
+    };
+
+    chatInput?.addEventListener('click', handleInputFocus);
+    chatInput?.addEventListener('touchstart', handleInputFocus);
+    chatInput?.addEventListener('focus', () => {
+        chatInput.parentElement.style.borderColor = 'var(--color-accent)';
+    });
+    chatInput?.addEventListener('blur', () => {
+        chatInput.parentElement.style.borderColor = 'var(--color-border)';
     });
 
-    document.querySelector('.chat-footer')?.addEventListener('click', () => {
-        chatInput.focus();
-    });
+    document.querySelector('.chat-footer')?.addEventListener('click', handleInputFocus);
     
     sendBtn.onclick = sendMessage;
     chatInput.onkeypress = (e) => e.key === 'Enter' && sendMessage();
