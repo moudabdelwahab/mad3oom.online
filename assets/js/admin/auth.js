@@ -36,12 +36,13 @@ export function updateAdminUI(user) {
             adminBadgeContainer.style.display = 'block';
         }
 
-        if (profile.avatar_url && adminAvatarBtn) {
-            const navAvatar = document.createElement('img');
-            navAvatar.src = profile.avatar_url;
-            navAvatar.className = 'nav-avatar';
-            adminAvatarBtn.innerHTML = '';
-            adminAvatarBtn.appendChild(navAvatar);
+        if (adminAvatarBtn) {
+            if (profile.avatar_url) {
+                adminAvatarBtn.innerHTML = `<img src="${profile.avatar_url}" class="nav-avatar" alt="Profile">`;
+            } else {
+                const initial = (profile.full_name || user.email).charAt(0).toUpperCase();
+                adminAvatarBtn.innerHTML = `<div class="avatar-circle">${initial}</div>`;
+            }
         }
     }
 }

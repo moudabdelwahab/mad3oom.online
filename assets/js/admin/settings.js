@@ -165,6 +165,8 @@ function setupEventListeners() {
             if (updateError) throw updateError;
 
             updateAvatarUI(null, publicUrl);
+            // Update Navbar immediately
+            updateAdminUI({ ...user, profile: { ...user.profile, avatar_url: publicUrl } });
             showAlert('تم تحديث صورة الملف الشخصي', 'success');
         } catch (error) {
             console.error('Avatar upload error:', error);
