@@ -189,6 +189,30 @@
             .chat-header-blue { padding: 1rem; }
             .chat-footer { padding: 1rem; }
         }
+
+        .view-container,
+.main-content,
+.chat-wrapper {
+    overflow: hidden !important;
+}
+
+.chat-body {
+    overflow-y: auto !important;
+}
+
+.chat-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 999999;
+    background: #fff;
+}
+
+.input-box {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 999999;
+}
+
     </style>
 </head>
 <body>
