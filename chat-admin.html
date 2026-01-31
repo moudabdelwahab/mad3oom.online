@@ -27,6 +27,7 @@
             height: 100vh;
             width: 100%;
             overflow: hidden;
+            position: relative;
         }
 
         /* Sidebar Styling */
@@ -88,6 +89,7 @@
             position: relative;
             background: #f0f2f5;
             overflow: hidden;
+            height: 100%;
         }
 
         /* Navbar Styling */
@@ -99,7 +101,8 @@
             justify-content: space-between;
             padding: 0 2rem;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            z-index: 90;
+            z-index: 100;
+            flex-shrink: 0;
         }
 
         .nav-logo-area {
@@ -118,6 +121,8 @@
             padding: 2rem;
             overflow: hidden;
             justify-content: center;
+            position: relative;
+            z-index: 10;
         }
 
         .view-container.active { display: flex; }
@@ -133,6 +138,8 @@
             flex-direction: column;
             overflow: hidden;
             height: 100%;
+            position: relative;
+            z-index: 20;
         }
 
         .chat-header-blue {
@@ -142,6 +149,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 30;
         }
 
         .bot-profile {
@@ -172,6 +182,8 @@
             flex-direction: column;
             gap: 1rem;
             min-height: 0;
+            position: relative;
+            z-index: 25;
         }
 
         /* Message Bubbles */
@@ -206,8 +218,9 @@
             gap: 1rem;
             align-items: center;
             position: relative;
-            z-index: 9999;
+            z-index: 50;
             flex-shrink: 0;
+            pointer-events: auto !important;
         }
 
         .input-box {
@@ -220,8 +233,9 @@
             background: var(--color-surface) !important;
             color: var(--color-text) !important;
             position: relative;
-            z-index: 10001 !important;
+            z-index: 60;
             pointer-events: auto !important;
+            cursor: text;
         }
         .input-box:focus {
             border-color: var(--color-accent) !important;
@@ -239,6 +253,8 @@
             align-items: center;
             justify-content: center;
             transition: transform 0.2s;
+            position: relative;
+            z-index: 60;
         }
 
         /* Settings UI Styling */
@@ -291,6 +307,10 @@
             .menu-item span { display: none; }
             .menu-item { justify-content: center; padding: 1.5rem 0; }
         }
+
+        footer {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -324,19 +344,43 @@
                     <img src="/assets/images/logo.png" alt="Logo">
                     <span>منصة مدعوم</span>
                 </div>
-                <a href="/admin-dashboard.html" id="backLink" style="text-decoration: none; color: #666; font-weight: 600;">العودة للوحة التحكم</a>
+                <div class="nav-actions">
+                    <a href="/admin-dashboard.html" style="text-decoration: none; color: #666; font-weight: 600;">العودة للوحة التحكم</a>
+                </div>
             </nav>
 
-            <!-- 1. View: Customer Chats (Sessions List) -->
+            <!-- Customer Chats View -->
             <div id="customer-chats-view" class="view-container active">
-                <div class="sessions-grid" id="sessionsGrid">
-                    <!-- Sessions will be loaded here -->
-                    <div style="text-align: center; grid-column: 1/-1; padding: 3rem;">جاري تحميل المحادثات...</div>
+                <div class="sessions-grid" id="sessionsList">
+                    <!-- Session cards will be loaded here -->
+                    <div style="text-align: center; grid-column: 1/-1; padding: 3rem; color: #666;">
+                        جاري تحميل المحادثات...
+                    </div>
                 </div>
             </div>
 
-            <!-- 2. View: Chat Window (Used for both monitoring and testing) -->
-            <div id="chat-window-view" class="view-container">
+            <!-- Bot Settings View -->
+            <div id="bot-settings-view" class="view-container">
+                <form class="settings-form" id="botSettingsForm">
+                    <div class="section-title">إعدادات ردود البوت</div>
+                    <div class="form-row">
+                        <label>اسم البوت</label>
+                        <input type="text" class="form-input" id="botName" placeholder="مثال: بوت مدعوم الذكي">
+                    </div>
+                    <div class="form-row">
+                        <label>الرسالة الترحيبية</label>
+                        <textarea class="form-input" id="welcomeMsg" rows="3" placeholder="الرسالة التي تظهر عند بدء المحادثة"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <label>تعليمات البوت (System Prompt)</label>
+                        <textarea class="form-input" id="systemPrompt" rows="6" placeholder="كيف يجب أن يتصرف البوت؟"></textarea>
+                    </div>
+                    <button type="submit" class="action-btn" style="width: auto; border-radius: 8px; padding: 0 2rem;">حفظ الإعدادات</button>
+                </form>
+            </div>
+
+            <!-- Bot Test View (Chat Window) -->
+            <div id="bot-test-view" class="view-container">
                 <div class="chat-wrapper">
                     <div class="chat-header-blue">
                         <div class="bot-profile">
@@ -348,7 +392,9 @@
                                 <span style="font-size: 0.8rem; opacity: 0.8;" id="chatHeaderStatus">متصل الآن - رد تلقائي</span>
                             </div>
                         </div>
-                        <button id="closeChatBtn" style="background:none; border:none; color:white; cursor:pointer; font-size:1.5rem;">&times;</button>
+                        <button id="closeChatBtn" style="background: none; border: none; color: white; cursor: pointer; display: none;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                        </button>
                     </div>
 
                     <div class="chat-body" id="chatMessages">
@@ -358,56 +404,17 @@
                     <div id="typingIndicator" style="padding: 0.5rem 2rem; font-size: 0.8rem; color: #666; display: none;">جاري الرد...</div>
 
                     <div class="chat-footer">
-                        <input type="text" class="input-box" placeholder="اكتب رسالتك هنا..." id="chatInput">
+                        <input type="text" class="input-box" placeholder="اكتب رسالتك هنا..." id="chatInput" autocomplete="off">
                         <button class="action-btn" id="sendBtn">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(180deg);"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
                         </button>
                     </div>
                 </div>
             </div>
-
-            <!-- 3. View: Bot Settings -->
-            <div id="bot-settings-view" class="view-container">
-                <div class="settings-form">
-                    <h2 class="section-title">إعدادات سلوك البوت</h2>
-                    
-                    <div class="form-row" style="display:flex; justify-content:space-between; align-items:center; background:#f8f9fa; padding:1rem; border-radius:8px;">
-                        <label>تفعيل البوت الذكي</label>
-                        <input type="checkbox" id="botEnabled" checked style="width:20px; height:20px;">
-                    </div>
-
-                    <div class="form-row">
-                        <label>رسالة الترحيب</label>
-                        <textarea id="welcomeMessage" class="form-input" rows="2"></textarea>
-                    </div>
-
-                    <div class="form-row">
-                        <label>رسالة فتح التذكرة</label>
-                        <textarea id="ticketMessage" class="form-input" rows="2"></textarea>
-                    </div>
-
-                    <div class="form-row">
-                        <label>كلمات فتح التذاكر (اضغط Enter للإضافة)</label>
-                        <input type="text" id="keywordInput" class="form-input" placeholder="مثال: مشكلة، عطل...">
-                        <div id="keywordsList" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.5rem;"></div>
-                    </div>
-
-                    <h2 class="section-title" style="margin-top:2rem;">الردود المخصصة</h2>
-                    <div id="customRepliesList"></div>
-                    <button id="addCustomReply" style="background:#6c757d; color:white; border:none; padding:0.5rem 1rem; border-radius:5px; cursor:pointer; margin-bottom:1.5rem;">+ إضافة رد جديد</button>
-
-                    <div class="form-row">
-                        <label>تأخير الرد (بالثواني)</label>
-                        <input type="number" id="responseDelay" class="form-input" min="0" max="10">
-                    </div>
-
-                    <button id="saveBotSettings" class="action-btn" style="width:100%; border-radius:8px; height:50px; margin-top:1rem;">حفظ الإعدادات</button>
-                    <div id="settingsAlert" style="margin-top:1rem; padding:1rem; border-radius:8px; display:none; background:#d4edda; color:#155724; text-align:center;">تم الحفظ بنجاح!</div>
-                </div>
-            </div>
         </main>
     </div>
 
+    <script type="module" src="/assets/js/admin/sidebar.js"></script>
     <script type="module" src="/assets/js/chat-logic.js"></script>
 </body>
 </html>

@@ -27,6 +27,7 @@
             height: 100vh; 
             width: 100%; 
             overflow: hidden;
+            position: relative;
         } 
         
         /* Main Content Area */ 
@@ -37,6 +38,7 @@
             position: relative; 
             background: #f0f2f5; 
             overflow: hidden;
+            height: 100%;
         } 
         
         /* Navbar Styling */ 
@@ -48,7 +50,7 @@
             justify-content: space-between; 
             padding: 0 2rem; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            z-index: 90; 
+            z-index: 100; 
             flex-shrink: 0;
         } 
         
@@ -68,6 +70,8 @@
             padding: 2rem; 
             justify-content: center; 
             overflow: hidden; 
+            position: relative;
+            z-index: 10;
         } 
         
         /* Chat Window Styling */ 
@@ -81,6 +85,8 @@
             flex-direction: column; 
             overflow: hidden; 
             height: 100%; 
+            position: relative;
+            z-index: 20;
         } 
         
         .chat-header-blue { 
@@ -91,6 +97,8 @@
             align-items: center; 
             justify-content: space-between; 
             flex-shrink: 0;
+            position: relative;
+            z-index: 30;
         } 
         
         .bot-profile { 
@@ -121,6 +129,8 @@
             flex-direction: column; 
             gap: 1rem; 
             min-height: 0;
+            position: relative;
+            z-index: 25;
         } 
         
         /* Message Bubbles */ 
@@ -156,7 +166,8 @@
             align-items: center; 
             flex-shrink: 0;
             position: relative;
-            z-index: 10;
+            z-index: 50; /* ضمان بقاء الفوتر فوق أي عناصر أخرى */
+            pointer-events: auto !important;
         } 
         
         .input-box { 
@@ -166,11 +177,12 @@
             border-radius: 2rem; 
             outline: none; 
             font-family: inherit; 
-            background: var(--color-surface); 
-            color: var(--color-text); 
+            background: var(--color-surface) !important; 
+            color: var(--color-text) !important; 
             position: relative; 
-            z-index: 10000; 
+            z-index: 60; 
             pointer-events: auto !important; 
+            cursor: text;
         } 
         
         .input-box:focus { 
@@ -190,6 +202,8 @@
             align-items: center; 
             justify-content: center; 
             transition: transform 0.2s; 
+            position: relative;
+            z-index: 60;
         } 
         
         /* Responsive */ 
@@ -198,6 +212,11 @@
             .chat-header-blue { padding: 1rem; } 
             .chat-footer { padding: 1rem; } 
         } 
+
+        /* منع أي تداخل من الفوتر العام إذا كان موجوداً */
+        footer {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -235,7 +254,7 @@
                     <div id="typingIndicator" style="padding: 0.5rem 2rem; font-size: 0.8rem; color: #666; display: none;">جاري الرد...</div>
 
                     <div class="chat-footer">
-                        <input type="text" class="input-box" placeholder="اكتب رسالتك هنا..." id="chatInput">
+                        <input type="text" class="input-box" placeholder="اكتب رسالتك هنا..." id="chatInput" autocomplete="off">
                         <button class="action-btn" id="sendBtn">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform: rotate(180deg);"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
                         </button>
