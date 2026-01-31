@@ -128,13 +128,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
+        let responseDelay = parseInt(document.getElementById('responseDelay').value) || 0;
+        
+        // التحقق من القيود برمجياً
+        if (responseDelay < 0) responseDelay = 0;
+        if (responseDelay > 10) responseDelay = 10;
+
         const settings = {
             is_enabled: document.getElementById('botEnabled').checked,
             welcome_message: document.getElementById('welcomeMessage').value,
             ticket_confirmation_message: document.getElementById('ticketMessage').value,
             trigger_keywords: currentKeywords,
             custom_replies: updatedCustomReplies, // الميزة الجديدة
-            response_delay_seconds: parseInt(document.getElementById('responseDelay').value) || 1,
+            response_delay_seconds: responseDelay,
             response_frequency: document.getElementById('responseFrequency').value,
             advanced_first_chat_only: document.getElementById('firstChatOnly').checked,
             advanced_ignore_if_support_online: document.getElementById('ignoreIfOnline').checked,
