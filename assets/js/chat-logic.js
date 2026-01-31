@@ -16,23 +16,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const { data: { user }, error } = await supabase.auth.getUser();
             if (error || !user) {
-                console.warn('Auth error or no user:', error);
-                // محاولة فحص الجلسة كضيف من localStorage كحل بديل
                 const guestSession = localStorage.getItem('mad3oom-guest-session');
                 if (guestSession) {
                     currentUser = JSON.parse(guestSession);
-                    console.log('Using guest session:', currentUser);
                 } else {
                     window.location.href = '/sign-in.html';
                     return;
                 }
             } else {
                 currentUser = user;
-                console.log('User authenticated:', currentUser.id);
             }
         } catch (err) {
             console.error('Auth initialization failed:', err);
-            window.location.href = '/sign-in.html';
         }
     }
 
@@ -42,17 +37,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             const { data, error } = await supabase.from('bot_settings').select('*').limit(1).maybeSingle();
             if (error) throw error;
             botSettings = data;
-            console.log('Bot settings loaded:', botSettings);
         } catch (err) {
             console.error('Error loading bot settings:', err);
         } finally {
-            // إعدادات افتراضية في حال فشل التحميل أو عدم وجود بيانات
             if (!botSettings) {
                 botSettings = {
                     is_enabled: true,
                     welcome_message: 'أهلاً بك في منصة مدعوم! كيف يمكننا مساعدتك اليوم؟',
                     ticket_confirmation_message: 'تم فتح تذكرة دعم وسيتم التواصل معك قريبًا.',
-                    trigger_keywords: ['مشكلة', 'عطل', 'مش شغال', 'problem', 'issue', 'help'],
+                    trigger_keywords: ['مشكلة', 'عطل', 'مش شغال'],
+                    custom_replies: [],
                     response_delay_seconds: 1,
                     response_frequency: 'once'
                 };
@@ -65,9 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type}`;
         const date = new Date(timestamp);
-        const hours = date.getHours();
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const timeStr = `${hours}:${minutes}`;
+        const timeStr = date.getHours() + ":" + date.getMinutes().toString().padStart(2, '0');
         messageDiv.innerHTML = `${text}<span class="message-time">${timeStr}</span>`;
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -88,15 +80,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             botReplyCount++;
             
             if (currentSessionId) {
-                try {
-                    await supabase.from('chat_messages').insert([{
-                        session_id: currentSessionId,
-                        message_text: text,
-                        is_bot_reply: true
-                    }]);
-                } catch (err) {
-                    console.error('Error saving bot reply:', err);
-                }
+                await supabase.from('chat_messages').insert([{
+                    session_id: currentSessionId,
+                    message_text: text,
+                    is_bot_reply: true
+                }]);
             }
         }, delay);
     }
@@ -104,9 +92,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 5. إنشاء أو جلب جلسة المحادثة
     async function getOrCreateSession() {
         if (!currentUser) return;
-        
         try {
-            const { data: sessions, error } = await supabase
+            const { data: sessions } = await supabase
                 .from('chat_sessions')
                 .select('id')
                 .eq('user_id', currentUser.id)
@@ -116,30 +103,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (sessions && sessions.length > 0) {
                 currentSessionId = sessions[0].id;
-                console.log('Existing session found:', currentSessionId);
                 await loadMessages();
             } else {
-                console.log('Creating new session...');
-                const { data: newSession, error: createError } = await supabase
+                const { data: newSession } = await supabase
                     .from('chat_sessions')
                     .insert([{ user_id: currentUser.id }])
                     .select()
                     .single();
                 
-                if (createError) throw createError;
-                
                 if (newSession) {
                     currentSessionId = newSession.id;
-                    console.log('New session created:', currentSessionId);
-                    // إرسال رسالة ترحيب فورية للجلسة الجديدة
                     if (botSettings && botSettings.is_enabled) {
                         sendBotReply(botSettings.welcome_message);
                     }
                 }
             }
         } catch (err) {
-            console.error('Session error:', err);
-            // في حال فشل قاعدة البيانات، نظهر الرسالة الترحيبية على الأقل في الواجهة
             if (botSettings && botSettings.is_enabled && chatMessages.children.length === 0) {
                 sendBotReply(botSettings.welcome_message);
             }
@@ -149,33 +128,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 6. تحميل الرسائل السابقة
     async function loadMessages() {
         if (!currentSessionId) return;
-        
-        try {
-            const { data: messages, error } = await supabase
-                .from('chat_messages')
-                .select('*')
-                .eq('session_id', currentSessionId)
-                .order('created_at', { ascending: true });
+        const { data: messages } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('session_id', currentSessionId)
+            .order('created_at', { ascending: true });
 
-            if (error) throw error;
-
-            if (messages && messages.length > 0) {
-                chatMessages.innerHTML = '';
-                messages.forEach(msg => {
-                    appendMessage(msg.message_text, msg.is_bot_reply ? 'received' : 'sent', msg.created_at);
-                    if (msg.is_bot_reply) botReplyCount++;
-                });
-            } else {
-                // إذا كانت الجلسة موجودة ولكن لا توجد رسائل، أرسل الترحيب
-                if (botSettings && botSettings.is_enabled) {
-                    sendBotReply(botSettings.welcome_message);
-                }
-            }
-        } catch (err) {
-            console.error('Error loading messages:', err);
-            if (botSettings && botSettings.is_enabled && chatMessages.children.length === 0) {
-                sendBotReply(botSettings.welcome_message);
-            }
+        if (messages && messages.length > 0) {
+            chatMessages.innerHTML = '';
+            messages.forEach(msg => {
+                appendMessage(msg.message_text, msg.is_bot_reply ? 'received' : 'sent', msg.created_at);
+                if (msg.is_bot_reply) botReplyCount++;
+            });
+        } else if (botSettings && botSettings.is_enabled) {
+            sendBotReply(botSettings.welcome_message);
         }
     }
 
@@ -183,11 +149,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function handleBotLogic(userText) {
         if (!botSettings || !botSettings.is_enabled) return;
 
-        // التحقق من تكرار الرد إذا كان مضبوطاً على "مرة واحدة"
-        if (botSettings.response_frequency === 'once' && botReplyCount >= 2) return; 
+        // التحقق من تكرار الرد العام إذا كان مضبوطاً على "مرة واحدة"
+        const isOnce = botSettings.response_frequency === 'once';
+        if (isOnce && botReplyCount >= 2) return; 
         
         const lowerText = userText.toLowerCase();
-        const triggerFound = (botSettings.trigger_keywords || []).some(word => lowerText.includes(word.toLowerCase()));
+
+        // أولاً: فحص الردود المخصصة (تدريب البوت)
+        if (botSettings.custom_replies && Array.isArray(botSettings.custom_replies)) {
+            const matchedCustom = botSettings.custom_replies.find(item => 
+                item.trigger && lowerText.includes(item.trigger.toLowerCase())
+            );
+            
+            if (matchedCustom) {
+                await sendBotReply(matchedCustom.response);
+                return; // إذا وجد رد مخصص نكتفي به
+            }
+        }
+
+        // ثانياً: فحص كلمات فتح التذاكر
+        const triggerFound = (botSettings.trigger_keywords || []).some(word => 
+            word && lowerText.includes(word.toLowerCase())
+        );
 
         if (triggerFound) {
             await sendBotReply(botSettings.ticket_confirmation_message);
@@ -226,12 +209,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const text = chatInput.value.trim();
         if (!text) return;
         
-        // إظهار الرسالة في الواجهة فوراً لتحسين تجربة المستخدم
         appendMessage(text, 'sent');
         chatInput.value = '';
 
         if (!currentSessionId) {
-            console.warn('No active session, message not saved to DB');
             handleBotLogic(text);
             return;
         }
@@ -246,17 +227,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (!error) {
                 handleBotLogic(text);
-            } else {
-                console.error('Error saving message to DB:', error);
             }
         } catch (err) {
-            console.error('Send message exception:', err);
-            // استمرار منطق البوت حتى لو فشل الحفظ في القاعدة
             handleBotLogic(text);
         }
     }
 
-    // الأحداث
     if (sendBtn) {
         sendBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -273,12 +249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // التشغيل التسلسلي لضمان الترتيب
-    try {
-        await initAuth();
-        await loadBotSettings();
-        await getOrCreateSession();
-    } catch (err) {
-        console.error('Initialization flow failed:', err);
-    }
+    await initAuth();
+    await loadBotSettings();
+    await getOrCreateSession();
 });
