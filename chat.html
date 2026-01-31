@@ -228,29 +228,6 @@
         </div>
     </main>
 
-    <script>
-        const chatInput = document.getElementById('chatInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const chatMessages = document.getElementById('chatMessages');
-
-        function sendMessage() {
-            const text = chatInput.value.trim();
-            if (text) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message sent';
-                const now = new Date();
-                const timeStr = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
-                messageDiv.innerHTML = `${text}<span class="message-time">${timeStr}</span>`;
-                chatMessages.appendChild(messageDiv);
-                chatInput.value = '';
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-        }
-
-        sendBtn.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-    </script>
+    <script type="module" src="/assets/js/chat-logic.js"></script>
 </body>
 </html>

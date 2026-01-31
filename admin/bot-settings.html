@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات البوت - لوحة الإدارة</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .settings-container { max-width: 900px; margin: 0 auto; }
+        .settings-section { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .settings-section h2 { font-size: 1.25rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid #eee; color: var(--color-primary); }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--color-text-primary); }
+        .form-control { width: 100%; padding: 0.75rem 1rem; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; font-size: 1rem; }
+        .switch-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--color-primary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .keywords-container { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+        .keyword-tag { background: var(--color-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 16px; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+        .keyword-tag span { cursor: pointer; font-weight: bold; }
+        .btn-save { background: var(--color-primary); color: white; border: none; padding: 0.75rem 2rem; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: none; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+    <main class="admin-main">
+        <header class="page-header">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <a href="/admin/settings.html" style="text-decoration: none; color: var(--color-primary); font-weight: bold;">&rarr; عودة</a>
+                <h1>إعدادات البوت الذكي</h1>
+            </div>
+            <p>التحكم الكامل في ردود البوت التلقائية ومنطق فتح التذاكر</p>
+        </header>
+
+        <div class="settings-container">
+            <div id="botAlert" class="alert alert-success">تم حفظ الإعدادات بنجاح!</div>
+            
+            <section class="settings-section">
+                <h2>الحالة العامة</h2>
+                <div class="switch-group">
+                    <div>
+                        <strong>تفعيل البوت</strong>
+                        <p style="font-size: 0.85rem; color: #666; margin: 0;">تشغيل أو إيقاف الردود التلقائية بالكامل</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="botEnabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h2>الرسائل التلقائية</h2>
+                <div class="form-group">
+                    <label for="welcomeMessage">رسالة الترحيب (عند أول رسالة)</label>
+                    <textarea id="welcomeMessage" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="ticketMessage">رسالة تأكيد فتح التذكرة</label>
+                    <textarea id="ticketMessage" class="form-control" rows="3"></textarea>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h2>منطق فتح التذاكر</h2>
+                <div class="form-group">
+                    <label>كلمات تفعيل فتح التذكرة (اضغط Enter للإضافة)</label>
+                    <input type="text" id="keywordInput" class="form-control" placeholder="مثال: مشكلة، عطل، help...">
+                    <div id="keywordsList" class="keywords-container"></div>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h2>إعدادات الاستجابة</h2>
+                <div class="form-group">
+                    <label for="responseDelay">زمن تأخير رد البوت (بالثواني)</label>
+                    <input type="number" id="responseDelay" class="form-control" min="0" max="60">
+                </div>
+                <div class="form-group">
+                    <label for="responseFrequency">تكرار رد البوت</label>
+                    <select id="responseFrequency" class="form-control">
+                        <option value="once">مرة واحدة فقط في المحادثة</option>
+                        <option value="always">مع كل رسالة من المستخدم</option>
+                    </select>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h2>إعدادات متقدمة</h2>
+                <div class="switch-group">
+                    <span>الرد فقط في أول محادثة للمستخدم</span>
+                    <label class="switch">
+                        <input type="checkbox" id="firstChatOnly">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-group">
+                    <span>تجاهل الرد لو الدعم متصل (قريباً)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="ignoreIfOnline">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="switch-group">
+                    <span>منع تكرار فتح التذكرة لنفس المستخدم</span>
+                    <label class="switch">
+                        <input type="checkbox" id="preventDuplicate">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </section>
+
+            <div style="text-align: left; margin-bottom: 3rem;">
+                <button id="saveBotSettings" class="btn-save">حفظ كافة الإعدادات</button>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="/assets/js/admin/bot-settings.js"></script>
+</body>
+</html>
