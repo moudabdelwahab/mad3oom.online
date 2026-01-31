@@ -77,9 +77,16 @@ function setupSidebarLogic(onTabChange) {
     
     const onLogout = async (e) => {
         e.preventDefault();
-        const { logout } = await import('../auth-client.js');
-        await logout();
-        window.location.replace('sign-in.html');
+        try {
+            const { logout } = await import('../auth-client.js');
+            await logout();
+            window.location.replace('sign-in.html');
+        } catch (err) {
+            console.error('Logout failed:', err);
+            // Fallback: try to clear local storage and redirect
+            localStorage.removeItem('mad3oom-guest-session');
+            window.location.replace('sign-in.html');
+        }
     };
 
     if (customerSignOut) customerSignOut.addEventListener('click', onLogout);

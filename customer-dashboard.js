@@ -44,6 +44,52 @@ import {
         if (tabEl) tabEl.click();
     });
 
+    // Badges Logic
+    async function updateBadges() {
+        const stats = await fetchTicketStats();
+        const total = stats.total || 0;
+        
+        if (total >= 1) {
+            const badge = document.getElementById('badge-first-ticket');
+            if (badge) {
+                badge.style.opacity = '1';
+                badge.style.filter = 'grayscale(0)';
+                badge.style.borderColor = 'var(--color-success)';
+                badge.style.boxShadow = '0 0 15px rgba(46, 138, 58, 0.2)';
+            }
+        }
+        
+        if (total >= 10) {
+            const badge = document.getElementById('badge-ten-tickets');
+            if (badge) {
+                badge.style.opacity = '1';
+                badge.style.filter = 'grayscale(0)';
+                badge.style.borderColor = '#f59e0b';
+                badge.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.2)';
+            }
+        }
+    }
+    updateBadges();
+
+    // Rating Logic
+    const stars = document.querySelectorAll('.star-rating .star');
+    const ratingInput = document.getElementById('ticketRatingValue');
+    
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const val = star.getAttribute('data-value');
+            ratingInput.value = val;
+            
+            stars.forEach(s => {
+                if (s.getAttribute('data-value') <= val) {
+                    s.style.opacity = '1';
+                } else {
+                    s.style.opacity = '0.3';
+                }
+            });
+        });
+    });
+
     // Update Sidebar User Info
     const updateSidebarUserInfo = () => {
         const customerInitial = document.getElementById('customerInitial');
@@ -338,6 +384,12 @@ import {
         statusEl.style.background = 'var(--color-muted)';
         
         document.getElementById('detailTicketDescription').textContent = ticket.description;
+
+        // Show rating section if ticket is resolved
+        const ratingSection = document.getElementById('ticketRatingSection');
+        if (ratingSection) {
+            ratingSection.style.display = ticket.status === 'resolved' ? 'block' : 'none';
+        }
 
         modal.classList.add('active');
         await loadReplies(ticket.id);

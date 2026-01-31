@@ -70,6 +70,7 @@
         <div class="nav-tabs">
             <div class="nav-tab active" data-tab="tickets">تذاكري</div>
             <div class="nav-tab" data-tab="rewards">المكافآت والنقاط</div>
+            <div class="nav-tab" data-tab="badges">الشارات</div>
             <div class="nav-tab" data-tab="profile" id="profileTab">الملف الشخصي</div>
             <div class="nav-tab" onclick="window.location.href='/chat-customer.html'">المحادثة الفورية</div>
         </div>
@@ -101,6 +102,34 @@
         <div id="rewardsTabContent" class="tab-content">
             <h1>المكافآت والنقاط</h1>
             <p>سيتم عرض تفاصيل المكافآت والنقاط هنا.</p>
+        </div>
+
+        <!-- Badges Tab -->
+        <div id="badgesTabContent" class="tab-content">
+            <div style="margin-bottom: 2rem;">
+                <h1>شاراتي</h1>
+                <p style="color: var(--color-text-secondary);">اجمع الشارات من خلال تفاعلك مع الدعم الفني</p>
+            </div>
+            <div id="badgesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem;">
+                <!-- Badge: First Ticket -->
+                <div class="badge-card" id="badge-first-ticket" style="background: var(--color-surface); padding: 2rem; border-radius: 1rem; border: 1px solid var(--color-border); text-align: center; opacity: 0.4; filter: grayscale(1); transition: all 0.3s;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🎫</div>
+                    <h3 style="margin-bottom: 0.5rem;">أول تذكرة</h3>
+                    <p style="font-size: 0.85rem; color: var(--color-text-secondary);">تم الحصول عليها عند إنشاء أول تذكرة دعم</p>
+                </div>
+                <!-- Badge: 10 Tickets -->
+                <div class="badge-card" id="badge-ten-tickets" style="background: var(--color-surface); padding: 2rem; border-radius: 1rem; border: 1px solid var(--color-border); text-align: center; opacity: 0.4; filter: grayscale(1); transition: all 0.3s;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🔥</div>
+                    <h3 style="margin-bottom: 0.5rem;">المستخدم النشط</h3>
+                    <p style="font-size: 0.85rem; color: var(--color-text-secondary);">تم الحصول عليها عند إنشاء 10 تذاكر دعم</p>
+                </div>
+                <!-- Badge: Fast Responder -->
+                <div class="badge-card" id="badge-fast-responder" style="background: var(--color-surface); padding: 2rem; border-radius: 1rem; border: 1px solid var(--color-border); text-align: center; opacity: 0.4; filter: grayscale(1); transition: all 0.3s;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">⚡</div>
+                    <h3 style="margin-bottom: 0.5rem;">المتفاعل السريع</h3>
+                    <p style="font-size: 0.85rem; color: var(--color-text-secondary);">تم الحصول عليها عند الرد السريع على التذاكر</p>
+                </div>
+            </div>
         </div>
 
         <!-- Profile Tab -->
@@ -183,6 +212,20 @@
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <textarea id="detailReplyMessage" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; min-height: 80px;" placeholder="اكتب ردك هنا..." required></textarea>
                 </div>
+                
+                <!-- Rating System (Visible when ticket is resolved) -->
+                <div id="ticketRatingSection" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem; border: 1px solid #bae6fd;">
+                    <p style="font-weight: 600; margin-bottom: 0.5rem; color: #0369a1;">كيف تقيم مستوى الخدمة؟</p>
+                    <div class="star-rating" style="display: flex; gap: 0.5rem; font-size: 1.5rem; cursor: pointer;">
+                        <span class="star" data-value="1">⭐</span>
+                        <span class="star" data-value="2">⭐</span>
+                        <span class="star" data-value="3">⭐</span>
+                        <span class="star" data-value="4">⭐</span>
+                        <span class="star" data-value="5">⭐</span>
+                    </div>
+                    <input type="hidden" id="ticketRatingValue" value="0">
+                </div>
+
                 <button type="submit" class="btn btn-primary">إرسال الرد</button>
             </form>
             <button class="btn btn-secondary close-modal" style="margin-top: 1.5rem; width: 100%;">إغلاق</button>
