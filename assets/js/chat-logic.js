@@ -374,6 +374,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // UI Events
     // Fix for input focus issues
+    chatInput?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        chatInput.focus();
+        console.log('Chat input clicked and focused');
+    });
+
     document.querySelector('.chat-footer')?.addEventListener('click', () => {
         chatInput.focus();
     });
