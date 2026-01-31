@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات الحساب - لوحة الإدارة</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/robot.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .settings-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .settings-section h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #eee;
+            color: var(--color-primary);
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+        .avatar-upload {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .avatar-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--color-primary);
+            overflow: hidden;
+            border: 3px solid var(--color-primary);
+        }
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .btn-upload {
+            border: 2px solid #ddd;
+            color: #666;
+            background-color: white;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .btn-save {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-save:hover {
+            opacity: 0.9;
+        }
+        .btn-save:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+
+    <main class="admin-main">
+        <header class="page-header">
+            <h1>إعدادات الحساب</h1>
+            <p>إدارة بياناتك الشخصية وتأمين حسابك</p>
+        </header>
+
+        <div class="settings-container">
+            <div id="settingsAlert" class="alert"></div>
+
+            <!-- Profile Section -->
+            <section class="settings-section">
+                <h2>المعلومات الشخصية</h2>
+                <div class="avatar-upload">
+                    <div class="avatar-preview" id="avatarPreview">
+                        <span id="initialsDisplay">A</span>
+                    </div>
+                    <div class="upload-btn-wrapper">
+                        <button class="btn-upload">تغيير الصورة</button>
+                        <input type="file" id="avatarInput" accept="image/*" />
+                    </div>
+                </div>
+
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label for="fullName">الاسم الكامل</label>
+                        <input type="text" id="fullName" class="form-control" placeholder="أدخل اسمك الكامل">
+                    </div>
+                    <button type="submit" class="btn-save" id="saveProfileBtn">حفظ التغييرات</button>
+                </form>
+            </section>
+
+            <!-- Email Section -->
+            <section class="settings-section">
+                <h2>البريد الإلكتروني</h2>
+                <form id="emailForm">
+                    <div class="form-group">
+                        <label for="email">البريد الإلكتروني الحالي</label>
+                        <input type="email" id="email" class="form-control" readonly style="background: #f8f9fa;">
+                    </div>
+                    <div class="form-group">
+                        <label for="newEmail">البريد الإلكتروني الجديد</label>
+                        <input type="email" id="newEmail" class="form-control" placeholder="أدخل البريد الجديد">
+                    </div>
+                    <button type="submit" class="btn-save" id="saveEmailBtn">تحديث البريد</button>
+                </form>
+            </section>
+
+            <!-- Password Section -->
+            <section class="settings-section">
+                <h2>تغيير كلمة المرور</h2>
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">كلمة المرور الحالية</label>
+                        <input type="password" id="currentPassword" class="form-control" placeholder="********">
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">كلمة المرور الجديدة</label>
+                        <input type="password" id="newPassword" class="form-control" placeholder="********">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">تأكيد كلمة المرور الجديدة</label>
+                        <input type="password" id="confirmPassword" class="form-control" placeholder="********">
+                    </div>
+                    <button type="submit" class="btn-save" id="savePasswordBtn">تحديث كلمة المرور</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <script type="module" src="/assets/js/admin/settings.js"></script>
+</body>
+</html>
