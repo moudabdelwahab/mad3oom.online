@@ -393,16 +393,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.querySelector('.chat-footer')?.addEventListener('click', handleInputFocus);
     
-    sendBtn.onclick = sendMessage;
-    chatInput.onkeypress = (e) => e.key === 'Enter' && sendMessage();
-    closeChatBtn.onclick = () => {
-        if (isAdmin) {
-            views['chat-window'].classList.remove('active');
-            views['customer-chats'].classList.add('active');
-            menuItems.forEach(i => i.classList.remove('active'));
-            document.querySelector('[data-target="customer-chats"]').classList.add('active');
-        }
-    };
+    if (sendBtn) sendBtn.onclick = sendMessage;
+    if (chatInput) chatInput.onkeypress = (e) => e.key === 'Enter' && sendMessage();
+    if (closeChatBtn) {
+        closeChatBtn.onclick = () => {
+            if (isAdmin) {
+                views['chat-window'].classList.remove('active');
+                views['customer-chats'].classList.add('active');
+                menuItems.forEach(i => i.classList.remove('active'));
+                const chatTarget = document.querySelector('[data-target="customer-chats"]');
+                if (chatTarget) chatTarget.classList.add('active');
+            }
+        };
+    }
 
     // Initialize
     await loadBotSettings();
