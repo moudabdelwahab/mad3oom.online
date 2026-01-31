@@ -48,7 +48,7 @@ async function impersonateUser(id) {
     const activityModule = await import('/activity-service.js');
     activityModule.logActivity('impersonate', { target_user_id: id, target_email: targetUser?.email });
     await adminImpersonateUser(id);
-    location.href = '../customer-dashboard.html';
+    location.href = '/customer-dashboard.html';
 }
 
 init();

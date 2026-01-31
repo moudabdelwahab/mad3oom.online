@@ -5,20 +5,20 @@ export async function checkAdminAuth() {
     try {
         const user = await requireAuth('admin');
         if (!user) {
-            window.location.replace('../sign-in.html');
+            window.location.replace('/sign-in.html');
             return null;
         }
         return user;
     } catch (err) {
         console.error('Auth error:', err);
-        window.location.replace('../sign-in.html');
+        window.location.replace('/sign-in.html');
         return null;
     }
 }
 
 export async function handleLogout() {
     await logout();
-    window.location.replace('../sign-in.html');
+    window.location.replace('/sign-in.html');
 }
 
 export function updateAdminUI(user) {

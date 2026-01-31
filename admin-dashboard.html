@@ -5,372 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة الإدارة - مدعوم</title>
     <link rel="icon" type="image/png" href="/assets/images/logo.png">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="robot.css">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/robot.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <!-- مكتبات التصدير -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <style>
-        /* ==================== Admin Dashboard - Professional Blue Palette ==================== */
-        :root {
-            /* Base Color Palette - Professional Blue (Same as Customer Dashboard) */
-            --color-primary: #003366;
-            --color-primary-variant: #0055AA;
-            --color-accent: #0077CC;
-            --color-background: #F5F5F5;
-            --color-surface: #FFFFFF;
-            --color-text: #333333;
-            --color-text-secondary: #777777;
-            --color-muted: #EEEEEE;
-            --color-success: #2E8A3A;
-            --color-warning: #E0A800;
-            --color-danger: #D9534F;
-            --color-border: #DDDDDD;
-            
-            /* Computed Colors */
-            --color-accent-hover: #0055AA;
-            --color-accent-dark: #0055AA;
-            --color-sidebar-bg: #002244;
-            --color-sidebar-active: #0077CC;
-            
-            /* Shadows */
-            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --shadow-glow: 0 0 20px rgba(0, 119, 204, 0.2);
-        }
-
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: var(--color-background);
-            color: var(--color-text);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* ==================== Navigation Bar ==================== */
-        .admin-nav {
-            background: var(--color-primary);
-            border-bottom: 1px solid var(--color-border);
-            padding: 0.75rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-right, .nav-left {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .admin-logo {
-            height: 35px !important;
-            width: auto !important;
-            object-fit: contain;
-        }
-
-        .admin-title {
-            font-weight: 800;
-            font-size: 1.1rem;
-            color: #FFFFFF;
-        }
-
-        /* ==================== Sidebar ==================== */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            right: -280px;
-            width: 280px;
-            height: 100%;
-            background: var(--color-sidebar-bg);
-            color: white;
-            z-index: 2000;
-            transition: all 0.3s ease;
-            box-shadow: -5px 0 15px rgba(0,0,0,0.2);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar.active {
-            right: 0;
-        }
-
-        .sidebar-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1999;
-            display: none;
-            backdrop-filter: blur(2px);
-        }
-
-        .sidebar-overlay.active {
-            display: block;
-        }
-
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .sidebar-close {
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .sidebar-menu {
-            padding: 1rem 0;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .sidebar-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.5rem;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            transition: all 0.2s;
-            font-weight: 600;
-            border-right: 4px solid transparent;
-        }
-
-        .sidebar-item:hover {
-            background: rgba(255,255,255,0.05);
-            color: white;
-            border-right-color: var(--color-accent);
-        }
-
-        .sidebar-item.active {
-            background: rgba(0, 119, 204, 0.15);
-            color: white;
-            border-right-color: var(--color-accent);
-        }
-
-        .sidebar-item svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        /* ==================== Menu Toggle Button ==================== */
-        .menu-toggle {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .menu-toggle:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: white;
-        }
-
-        /* ==================== Admin Badge ==================== */
-        .admin-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: linear-gradient(135deg, var(--color-warning), #FFD700);
-            color: #000;
-            padding: 0.35rem 0.85rem;
-            border-radius: 2rem;
-            font-weight: 800;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(224, 168, 0, 0.3);
-            animation: adminPulse 2s infinite;
-        }
-
-        @keyframes adminPulse {
-            0% { box-shadow: 0 0 0 0 rgba(224, 168, 0, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(224, 168, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(224, 168, 0, 0); }
-        }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .nav-btn {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #FFFFFF;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .nav-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: #FFFFFF;
-        }
-
-        .avatar-circle {
-            width: 35px;
-            height: 35px;
-            background: var(--color-accent);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-        }
-
-        .nav-avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        /* ==================== Buttons ==================== */
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: 'Cairo', sans-serif;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .btn-primary { background: var(--color-accent); color: #FFFFFF; }
-        .btn-primary:hover { background: var(--color-accent-hover); box-shadow: var(--shadow-glow); }
-        .btn-secondary { background: var(--color-muted); color: var(--color-text); border: 1px solid var(--color-border); }
-        .btn-secondary:hover { background: var(--color-border); }
-        .btn-danger { background: var(--color-danger); color: #FFFFFF; }
-        .btn-danger:hover { background: #c9302c; }
-        .btn-warning { background: var(--color-warning); color: #FFFFFF; }
-        .btn-success { background: var(--color-success); color: #FFFFFF; }
-        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 0.4rem; }
-
-        /* ==================== Tables ==================== */
-        .table-container {
-            background: var(--color-surface);
-            border-radius: 1rem;
-            border: 1px solid var(--color-border);
-            overflow: hidden;
-            margin-top: 1.5rem;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: right;
-        }
-
-        .admin-table th {
-            background: #F8FAFC;
-            padding: 1rem;
-            font-weight: 700;
-            border-bottom: 1px solid var(--color-border);
-        }
-
-        .admin-table td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--color-border);
-        }
-
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 2rem;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .status-open { background: #E3F2FD; color: #1976D2; }
-        .status-resolved { background: #E8F5E9; color: #2E7D32; }
-
-        /* ==================== Stats Grid ==================== */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: var(--color-surface);
-            padding: 1.5rem;
-            border-radius: 1rem;
-            border: 1px solid var(--color-border);
-            display: flex;
-            align-items: center;
-            gap: 1.25rem;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        /* ==================== Main Content ==================== */
-        .admin-main {
-            flex: 1;
-            padding: 2rem 1.5rem;
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-            box-sizing: border-box;
-        }
-    </style>
 </head>
 <body>
-<div id="sidebar-container"></div>
+    <div id="sidebar-container"></div>
 
     <main class="admin-main">
-        <header style="margin-bottom: 2rem;">
+        <header class="page-header">
             <h1 style="font-weight: 800; font-size: 1.75rem; margin: 0;">لوحة التحكم</h1>
             <p style="color: var(--color-text-secondary); margin-top: 0.5rem;">نظرة عامة على نشاط النظام</p>
         </header>
@@ -380,33 +28,36 @@
                 <div class="stat-icon" style="background: #E3F2FD; color: #1976D2;">
                     <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                 </div>
-                <div>
+                <div class="stat-info">
                     <div style="font-size: 0.9rem; color: var(--color-text-secondary);">إجمالي التذاكر</div>
-                    <div style="font-size: 1.5rem; font-weight: 800;" id="admTotal">0</div>
+                    <div class="stat-value" id="admTotal">0</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background: #FFF3E0; color: #F57C00;">
                     <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                 </div>
-                <div>
+                <div class="stat-info">
                     <div style="font-size: 0.9rem; color: var(--color-text-secondary);">تذاكر مفتوحة</div>
-                    <div style="font-size: 1.5rem; font-weight: 800;" id="admOpen">0</div>
+                    <div class="stat-value" id="admOpen">0</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="background: #E8F5E9; color: #2E7D32;">
                     <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
-                <div>
+                <div class="stat-info">
                     <div style="font-size: 0.9rem; color: var(--color-text-secondary);">تذاكر مكتملة</div>
-                    <div style="font-size: 1.5rem; font-weight: 800;" id="admResolved">0</div>
+                    <div class="stat-value" id="admResolved">0</div>
                 </div>
             </div>
         </div>
 
         <div class="section-card">
-            <h2 style="font-weight: 700; font-size: 1.25rem; margin-bottom: 1rem;">آخر التذاكر</h2>
+            <div class="section-header">
+                <h2 class="section-title">آخر التذاكر</h2>
+                <a href="/admin/tickets.html" class="btn btn-secondary btn-sm">عرض الكل</a>
+            </div>
             <div class="table-container">
                 <table class="admin-table">
                     <thead>

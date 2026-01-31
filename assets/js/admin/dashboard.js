@@ -12,36 +12,8 @@ async function init() {
     if (!user) return;
 
     updateAdminUI(user);
-    setupEventListeners();
     renderTickets();
     subscribeToTickets(() => renderTickets());
-}
-
-function setupEventListeners() {
-    const adminAvatarBtn = document.getElementById('adminAvatarBtn');
-    const adminAvatarMenu = document.getElementById('adminAvatarMenu');
-    const adminSignOut = document.getElementById('adminSignOut');
-
-    if (adminAvatarBtn && adminAvatarMenu) {
-        // Since sidebar is loaded dynamically, we might need to delegate or wait
-        // But for now, we'll try to attach if they exist, or use delegation on document
-        document.addEventListener('click', (e) => {
-            const btn = e.target.closest('#adminAvatarBtn');
-            if (btn) {
-                e.stopPropagation();
-                adminAvatarMenu.style.display = adminAvatarMenu.style.display === 'block' ? 'none' : 'block';
-            } else {
-                adminAvatarMenu.style.display = 'none';
-            }
-        });
-    }
-
-    document.addEventListener('click', async (e) => {
-        if (e.target.id === 'adminSignOut') {
-            e.preventDefault();
-            await handleLogout();
-        }
-    });
 }
 
 async function renderTickets() {
@@ -52,7 +24,7 @@ async function renderTickets() {
         .from('tickets')
         .select('*, profiles(full_name, email)')
         .order('created_at', { ascending: false })
-        .limit(10); // Only show recent for dashboard
+        .limit(10); 
 
     body.innerHTML = tickets?.map(t => `
         <tr>
@@ -64,7 +36,6 @@ async function renderTickets() {
         </tr>
     `).join('') || '<tr><td colspan="5">لا توجد تذاكر</td></tr>';
 
-    // Add listeners for impersonate buttons
     document.querySelectorAll('.impersonate-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const userId = btn.getAttribute('data-user-id');
@@ -87,7 +58,7 @@ async function impersonateUser(id) {
     const activityModule = await import('/activity-service.js');
     activityModule.logActivity('impersonate', { target_user_id: id, target_email: targetUser?.email });
     await adminImpersonateUser(id);
-    location.href = '../customer-dashboard.html';
+    location.href = '/customer-dashboard.html';
 }
 
 init();

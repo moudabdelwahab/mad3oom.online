@@ -19,15 +19,18 @@ async function renderActivityLog() {
 
     const { data: activities } = await supabase
         .from('activity_log')
-        .select('*')
+        .select('*, profiles(full_name, email)')
         .order('created_at', { ascending: false })
         .limit(50);
 
     body.innerHTML = activities?.map(a => `
         <tr>
-            <td>${a.user_id}</td>
-            <td>${a.action}</td>
-            <td><pre style="font-size: 0.75rem; margin: 0;">${JSON.stringify(a.details)}</pre></td>
+            <td>
+                <div style="font-weight: 600;">${a.profiles?.full_name || a.user_id}</div>
+                <div style="font-size: 0.8rem; color: var(--color-text-secondary);">${a.profiles?.email || ''}</div>
+            </td>
+            <td><span class="status-badge status-pending">${a.action}</span></td>
+            <td><pre style="font-size: 0.75rem; margin: 0; white-space: pre-wrap; word-break: break-all;">${JSON.stringify(a.details)}</pre></td>
             <td>${new Date(a.created_at).toLocaleString('ar-EG')}</td>
         </tr>
     `).join('') || '<tr><td colspan="4" style="text-align: center; padding: 2rem;">لا توجد سجلات نشاط</td></tr>';

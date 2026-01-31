@@ -1,50 +1,26 @@
 import { supabase } from '/api-config.js';
-import { requireAuth, logout, adminImpersonateUser } from '/auth-client.js';
+import { checkAdminAuth, updateAdminUI, handleLogout } from './auth.js';
 import { fetchTicketStats, subscribeToTickets } from '/tickets-service.js';
 import { initSidebar } from './sidebar.js';
+import { adminImpersonateUser } from '/auth-client.js';
 
 let user = null;
 
 async function init() {
     initSidebar();
-    setupEventListeners();
-    try {
-        user = await requireAuth('admin');
-        if (!user) return; 
-        
-        updateUIWithUserData();
-        renderTickets();
-        subscribeToTickets(() => renderTickets());
-    } catch (err) {
-        console.error('Init error:', err);
-    }
-}
-
-function updateUIWithUserData() {
-    if (user) {
-        const profile = user.profile || {};
-        const adminInitial = document.getElementById('adminInitial');
-        const adminBadgeContainer = document.getElementById('adminBadgeContainer');
-        const adminAvatarBtn = document.getElementById('adminAvatarBtn');
-
-        if (adminInitial) adminInitial.textContent = (profile.full_name || user.email).charAt(0).toUpperCase();
-        if (profile.role === 'admin' && adminBadgeContainer) adminBadgeContainer.style.display = 'block';
-        
-        if (profile.avatar_url && adminAvatarBtn) {
-            const navAvatar = document.createElement('img');
-            navAvatar.src = profile.avatar_url;
-            navAvatar.className = 'nav-avatar';
-            adminAvatarBtn.innerHTML = '';
-            adminAvatarBtn.appendChild(navAvatar);
-        }
-    }
+    user = await checkAdminAuth();
+    if (!user) return; 
+    
+    updateAdminUI(user);
+    renderTickets();
+    subscribeToTickets(() => renderTickets());
 }
 
 async function renderTickets() {
     const body = document.getElementById('admTicketsBody');
     if (!body) return;
 
-    const { data: tickets } = await supabase.from('tickets').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+    const { data: tickets } = await supabase.from('tickets').select('*, profiles(full_name, email)').order('created_at', { ascending: false }).limit(10);
     
     body.innerHTML = tickets?.map(t => `
         <tr>
@@ -56,7 +32,6 @@ async function renderTickets() {
         </tr>
     `).join('') || '<tr><td colspan="5">لا توجد تذاكر</td></tr>';
 
-    // Add event listeners to the buttons since we removed inline onclick
     document.querySelectorAll('.impersonate-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const userId = btn.getAttribute('data-user-id');
@@ -72,29 +47,6 @@ async function renderTickets() {
     if (totalEl) totalEl.textContent = stats.total;
     if (openEl) openEl.textContent = stats.open;
     if (resolvedEl) resolvedEl.textContent = stats.resolved;
-}
-
-function setupEventListeners() {
-    // We use event delegation or wait for sidebar to load for elements inside it
-    document.addEventListener('click', async (e) => {
-        // Avatar Menu Toggle
-        const avatarBtn = e.target.closest('#adminAvatarBtn');
-        const avatarMenu = document.getElementById('adminAvatarMenu');
-        
-        if (avatarBtn && avatarMenu) {
-            e.stopPropagation();
-            avatarMenu.style.display = avatarMenu.style.display === 'block' ? 'none' : 'block';
-        } else if (avatarMenu) {
-            avatarMenu.style.display = 'none';
-        }
-
-        // Sign Out
-        if (e.target.id === 'adminSignOut' || e.target.id === 'sidebarSignOut' || e.target.closest('#sidebarSignOut')) {
-            e.preventDefault();
-            await logout();
-            window.location.replace('sign-in.html');
-        }
-    });
 }
 
 async function impersonateUser(id) { 

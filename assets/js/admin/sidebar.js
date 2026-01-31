@@ -2,14 +2,15 @@ export function initSidebar() {
     const sidebarContainer = document.getElementById('sidebar-container');
     if (!sidebarContainer) return;
 
-    // Load sidebar HTML
+    // Load sidebar HTML - Use absolute path to ensure it works from any directory
     fetch('/assets/components/sidebar.html')
         .then(response => response.text())
         .then(html => {
             sidebarContainer.innerHTML = html;
             setupSidebarLogic();
             highlightActiveLink();
-        });
+        })
+        .catch(err => console.error('Error loading sidebar:', err));
 }
 
 function setupSidebarLogic() {
@@ -54,6 +55,7 @@ function setupSidebarLogic() {
     
     const onLogout = async (e) => {
         e.preventDefault();
+        // Dynamic import to avoid circular dependency
         const { handleLogout } = await import('./auth.js');
         await handleLogout();
     };
@@ -68,7 +70,17 @@ function highlightActiveLink() {
     
     sidebarItems.forEach(item => {
         const href = item.getAttribute('href');
-        if (currentPath.endsWith(href) || (currentPath.endsWith('/admin-dashboard.html') && href === '/admin-dashboard.html')) {
+        if (!href || href === '#') return;
+
+        // Clean paths for comparison
+        const cleanPath = currentPath.replace(/\/$/, '');
+        const cleanHref = href.replace(/\/$/, '');
+
+        // Check if current path ends with href or if it's the dashboard
+        if (cleanPath.endsWith(cleanHref) || 
+           (cleanPath === '' && cleanHref === '/admin-dashboard.html') ||
+           (cleanPath.endsWith('/admin/') && cleanHref.endsWith('/admin/dashboard.html')) ||
+           (cleanPath.endsWith('/admin/dashboard.html') && cleanHref.endsWith('/admin-dashboard.html'))) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
