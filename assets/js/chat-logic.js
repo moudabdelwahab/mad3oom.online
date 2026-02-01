@@ -21,14 +21,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const chatHeaderStatus = document.getElementById('chatHeaderStatus');
     const chatHeaderImg = document.getElementById('chatHeaderImg');
     const closeChatBtn = document.getElementById('closeChatBtn');
+    const endChatBtn = document.getElementById('endChatBtn');
+
+    // Rating Modal Elements
+    const ratingModal = document.getElementById('ratingModal');
+    const stars = document.querySelectorAll('.star');
+    const submitRatingBtn = document.getElementById('submitRatingBtn');
+    const ratingComment = document.getElementById('ratingComment');
 
     let currentUser = null;
     let isAdmin = false;
     let currentSessionId = null;
+    let currentTicketId = null;
     let botSettings = null;
     let currentKeywords = [];
     let customReplies = [];
     let isTestMode = false;
+    let selectedRating = 0;
 
     // 1. Initialize Auth
     async function initAuth() {
@@ -49,8 +58,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 currentUser = JSON.parse(guestData);
                 setupUserChat();
             } else if (window.isCustomerChat) {
-                const tempGuestId = 'guest-' + Math.random().toString(36).substr(2, 9);
-                currentUser = { id: tempGuestId, email: 'guest@mad3oom.online', isGuest: true };
+                // Create a persistent guest ID if not exists
+                let guestId = localStorage.getItem('mad3oom-guest-id');
+                if (!guestId) {
+                    guestId = 'guest-' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('mad3oom-guest-id', guestId);
+                }
+                currentUser = { id: guestId, email: 'guest@mad3oom.online', isGuest: true };
                 setupUserChat();
             } else {
                 window.location.href = '/sign-in.html';
@@ -129,6 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         if (views['chat-window']) views['chat-window'].classList.add('active');
         loadMessages();
+        subscribeToMessages();
     }
 
     function setupTestChat() {
@@ -151,25 +166,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function setupUserChat() {
         const isRealUser = currentUser.id && currentUser.id.length > 20;
 
-        if (isRealUser) {
-            const { data: session } = await supabase.from('chat_sessions').select('id').eq('user_id', currentUser.id).eq('status', 'active').maybeSingle();
-            if (session) {
-                currentSessionId = session.id;
-            } else {
-                const { data: newS, error } = await supabase.from('chat_sessions').insert([{ user_id: currentUser.id }]).select().single();
-                if (!error && newS) currentSessionId = newS.id;
-            }
+        // Try to find an active session for this user (real or guest)
+        const { data: session } = await supabase
+            .from('chat_sessions')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .eq('status', 'active')
+            .maybeSingle();
+
+        if (session) {
+            currentSessionId = session.id;
+            // Check if there's an open ticket for this session
+            const { data: ticket } = await supabase
+                .from('tickets')
+                .select('id')
+                .eq('chat_session_id', currentSessionId)
+                .eq('status', 'open')
+                .maybeSingle();
+            if (ticket) currentTicketId = ticket.id;
         } else {
-            currentSessionId = 'guest-session-' + currentUser.id;
-            isTestMode = true;
+            const { data: newS, error } = await supabase
+                .from('chat_sessions')
+                .insert([{ user_id: currentUser.id, status: 'active' }])
+                .select()
+                .single();
+            if (!error && newS) currentSessionId = newS.id;
         }
         
         if (views['chat-window']) views['chat-window'].classList.add('active');
         loadMessages();
+        subscribeToMessages();
         
-        if (chatMessages && chatMessages.children.length === 0 && botSettings && botSettings.is_enabled) {
-            appendMessage(botSettings.welcome_message, 'received', new Date(), true);
-        }
+        // Send welcome message if chat is empty
+        setTimeout(() => {
+            if (chatMessages && chatMessages.children.length === 0 && botSettings && botSettings.is_enabled) {
+                appendMessage(botSettings.welcome_message, 'received', new Date(), true);
+            }
+        }, 1000);
     }
 
     // 4. Settings Logic
@@ -317,13 +350,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 5. Chat Messaging Core
     function appendMessage(text, type, timestamp = new Date(), isBot = false) {
         if (!chatMessages) return;
+        
+        // Check if message already exists to avoid duplicates from Realtime
+        const existingMsgs = Array.from(chatMessages.querySelectorAll('.msg-text')).map(m => m.innerText);
+        if (existingMsgs.includes(text)) return;
+
         const messageDiv = document.createElement('div');
         messageDiv.className = `msg ${type}`;
         if (isBot) messageDiv.style.borderRight = '4px solid #003366';
         
         const date = new Date(timestamp);
         const timeStr = date.getHours() + ":" + date.getMinutes().toString().padStart(2, '0');
-        messageDiv.innerHTML = `${text}<span style="display:block; font-size:0.7rem; opacity:0.6; margin-top:0.3rem;">${timeStr}</span>`;
+        messageDiv.innerHTML = `<span class="msg-text">${text}</span><span style="display:block; font-size:0.7rem; opacity:0.6; margin-top:0.3rem;">${timeStr}</span>`;
         
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -339,6 +377,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 appendMessage(msg.message_text, type, msg.created_at, msg.is_bot_reply);
             });
         }
+    }
+
+    function subscribeToMessages() {
+        if (!currentSessionId || isTestMode) return;
+        
+        supabase
+            .channel(`chat:${currentSessionId}`)
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'chat_messages',
+                filter: `session_id=eq.${currentSessionId}`
+            }, payload => {
+                const msg = payload.new;
+                if (msg.sender_id !== currentUser.id) {
+                    appendMessage(msg.message_text, 'received', msg.created_at, msg.is_bot_reply);
+                }
+            })
+            .subscribe();
     }
 
     async function sendMessage() {
@@ -379,12 +436,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (currentKeywords.some(k => lowerText.includes(k.toLowerCase()))) {
             sendBotReply(botSettings.ticket_confirmation_message);
             if (!isTestMode) {
-                await supabase.from('tickets').insert([{
-                    user_id: currentUser.id,
-                    title: 'تذكرة تلقائية',
-                    description: userText,
-                    status: 'open'
-                }]);
+                // Get all messages in current session to include in ticket description
+                const { data: messages } = await supabase
+                    .from('chat_messages')
+                    .select('message_text, is_bot_reply, created_at')
+                    .eq('session_id', currentSessionId)
+                    .order('created_at', { ascending: true });
+                
+                let fullConversation = "محتوى المحادثة:\n";
+                if (messages) {
+                    messages.forEach(m => {
+                        const sender = m.is_bot_reply ? "البوت" : "العميل";
+                        fullConversation += `[${sender}]: ${m.message_text}\n`;
+                    });
+                }
+
+                // Get last ticket number
+                const { data: lastTicket } = await supabase.from('tickets').select('ticket_number').order('ticket_number', { ascending: false }).limit(1).maybeSingle();
+                const nextNumber = (lastTicket?.ticket_number || 0) + 1;
+
+                const { data: ticket, error } = await supabase.from('tickets').insert([{
+                    user_id: currentUser.id.includes('guest') ? null : currentUser.id,
+                    title: 'تذكرة تلقائية من المحادثة',
+                    description: fullConversation,
+                    status: 'open',
+                    chat_session_id: currentSessionId,
+                    ticket_number: nextNumber
+                }]).select().single();
+
+                if (!error && ticket) {
+                    currentTicketId = ticket.id;
+                }
             }
         }
     }
@@ -406,6 +488,89 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }]);
             }
         }, (botSettings.response_delay_seconds || 1) * 1000);
+    }
+
+    // 6. End Chat & Rating Logic
+    if (endChatBtn) {
+        endChatBtn.onclick = () => {
+            if (ratingModal) ratingModal.style.display = 'flex';
+        };
+    }
+
+    stars.forEach(star => {
+        star.onclick = () => {
+            selectedRating = parseInt(star.dataset.value);
+            stars.forEach(s => {
+                if (parseInt(s.dataset.value) <= selectedRating) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        };
+    });
+
+    if (submitRatingBtn) {
+        submitRatingBtn.onclick = async () => {
+            if (selectedRating === 0) {
+                alert('يرجى اختيار تقييم أولاً');
+                return;
+            }
+
+            submitRatingBtn.disabled = true;
+            submitRatingBtn.innerText = 'جاري الإرسال...';
+
+            try {
+                // 1. Close the chat session
+                await supabase.from('chat_sessions').update({ status: 'closed' }).eq('id', currentSessionId);
+
+                // 2. Update ticket with rating if exists
+                if (currentTicketId) {
+                    await supabase.from('tickets').update({
+                        rating: selectedRating,
+                        rating_comment: ratingComment.value,
+                        status: 'resolved' // Mark as resolved when chat ends
+                    }).eq('id', currentTicketId);
+                } else {
+                    // If no ticket was opened by keyword, open one now to save the rating and conversation
+                    const { data: messages } = await supabase
+                        .from('chat_messages')
+                        .select('message_text, is_bot_reply')
+                        .eq('session_id', currentSessionId)
+                        .order('created_at', { ascending: true });
+                    
+                    let fullConversation = "محتوى المحادثة عند الإغلاق:\n";
+                    if (messages) {
+                        messages.forEach(m => {
+                            const sender = m.is_bot_reply ? "البوت" : "العميل";
+                            fullConversation += `[${sender}]: ${m.message_text}\n`;
+                        });
+                    }
+
+                    const { data: lastTicket } = await supabase.from('tickets').select('ticket_number').order('ticket_number', { ascending: false }).limit(1).maybeSingle();
+                    const nextNumber = (lastTicket?.ticket_number || 0) + 1;
+
+                    await supabase.from('tickets').insert([{
+                        user_id: currentUser.id.includes('guest') ? null : currentUser.id,
+                        title: 'محادثة منتهية وتقييم',
+                        description: fullConversation,
+                        status: 'resolved',
+                        chat_session_id: currentSessionId,
+                        rating: selectedRating,
+                        rating_comment: ratingComment.value,
+                        ticket_number: nextNumber
+                    }]);
+                }
+
+                alert('شكراً لتقييمك! تم إنهاء المحادثة.');
+                window.location.href = '/customer-dashboard.html';
+            } catch (err) {
+                console.error('Error ending chat:', err);
+                alert('حدث خطأ أثناء إنهاء المحادثة');
+                submitRatingBtn.disabled = false;
+                submitRatingBtn.innerText = 'إرسال التقييم';
+            }
+        };
     }
 
     // UI Events

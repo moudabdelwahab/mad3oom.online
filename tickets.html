@@ -52,9 +52,12 @@
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 700; }
         .status-open { background: #FFF3CD; color: #856404; }
         .status-resolved { background: #D4EDDA; color: #155724; }
-        .btn { padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer; font-family: 'Cairo'; }
+        .status-in_progress { background: #E0F2F1; color: #00796B; }
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 0.5rem; cursor: pointer; font-family: 'Cairo'; text-decoration: none; display: inline-block; font-size: 0.85rem; }
         .btn-primary { background: var(--color-accent); color: white; }
+        .btn-outline { border: 1px solid var(--color-accent); color: var(--color-accent); background: transparent; }
         .avatar-circle { width: 35px; height: 35px; background: var(--color-accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .rating-stars { color: #ffcc00; font-size: 1.1rem; }
     </style>
 </head>
 <body>
@@ -66,12 +69,12 @@
         </div>
         <nav class="sidebar-menu">
             <a href="tickets.html" class="sidebar-item active">إدارة التذاكر</a>
+            <a href="chat-admin.html" class="sidebar-item">محادثات العملاء</a>
             <a href="rewards.html" class="sidebar-item">إدارة المكافآت</a>
             <a href="users.html" class="sidebar-item">المستخدمين</a>
             <a href="banned.html" class="sidebar-item">المحظورين</a>
             <a href="stats.html" class="sidebar-item">الإحصائيات</a>
             <a href="activity-log.html" class="sidebar-item">سجل النشاطات</a>
-            <a href="profile.html" class="sidebar-item">الملف الشخصي</a>
         </nav>
     </aside>
 
@@ -96,8 +99,8 @@
         </div>
         <div class="table-container">
             <table>
-                <thead><tr><th>العميل</th><th>الموضوع</th><th>الحالة</th><th>التاريخ</th><th>الإجراء</th></tr></thead>
-                <tbody id="admTicketsBody"><tr><td colspan="5" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr></tbody>
+                <thead><tr><th>العميل</th><th>الموضوع</th><th>الحالة</th><th>التقييم</th><th>التاريخ</th><th>الإجراء</th></tr></thead>
+                <tbody id="admTicketsBody"><tr><td colspan="6" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr></tbody>
             </table>
         </div>
     </main>
@@ -127,16 +130,34 @@
         }
 
         async function renderTickets() {
-            const { data: tickets } = await supabase.from('tickets').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
-            document.getElementById('admTicketsBody').innerHTML = tickets?.map(t => `
+            const { data: tickets } = await supabase
+                .from('tickets')
+                .select('*, profiles(full_name, email)')
+                .order('created_at', { ascending: false });
+
+            document.getElementById('admTicketsBody').innerHTML = tickets?.map(t => {
+                const ratingHtml = t.rating ? `<div class="rating-stars">${'★'.repeat(t.rating)}${'☆'.repeat(5-t.rating)}</div>` : '<span style="color:#999; font-size:0.8rem;">لا يوجد</span>';
+                const statusLabel = t.status === 'open' ? 'مفتوحة' : (t.status === 'resolved' ? 'محلولة' : 'قيد التنفيذ');
+                
+                return `
                 <tr>
-                    <td>${t.profiles?.full_name || 'مستخدم'}</td>
-                    <td>${t.title}</td>
-                    <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+                    <td>
+                        <div style="font-weight:700;">${t.profiles?.full_name || 'مستخدم ضيف'}</div>
+                        <div style="font-size:0.75rem; color:#666;">${t.profiles?.email || 'بدون بريد'}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight:600;">${t.title}</div>
+                        <div style="font-size:0.75rem; color:#888; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.description}</div>
+                    </td>
+                    <td><span class="status-badge status-${t.status}">${statusLabel}</span></td>
+                    <td>${ratingHtml}</td>
                     <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
-                    <td><button class="btn btn-primary" onclick="impersonateUser('${t.user_id}')">دخول</button></td>
+                    <td style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-primary" onclick="impersonateUser('${t.user_id}')">دخول</button>
+                        ${t.chat_session_id ? `<a href="chat-admin.html" class="btn btn-outline">المحادثة</a>` : ''}
+                    </td>
                 </tr>
-            `).join('') || '<tr><td colspan="5">لا توجد تذاكر</td></tr>';
+            `}).join('') || '<tr><td colspan="6">لا توجد تذاكر</td></tr>';
             
             const stats = await fetchTicketStats();
             document.getElementById('admTotal').textContent = stats.total;
@@ -145,6 +166,10 @@
         }
 
         window.impersonateUser = async (id) => {
+            if (!id) {
+                alert('لا يمكن الدخول لحساب ضيف');
+                return;
+            }
             await adminImpersonateUser(id);
             location.href = 'customer-dashboard.html';
         };

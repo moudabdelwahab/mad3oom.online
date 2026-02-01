@@ -11,6 +11,7 @@
         :root { 
             --chat-bg: #f4f7f6; 
             --header-height: 70px; 
+            --primary-blue: #003366;
         } 
         
         body { 
@@ -61,7 +62,7 @@
         } 
         
         .nav-logo-area img { height: 40px; } 
-        .nav-logo-area span { font-weight: 800; color: var(--color-primary); font-size: 1.2rem; } 
+        .nav-logo-area span { font-weight: 800; color: var(--primary-blue); font-size: 1.2rem; } 
         
         /* View Containers */ 
         .view-container { 
@@ -90,7 +91,7 @@
         } 
         
         .chat-header-blue { 
-            background: #003366; 
+            background: var(--primary-blue); 
             color: white; 
             padding: 1.25rem 2rem; 
             display: flex; 
@@ -145,7 +146,7 @@
         
         .msg.sent { 
             align-self: flex-end; 
-            background: #003366; 
+            background: var(--primary-blue); 
             color: white; 
             border-bottom-left-radius: 0.2rem; 
         } 
@@ -182,12 +183,12 @@
         } 
         
         .input-box:focus { 
-            border-color: #003366; 
+            border-color: var(--primary-blue); 
             background: white; 
         } 
         
         .action-btn { 
-            background: #003366; 
+            background: var(--primary-blue); 
             color: white; 
             width: 45px; 
             height: 45px; 
@@ -200,6 +201,86 @@
             transition: transform 0.2s; 
             flex-shrink: 0;
         } 
+
+        .end-chat-btn {
+            background: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+
+        .end-chat-btn:hover {
+            background: #e60000;
+        }
+        
+        /* Rating Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .stars-container {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+            direction: ltr;
+        }
+
+        .star {
+            font-size: 2rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .star.active {
+            color: #ffcc00;
+        }
+
+        .rating-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-family: inherit;
+            resize: none;
+        }
+
+        .submit-rating-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
         
         /* Responsive */ 
         @media (max-width: 768px) { 
@@ -238,6 +319,7 @@
                                 <span style="font-size: 0.8rem; opacity: 0.8;" id="chatHeaderStatus">متصل الآن</span>
                             </div>
                         </div>
+                        <button id="endChatBtn" class="end-chat-btn">إنهاء المحادثة</button>
                     </div>
 
                     <div class="chat-body" id="chatMessages"></div>
@@ -253,6 +335,26 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Rating Modal -->
+    <div id="ratingModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: var(--primary-blue);">تقييم المحادثة</h3>
+            <p style="color: #666; font-size: 0.9rem;">كيف كانت تجربتك مع الدعم الفني؟</p>
+            
+            <div class="stars-container" id="starsContainer">
+                <span class="star" data-value="1">★</span>
+                <span class="star" data-value="2">★</span>
+                <span class="star" data-value="3">★</span>
+                <span class="star" data-value="4">★</span>
+                <span class="star" data-value="5">★</span>
+            </div>
+
+            <textarea id="ratingComment" class="rating-textarea" rows="3" placeholder="أضف تعليقك هنا (اختياري)..."></textarea>
+            
+            <button id="submitRatingBtn" class="submit-rating-btn">إرسال التقييم</button>
+        </div>
     </div>
 
     <script type="module" src="/assets/js/chat-logic.js"></script>
