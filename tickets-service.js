@@ -144,6 +144,18 @@ export function subscribeToTickets(callback) {
 }
 
 /**
+ * الاشتراك في التحديثات التلقائية لردود تذكرة معينة
+ */
+export function subscribeToTicketReplies(ticketId, callback) {
+    return supabase
+        .channel(`public:ticket_replies:ticket_id=eq.${ticketId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_replies', filter: `ticket_id=eq.${ticketId}` }, payload => {
+            callback(payload);
+        })
+        .subscribe();
+}
+
+/**
  * جلب إحصائيات التذاكر
  */
 export async function fetchTicketStats() {
@@ -197,6 +209,42 @@ export async function updateTicketStatus(ticketId, status) {
         });
         await logActivity('status_change', { ticket_id: ticketId, new_status: status });
     }
+}
+
+/**
+ * إغلاق التذكرة مع تعليق للعميل
+ */
+export async function closeTicketWithComment(ticketId, closingComment) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data: ticket } = await supabase.from('tickets').select('*').eq('id', ticketId).single();
+    
+    if (!ticket) throw new Error('التذكرة غير موجودة');
+
+    // إضافة التعليق الختامي للعميل
+    if (closingComment && closingComment.trim()) {
+        await addTicketReply(ticketId, closingComment, false);
+    }
+
+    // تحديث حالة التذكرة إلى resolved
+    const { error } = await supabase
+        .from('tickets')
+        .update({ status: 'resolved' })
+        .eq('id', ticketId);
+
+    if (error) throw error;
+
+    // إشعار للعميل بإغلاق التذكرة
+    await createNotification({
+        userId: ticket.user_id,
+        title: 'تم إغلاق التذكرة',
+        message: `تم إغلاق تذكرتك #${ticket.ticket_number}`,
+        type: 'success',
+        link: `customer-dashboard.html?ticket=${ticket.id}`
+    });
+
+    await logActivity('ticket_closed', { ticket_id: ticketId, ticket_number: ticket.ticket_number });
 }
 
 /**

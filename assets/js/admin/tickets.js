@@ -1,11 +1,12 @@
 import { supabase } from '/api-config.js';
 import { checkAdminAuth, updateAdminUI } from './auth.js';
 import { initSidebar } from './sidebar.js';
-import { subscribeToTickets, updateTicketStatus, addTicketReply, fetchTicketReplies } from '/tickets-service.js';
+import { subscribeToTickets, subscribeToTicketReplies, updateTicketStatus, addTicketReply, fetchTicketReplies, closeTicketWithComment } from '/tickets-service.js';
 import { adminImpersonateUser } from '/auth-client.js';
 
 let user = null;
 let currentTicketId = null;
+let repliesSubscription = null;
 
 async function init() {
     initSidebar();
@@ -49,7 +50,7 @@ async function renderTickets() {
                 <td><span class="status-badge status-${t.status}">${statusMap[t.status] || t.status}</span></td>
                 <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
                 <td>
-                    <button class="btn btn-primary btn-sm view-ticket-btn" data-id="${t.id}">عرض التذكرة</button>
+                    <button class="btn btn-primary btn-sm view-ticket-btn" data-id="${t.id}">عرض</button>
                 </td>
             </tr>
         `;
@@ -109,11 +110,19 @@ async function openTicketModal(ticketId) {
         resolveBtn.onclick = () => changeStatus('open');
     } else {
         resolveBtn.innerText = 'إغلاق التذكرة (تم الحل)';
-        resolveBtn.onclick = () => changeStatus('resolved');
+        resolveBtn.onclick = () => showCloseModal();
     }
 
     // Load Replies
     loadReplies(ticketId);
+
+    // Subscribe to real-time replies updates
+    if (repliesSubscription) {
+        repliesSubscription.unsubscribe();
+    }
+    repliesSubscription = subscribeToTicketReplies(ticketId, () => {
+        loadReplies(ticketId);
+    });
 
     modal.style.display = 'block';
 }
@@ -161,12 +170,48 @@ async function changeStatus(newStatus) {
     }
 }
 
+function showCloseModal() {
+    const closeModal = document.getElementById('closeTicketModal');
+    if (closeModal) {
+        closeModal.style.display = 'block';
+        document.getElementById('closeTicketComment').value = '';
+    }
+}
+
+async function closeTicket() {
+    if (!currentTicketId) return;
+    
+    const comment = document.getElementById('closeTicketComment').value.trim();
+    
+    try {
+        await closeTicketWithComment(currentTicketId, comment);
+        document.getElementById('closeTicketModal').style.display = 'none';
+        openTicketModal(currentTicketId); // Refresh modal
+        renderTickets(); // Refresh list
+    } catch (err) {
+        alert('فشل إغلاق التذكرة: ' + err.message);
+    }
+}
+
 function setupModalEvents() {
     const modal = document.getElementById('ticketModal');
     const closeBtn = document.getElementById('closeModal');
     
-    closeBtn.onclick = () => modal.style.display = 'none';
-    window.onclick = (event) => { if (event.target == modal) modal.style.display = 'none'; };
+    closeBtn.onclick = () => {
+        modal.style.display = 'none';
+        if (repliesSubscription) {
+            repliesSubscription.unsubscribe();
+        }
+    };
+    
+    window.onclick = (event) => {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+            if (repliesSubscription) {
+                repliesSubscription.unsubscribe();
+            }
+        }
+    };
 
     // Send Public Reply
     document.getElementById('sendPublicReply').onclick = async () => {
@@ -196,6 +241,23 @@ function setupModalEvents() {
             alert('فشل إضافة الملاحظة');
         }
     };
+
+    // Close Ticket Modal Events
+    const closeTicketModal = document.getElementById('closeTicketModal');
+    if (closeTicketModal) {
+        const closeCloseBtn = document.getElementById('closeCloseTicketModal');
+        if (closeCloseBtn) {
+            closeCloseBtn.onclick = () => closeTicketModal.style.display = 'none';
+        }
+
+        document.getElementById('confirmCloseTicket').onclick = closeTicket;
+
+        window.onclick = (event) => {
+            if (event.target == closeTicketModal) {
+                closeTicketModal.style.display = 'none';
+            }
+        };
+    }
 }
 
 async function impersonateUser(id) { 
