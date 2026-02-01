@@ -23,21 +23,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeChatBtn = document.getElementById('closeChatBtn');
     const endChatBtn = document.getElementById('endChatBtn');
 
-    // Rating Modal Elements
-    const ratingModal = document.getElementById('ratingModal');
-    const stars = document.querySelectorAll('.star');
-    const submitRatingBtn = document.getElementById('submitRatingBtn');
-    const ratingComment = document.getElementById('ratingComment');
-
     let currentUser = null;
     let isAdmin = false;
     let currentSessionId = null;
     let currentTicketId = null;
     let botSettings = null;
-    let currentKeywords = [];
-    let customReplies = [];
     let isTestMode = false;
-    let selectedRating = 0;
+    let isManualMode = false; // Admin manual reply mode
 
     // 1. Initialize Auth
     async function initAuth() {
@@ -49,27 +41,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 isAdmin = true;
                 if (mainSidebar) mainSidebar.style.display = 'flex';
                 loadAllSessions();
-                subscribeToAllSessions(); // Subscribe to new sessions for admin
+                subscribeToAllSessions();
             } else {
                 setupUserChat();
             }
         } else {
-            const guestData = localStorage.getItem('sb-guest-session');
-            if (guestData) {
-                currentUser = JSON.parse(guestData);
-                setupUserChat();
-            } else if (window.isCustomerChat) {
-                // Create a persistent guest ID if not exists
-                let guestId = localStorage.getItem('mad3oom-guest-id');
-                if (!guestId) {
-                    guestId = 'guest-' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem('mad3oom-guest-id', guestId);
-                }
-                currentUser = { id: guestId, email: 'guest@mad3oom.online', isGuest: true };
-                setupUserChat();
-            } else {
-                window.location.href = '/sign-in.html';
+            // Handle Guest
+            let guestId = localStorage.getItem('mad3oom-guest-id');
+            if (!guestId) {
+                guestId = 'guest-' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('mad3oom-guest-id', guestId);
             }
+            currentUser = { id: guestId, email: 'guest@mad3oom.online', isGuest: true };
+            setupUserChat();
         }
     }
 
@@ -100,13 +84,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 3. Admin: Load Sessions List
     async function loadAllSessions() {
-        const { data: sessions } = await supabase
+        const { data: sessions, error } = await supabase
             .from('chat_sessions')
             .select(`
                 id, 
                 created_at, 
-                user_id, 
-                profiles(full_name),
+                user_id,
+                guest_id,
+                status,
+                is_manual_mode,
                 chat_messages(message_text, created_at)
             `)
             .eq('status', 'active')
@@ -117,12 +103,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         grid.innerHTML = '';
         
         if (sessions && sessions.length > 0) {
-            sessions.forEach(session => {
-                const name = session.profiles?.full_name || 'مستخدم ضيف';
+            for (const session of sessions) {
+                let name = 'مستخدم ضيف';
+                if (!session.guest_id && session.user_id) {
+                    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', session.user_id).single();
+                    if (profile) name = profile.full_name;
+                }
+                
                 const lastMsg = session.chat_messages && session.chat_messages.length > 0 
                     ? session.chat_messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0].message_text 
                     : 'بدأ محادثة جديدة...';
-                const time = new Date(session.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                
+                const dateObj = new Date(session.created_at);
+                const time = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                const date = dateObj.toLocaleDateString('ar-EG');
                 
                 const card = document.createElement('div');
                 card.className = 'session-card';
@@ -131,19 +125,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div style="display:flex; align-items:center; gap:0.75rem;">
                             <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${name.charAt(0)}</div>
                             <div>
-                                <div style="font-weight:700; color:#333;">${name}</div>
-                                <div style="font-size:0.7rem; color:#999;">#${session.id.slice(0,8)}</div>
+                                <div style="font-weight:700; color:#333;">${name} ${session.guest_id ? '(ضيف)' : ''}</div>
+                                <div style="font-size:0.7rem; color:#999;">${date} | ${time}</div>
                             </div>
                         </div>
-                        <div style="font-size:0.75rem; color:#888;">${time}</div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+                            <span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'};">
+                                ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
+                            </span>
+                            <button class="view-chat-btn" style="background:var(--primary-blue); color:white; border:none; padding:4px 12px; border-radius:5px; cursor:pointer; font-size:0.8rem;">عرض المحادثة</button>
+                        </div>
                     </div>
                     <div style="font-size:0.85rem; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:3rem;">
                         ${lastMsg}
                     </div>
                 `;
-                card.onclick = () => openAdminChat(session.id, name);
+                card.querySelector('.view-chat-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    openAdminChat(session.id, name, session.is_manual_mode);
+                };
+                card.onclick = () => openAdminChat(session.id, name, session.is_manual_mode);
                 grid.appendChild(card);
-            });
+            }
         } else {
             grid.innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:3rem; color:#888;">لا توجد محادثات نشطة حالياً.</div>';
         }
@@ -151,93 +154,71 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function subscribeToAllSessions() {
         if (!isAdmin) return;
-        
-        // Listen for new sessions
-        supabase
-            .channel('admin-sessions-list')
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
-                table: 'chat_sessions'
-            }, () => {
-                if (views['customer-chats'] && views['customer-chats'].classList.contains('active')) {
-                    loadAllSessions();
-                }
-            })
-            .subscribe();
-
-        // Also listen for new messages to update the "last message" in the list
-        supabase
-            .channel('admin-messages-updates')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'chat_messages'
-            }, () => {
-                if (views['customer-chats'] && views['customer-chats'].classList.contains('active')) {
-                    loadAllSessions();
-                }
-            })
-            .subscribe();
+        supabase.channel('admin-sessions-list').on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, () => loadAllSessions()).subscribe();
+        supabase.channel('admin-messages-updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, () => loadAllSessions()).subscribe();
     }
 
-    function openAdminChat(sessionId, name) {
+    async function openAdminChat(sessionId, name, manualMode) {
         currentSessionId = sessionId;
+        isManualMode = manualMode;
         isTestMode = false;
-        if (chatHeaderName) chatHeaderName.innerText = name;
-        if (chatHeaderStatus) chatHeaderStatus.innerText = 'مراقبة مباشرة للعميل';
-        if (chatHeaderImg) chatHeaderImg.src = '/assets/images/technical-support.svg';
         
-        Object.values(views).forEach(v => {
-            if (v) v.classList.remove('active');
-        });
+        if (chatHeaderName) chatHeaderName.innerText = name;
+        updateAdminChatHeader();
+        
+        Object.values(views).forEach(v => { if (v) v.classList.remove('active'); });
         if (views['chat-window']) views['chat-window'].classList.add('active');
+        
         loadMessages();
         subscribeToMessages();
+        
+        // Add manual mode toggle button to header if not exists
+        let toggleBtn = document.getElementById('manualModeToggle');
+        if (!toggleBtn) {
+            toggleBtn = document.createElement('button');
+            toggleBtn.id = 'manualModeToggle';
+            toggleBtn.style = "margin-right:10px; padding:5px 15px; border-radius:20px; border:1px solid white; background:transparent; color:white; cursor:pointer; font-size:0.8rem;";
+            document.querySelector('.chat-header-blue .bot-profile').appendChild(toggleBtn);
+        }
+        toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
+        toggleBtn.onclick = async () => {
+            const newMode = !isManualMode;
+            const { error } = await supabase.from('chat_sessions').update({ is_manual_mode: newMode }).eq('id', currentSessionId);
+            if (!error) {
+                isManualMode = newMode;
+                toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
+                updateAdminChatHeader();
+            }
+        };
     }
 
-    function setupTestChat() {
-        currentSessionId = 'test-session';
-        if (chatHeaderName) chatHeaderName.innerText = 'تجربة البوت الذكي';
-        if (chatHeaderStatus) chatHeaderStatus.innerText = 'وضع الاختبار - لن يتم حفظ الرسائل';
-        if (chatHeaderImg) chatHeaderImg.src = '/assets/images/mad3oom-robot.png';
-        if (chatMessages) chatMessages.innerHTML = '';
-        
-        Object.values(views).forEach(v => {
-            if (v) v.classList.remove('active');
-        });
-        if (views['chat-window']) views['chat-window'].classList.add('active');
-        
-        if (botSettings) {
-            appendMessage(botSettings.welcome_message, 'received', new Date(), true);
+    function updateAdminChatHeader() {
+        if (chatHeaderStatus) {
+            chatHeaderStatus.innerText = isManualMode ? 'أنت تتحدث الآن مع العميل' : 'البوت يقوم بالرد تلقائياً';
+            chatHeaderStatus.style.color = isManualMode ? '#ffcc00' : 'white';
         }
+        if (chatHeaderImg) chatHeaderImg.src = isManualMode ? '/assets/images/technical-support.svg' : '/assets/images/mad3oom-robot.png';
     }
 
     async function setupUserChat() {
-        // Try to find an active session for this user (real or guest)
-        const { data: session } = await supabase
-            .from('chat_sessions')
-            .select('id')
-            .eq('user_id', currentUser.id)
-            .eq('status', 'active')
-            .maybeSingle();
+        let sessionQuery = supabase.from('chat_sessions').select('id, is_manual_mode').eq('status', 'active');
+        if (currentUser.isGuest) {
+            sessionQuery = sessionQuery.eq('guest_id', currentUser.id);
+        } else {
+            sessionQuery = sessionQuery.eq('user_id', currentUser.id);
+        }
+        
+        const { data: session } = await sessionQuery.maybeSingle();
 
         if (session) {
             currentSessionId = session.id;
-            // Check if there's an open ticket for this session
-            const { data: ticket } = await supabase
-                .from('tickets')
-                .select('id')
-                .eq('chat_session_id', currentSessionId)
-                .eq('status', 'open')
-                .maybeSingle();
-            if (ticket) currentTicketId = ticket.id;
+            isManualMode = session.is_manual_mode;
         } else {
-            const { data: newS, error } = await supabase
-                .from('chat_sessions')
-                .insert([{ user_id: currentUser.id, status: 'active' }])
-                .select()
-                .single();
+            const sessionData = { status: 'active' };
+            if (currentUser.isGuest) sessionData.guest_id = currentUser.id;
+            else sessionData.user_id = currentUser.id;
+            
+            const { data: newS, error } = await supabase.from('chat_sessions').insert([sessionData]).select().single();
             if (!error && newS) currentSessionId = newS.id;
         }
         
@@ -245,419 +226,132 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadMessages();
         subscribeToMessages();
         
-        // Send welcome message if chat is empty
+        // Listen for manual mode changes
+        supabase.channel(`session-mode-${currentSessionId}`)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${currentSessionId}` }, payload => {
+                isManualMode = payload.new.is_manual_mode;
+                if (chatHeaderStatus) chatHeaderStatus.innerText = isManualMode ? 'موظف الدعم متصل الآن' : 'متصل الآن';
+                if (chatHeaderName) chatHeaderName.innerText = isManualMode ? 'الدعم الفني' : 'بوت مدعوم الذكي';
+            }).subscribe();
+            
         setTimeout(() => {
-            if (chatMessages && chatMessages.children.length === 0 && botSettings && botSettings.is_enabled) {
+            if (chatMessages && chatMessages.children.length === 0 && botSettings && !isManualMode) {
                 appendMessage(botSettings.welcome_message, 'received', new Date(), true);
             }
         }, 1000);
     }
 
-    // 4. Settings Logic
-    async function loadBotSettings() {
-        const { data } = await supabase.from('bot_settings').select('*').limit(1).maybeSingle();
-        if (data) {
-            botSettings = data;
-            currentKeywords = data.trigger_keywords || [];
-            customReplies = data.custom_replies || [];
-        }
-    }
-
-    function loadSettingsToForm() {
-        if (!botSettings) return;
-        const botEnabled = document.getElementById('botEnabled');
-        const welcomeMessage = document.getElementById('welcomeMessage');
-        const ticketMessage = document.getElementById('ticketMessage');
-        const responseDelay = document.getElementById('responseDelay');
-
-        if (botEnabled) botEnabled.checked = botSettings.is_enabled;
-        if (welcomeMessage) welcomeMessage.value = botSettings.welcome_message || '';
-        if (ticketMessage) ticketMessage.value = botSettings.ticket_confirmation_message || '';
-        if (responseDelay) responseDelay.value = botSettings.response_delay_seconds || 1;
-        
-        renderKeywords();
-        renderCustomReplies();
-    }
-
-    function renderKeywords() {
-        const list = document.getElementById('keywordsList');
-        if (!list) return;
-        list.innerHTML = '';
-        currentKeywords.forEach((word, index) => {
-            const tag = document.createElement('div');
-            tag.style = 'background:#003366; color:white; padding:0.3rem 0.8rem; border-radius:20px; font-size:0.85rem; display:flex; align-items:center; gap:0.5rem;';
-            tag.innerHTML = `${word} <span style="cursor:pointer; font-weight:bold;">&times;</span>`;
-            tag.querySelector('span').onclick = () => {
-                currentKeywords.splice(index, 1);
-                renderKeywords();
-            };
-            list.appendChild(tag);
-        });
-    }
-
-    function renderCustomReplies() {
-        const list = document.getElementById('customRepliesList');
-        if (!list) return;
-        list.innerHTML = '';
-        
-        if (customReplies.length === 0) {
-            list.innerHTML = '<div style="text-align:center; padding:2rem; color:#888; font-style:italic;">لا توجد ردود مخصصة حالياً. اضغط على "إضافة رد جديد" للبدء.</div>';
-            return;
-        }
-
-        customReplies.forEach((item, index) => {
-            const card = document.createElement('div');
-            card.className = 'custom-reply-card';
-            card.innerHTML = `
-                <div class="reply-card-header">
-                    <div style="display:flex; align-items:center; gap:0.5rem;">
-                        <div class="reply-number">${index + 1}</div>
-                        <span style="font-weight:700; color:#003366; font-size:0.9rem;">رد مخصص</span>
-                    </div>
-                    <button type="button" class="del-reply-btn">حذف الرد</button>
-                </div>
-                <div class="reply-grid">
-                    <div>
-                        <label style="font-size:0.85rem; font-weight:700; color:#555;">الكلمة المفتاحية</label>
-                        <input type="text" class="form-input reply-trigger" value="${item.trigger || ''}" placeholder="مثال: الأسعار">
-                    </div>
-                    <div>
-                        <label style="font-size:0.85rem; font-weight:700; color:#555;">رد البوت الذكي</label>
-                        <textarea class="form-input reply-response" rows="2" placeholder="اكتب الرد الذي سيقوم البوت بإرساله...">${item.response || ''}</textarea>
-                    </div>
-                </div>
-            `;
-            card.querySelector('.del-reply-btn').onclick = () => {
-                customReplies.splice(index, 1);
-                renderCustomReplies();
-            };
-            list.appendChild(card);
-        });
-    }
-
-    document.getElementById('keywordInput')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const val = e.target.value.trim();
-            if (val && !currentKeywords.includes(val)) {
-                currentKeywords.push(val);
-                renderKeywords();
-            }
-            e.target.value = '';
-        }
-    });
-
-    document.getElementById('addCustomReply')?.addEventListener('click', () => {
-        customReplies.push({ trigger: '', response: '' });
-        renderCustomReplies();
-    });
-
-    document.getElementById('saveBotSettings')?.addEventListener('click', async () => {
-        const btn = document.getElementById('saveBotSettings');
-        btn.disabled = true;
-        btn.innerText = 'جاري الحفظ...';
-        
-        const updatedCustomReplies = [];
-        document.querySelectorAll('#customRepliesList .custom-reply-card').forEach(group => {
-            const t = group.querySelector('.reply-trigger').value.trim();
-            const r = group.querySelector('.reply-response').value.trim();
-            if (t && r) updatedCustomReplies.push({ trigger: t, response: r });
-        });
-
-        const settings = {
-            is_enabled: document.getElementById('botEnabled').checked,
-            welcome_message: document.getElementById('welcomeMessage').value,
-            ticket_confirmation_message: document.getElementById('ticketMessage').value,
-            trigger_keywords: currentKeywords,
-            custom_replies: updatedCustomReplies,
-            response_delay_seconds: parseInt(document.getElementById('responseDelay').value) || 1,
-            updated_at: new Date().toISOString()
-        };
-
-        try {
-            const { error } = await supabase.from('bot_settings').update(settings).eq('id', botSettings.id);
-            if (!error) {
-                botSettings = { ...botSettings, ...settings };
-                customReplies = [...updatedCustomReplies];
-                const alert = document.getElementById('settingsAlert');
-                if (alert) {
-                    alert.style.display = 'block';
-                    setTimeout(() => alert.style.display = 'none', 3000);
-                }
-            } else {
-                console.error('Error updating settings:', error);
-                alert('حدث خطأ أثناء حفظ الإعدادات');
-            }
-        } catch (err) {
-            console.error('Unexpected error:', err);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = 'حفظ الإعدادات';
-        }
-    });
-
-    // 5. Chat Messaging Core
-    function appendMessage(text, type, timestamp = new Date(), isBot = false) {
-        if (!chatMessages) return;
-        
-        // Check if message already exists to avoid duplicates from Realtime
-        const existingMsgs = Array.from(chatMessages.querySelectorAll('.msg-text')).map(m => m.innerText);
-        if (existingMsgs.includes(text)) return;
-
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `msg ${type}`;
-        if (isBot) messageDiv.style.borderRight = '4px solid #003366';
-        
-        const date = new Date(timestamp);
-        const timeStr = date.getHours() + ":" + date.getMinutes().toString().padStart(2, '0');
-        messageDiv.innerHTML = `<span class="msg-text">${text}</span><span style="display:block; font-size:0.7rem; opacity:0.6; margin-top:0.3rem;">${timeStr}</span>`;
-        
-        chatMessages.appendChild(messageDiv);
-        
-        // Ensure scrolling happens after DOM update
-        setTimeout(() => {
-            chatMessages.scrollTo({
-                top: chatMessages.scrollHeight,
-                behavior: 'smooth'
-            });
-        }, 50);
-    }
-
     async function loadMessages() {
-        if (!currentSessionId || isTestMode || !chatMessages) return;
+        if (!currentSessionId || isTestMode) return;
         const { data: messages } = await supabase.from('chat_messages').select('*').eq('session_id', currentSessionId).order('created_at', { ascending: true });
-        chatMessages.innerHTML = '';
-        if (messages) {
-            messages.forEach(msg => {
-                const type = msg.sender_id === currentUser.id ? 'sent' : 'received';
-                appendMessage(msg.message_text, type, msg.created_at, msg.is_bot_reply);
-            });
+        if (chatMessages) {
+            chatMessages.innerHTML = '';
+            messages?.forEach(m => appendMessage(m.message_text, (m.is_bot_reply || m.is_admin_reply) ? 'received' : 'sent', m.created_at));
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
     }
 
     function subscribeToMessages() {
         if (!currentSessionId || isTestMode) return;
-        
-        supabase
-            .channel(`chat:${currentSessionId}`)
-            .on('postgres_changes', { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'chat_messages',
-                filter: `session_id=eq.${currentSessionId}`
-            }, payload => {
-                const msg = payload.new;
-                if (msg.sender_id !== currentUser.id) {
-                    appendMessage(msg.message_text, 'received', msg.created_at, msg.is_bot_reply);
-                }
-            })
-            .subscribe();
+        supabase.channel(`messages-${currentSessionId}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${currentSessionId}` }, payload => {
+                const isMine = isAdmin ? payload.new.is_admin_reply : (!payload.new.is_bot_reply && !payload.new.is_admin_reply);
+                if (!isMine) appendMessage(payload.new.message_text, 'received', payload.new.created_at);
+            }).subscribe();
     }
 
     async function sendMessage() {
-        if (!chatInput) return;
         const text = chatInput.value.trim();
-        if (!text) return;
-        
+        if (!text || !currentSessionId) return;
+
         chatInput.value = '';
-        appendMessage(text, 'sent');
+        appendMessage(text, 'sent', new Date());
+        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
         if (isTestMode) {
             handleBotLogic(text);
             return;
         }
 
-        const { error } = await supabase.from('chat_messages').insert([{
-            session_id: currentSessionId,
-            sender_id: currentUser.id,
-            message_text: text,
-            is_bot_reply: false
-        }]);
-
-        if (!error && !isAdmin) {
-            handleBotLogic(text);
+        const msgData = { session_id: currentSessionId, message_text: text, sender_id: currentUser.id };
+        if (isAdmin) {
+            msgData.is_admin_reply = true;
+            await supabase.from('chat_messages').insert([msgData]);
+        } else {
+            await supabase.from('chat_messages').insert([msgData]);
+            if (!isManualMode) handleBotLogic(text);
         }
     }
 
-    async function handleBotLogic(userText) {
-        if (!botSettings || !botSettings.is_enabled || (isAdmin && !isTestMode)) return;
-        
-        const lowerText = userText.toLowerCase();
-        
-        // 1. Check Custom Replies (Priority)
-        const matched = customReplies.find(r => r.trigger && lowerText.includes(r.trigger.toLowerCase()));
-        if (matched) return sendBotReply(matched.response);
-
-        // 2. Check Ticket Triggers
-        if (currentKeywords.some(k => lowerText.includes(k.toLowerCase()))) {
-            sendBotReply(botSettings.ticket_confirmation_message);
-            if (!isTestMode) {
-                // Get all messages in current session to include in ticket description
-                const { data: messages } = await supabase
-                    .from('chat_messages')
-                    .select('message_text, is_bot_reply, created_at')
-                    .eq('session_id', currentSessionId)
-                    .order('created_at', { ascending: true });
-                
-                let fullConversation = "محتوى المحادثة:\n";
-                if (messages) {
-                    messages.forEach(m => {
-                        const sender = m.is_bot_reply ? "البوت" : "العميل";
-                        fullConversation += `[${sender}]: ${m.message_text}\n`;
-                    });
-                }
-
-                // Get last ticket number
-                const { data: lastTicket } = await supabase.from('tickets').select('ticket_number').order('ticket_number', { ascending: false }).limit(1).maybeSingle();
-                const nextNumber = (lastTicket?.ticket_number || 0) + 1;
-
-                const { data: ticket, error } = await supabase.from('tickets').insert([{
-                    user_id: currentUser.id.includes('guest') ? null : currentUser.id,
-                    title: 'تذكرة تلقائية من المحادثة',
-                    description: fullConversation,
-                    status: 'open',
-                    chat_session_id: currentSessionId,
-                    ticket_number: nextNumber
-                }]).select().single();
-
-                if (!error && ticket) {
-                    currentTicketId = ticket.id;
-                }
-            }
-        }
+    function appendMessage(text, type, time, isBot = false) {
+        if (!chatMessages) return;
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.innerText = text;
+        const timeSpan = document.createElement('div');
+        timeSpan.style = "font-size:0.65rem; opacity:0.6; margin-top:4px; text-align:" + (type === 'sent' ? 'left' : 'right');
+        timeSpan.innerText = new Date(time).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        div.appendChild(timeSpan);
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    async function sendBotReply(text) {
-        if (!typingIndicator) return;
+    async function handleBotLogic(text) {
+        if (!botSettings?.is_enabled && !isTestMode) return;
+        
         typingIndicator.style.display = 'block';
-        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
-        
         setTimeout(async () => {
             typingIndicator.style.display = 'none';
-            appendMessage(text, 'received', new Date(), true);
+            let reply = "عذراً، لم أفهم طلبك جيداً. هل يمكنك التوضيح؟";
             
+            // Simple keyword matching from botSettings.custom_replies
+            if (botSettings.custom_replies) {
+                const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
+                if (matched) reply = matched.reply;
+            }
+
+            appendMessage(reply, 'received', new Date(), true);
             if (!isTestMode) {
-                await supabase.from('chat_messages').insert([{
-                    session_id: currentSessionId,
-                    message_text: text,
-                    is_bot_reply: true
-                }]);
+                await supabase.from('chat_messages').insert([{ session_id: currentSessionId, message_text: reply, is_bot_reply: true }]);
             }
-        }, (botSettings.response_delay_seconds || 1) * 1000);
+        }, (botSettings?.response_delay_seconds || 1) * 1000);
     }
 
-    // 6. End Chat & Rating Logic
-    if (endChatBtn) {
-        endChatBtn.onclick = () => {
-            if (ratingModal) ratingModal.style.display = 'flex';
-        };
+    async function loadBotSettings() {
+        const { data } = await supabase.from('bot_settings').select('*').limit(1).maybeSingle();
+        if (data) botSettings = data;
     }
 
-    stars.forEach(star => {
-        star.onclick = () => {
-            selectedRating = parseInt(star.dataset.value);
-            stars.forEach(s => {
-                if (parseInt(s.dataset.value) <= selectedRating) {
-                    s.classList.add('active');
-                } else {
-                    s.classList.remove('active');
-                }
-            });
-        };
-    });
-
-    if (submitRatingBtn) {
-        submitRatingBtn.onclick = async () => {
-            if (selectedRating === 0) {
-                alert('يرجى اختيار تقييم أولاً');
-                return;
-            }
-
-            submitRatingBtn.disabled = true;
-            submitRatingBtn.innerText = 'جاري الإرسال...';
-
-            try {
-                // 1. Close the chat session
-                await supabase.from('chat_sessions').update({ status: 'closed' }).eq('id', currentSessionId);
-
-                // 2. Update ticket with rating if exists
-                if (currentTicketId) {
-                    await supabase.from('tickets').update({
-                        rating: selectedRating,
-                        rating_comment: ratingComment.value,
-                        status: 'resolved' // Mark as resolved when chat ends
-                    }).eq('id', currentTicketId);
-                } else {
-                    // If no ticket was opened by keyword, open one now to save the rating and conversation
-                    const { data: messages } = await supabase
-                        .from('chat_messages')
-                        .select('message_text, is_bot_reply')
-                        .eq('session_id', currentSessionId)
-                        .order('created_at', { ascending: true });
-                    
-                    let fullConversation = "محتوى المحادثة عند الإغلاق:\n";
-                    if (messages) {
-                        messages.forEach(m => {
-                            const sender = m.is_bot_reply ? "البوت" : "العميل";
-                            fullConversation += `[${sender}]: ${m.message_text}\n`;
-                        });
-                    }
-
-                    const { data: lastTicket } = await supabase.from('tickets').select('ticket_number').order('ticket_number', { ascending: false }).limit(1).maybeSingle();
-                    const nextNumber = (lastTicket?.ticket_number || 0) + 1;
-
-                    await supabase.from('tickets').insert([{
-                        user_id: currentUser.id.includes('guest') ? null : currentUser.id,
-                        title: 'محادثة منتهية وتقييم',
-                        description: fullConversation,
-                        status: 'resolved',
-                        chat_session_id: currentSessionId,
-                        rating: selectedRating,
-                        rating_comment: ratingComment.value,
-                        ticket_number: nextNumber
-                    }]);
-                }
-
-                alert('شكراً لتقييمك! تم إنهاء المحادثة.');
-                window.location.href = '/customer-dashboard.html';
-            } catch (err) {
-                console.error('Error ending chat:', err);
-                alert('حدث خطأ أثناء إنهاء المحادثة');
-                submitRatingBtn.disabled = false;
-                submitRatingBtn.innerText = 'إرسال التقييم';
-            }
-        };
+    function setupTestChat() {
+        isTestMode = true;
+        if (chatHeaderName) chatHeaderName.innerText = 'تجربة البوت الذكي';
+        if (chatHeaderStatus) chatHeaderStatus.innerText = 'وضع الاختبار - لن يتم حفظ الرسائل';
+        if (chatMessages) chatMessages.innerHTML = '';
+        if (views['chat-window']) views['chat-window'].classList.add('active');
+        if (botSettings) appendMessage(botSettings.welcome_message, 'received', new Date(), true);
     }
 
-    // UI Events
+    // Settings Form Logic (Placeholder for full implementation)
+    async function loadSettingsToForm() {
+        if (!botSettings) await loadBotSettings();
+        const enabledCheck = document.getElementById('botEnabled');
+        const welcomeInput = document.getElementById('welcomeMessage');
+        if (enabledCheck) enabledCheck.checked = botSettings.is_enabled;
+        if (welcomeInput) welcomeInput.value = botSettings.welcome_message;
+    }
+
     if (sendBtn) sendBtn.onclick = sendMessage;
-    if (chatInput) {
-        chatInput.onkeypress = (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendMessage();
-            }
-        };
-    }
-    
+    if (chatInput) chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
     if (closeChatBtn) {
         closeChatBtn.onclick = () => {
             if (isAdmin) {
-                Object.values(views).forEach(v => {
-                    if (v) v.classList.remove('active');
-                });
+                Object.values(views).forEach(v => { if (v) v.classList.remove('active'); });
                 if (views['customer-chats']) views['customer-chats'].classList.add('active');
-                
-                menuItems.forEach(i => i.classList.remove('active'));
-                const chatTarget = document.querySelector('[data-target="customer-chats"]');
-                if (chatTarget) chatTarget.classList.add('active');
-                
-                isTestMode = false;
                 loadAllSessions();
             }
         };
     }
 
-    // Initialize
     await loadBotSettings();
     await initAuth();
 });
