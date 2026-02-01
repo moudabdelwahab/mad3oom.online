@@ -38,6 +38,30 @@
     </script>
     <link rel="stylesheet" href="subscriptions-styles.css">
     <script src="theme-manager.js" defer></script>
+    <style>
+        .discount-badge {
+            background: var(--color-danger);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+            font-weight: bold;
+        }
+        .limited-time {
+            color: var(--color-danger);
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+            display: block;
+        }
+        .old-price {
+            text-decoration: line-through;
+            color: var(--color-text-secondary);
+            font-size: 1rem;
+            margin-left: 0.5rem;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -95,9 +119,9 @@
             <!-- Toggle Button -->
             <div class="toggle-container">
                 <span class="toggle-label">الفترة:</span>
-                <button class="toggle-btn" onclick="toggleBilling('individuals')">
-                    <span class="toggle-option active">شهري</span>
-                    <span class="toggle-option">سنوي</span>
+                <button class="toggle-btn" id="billingToggle">
+                    <span class="toggle-option active" data-period="monthly">شهري</span>
+                    <span class="toggle-option" data-period="yearly">سنوي</span>
                 </button>
             </div>
 
@@ -153,7 +177,7 @@
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
-                            <span>تقارير مفصلة</span>
+                            <span>API للشات (ربط خارجي)</span>
                         </div>
                     </div>
 
@@ -165,18 +189,18 @@
                     <div class="badge">الأكثر شهرة</div>
                     <div class="plan-header">
                         <h3 class="plan-name">مدفوع</h3>
-                        <p class="plan-description">قريباً - الإعلان عنه قريبة</p>
+                        <p class="plan-description">الخيار الأمثل للمحترفين</p>
                     </div>
 
                     <div class="plan-price">
                         <span class="currency">EGP</span>
-                        <span class="amount">XX</span>
-                        <span class="period">/شهر</span>
+                        <span class="amount" id="premiumAmount">250</span>
+                        <span class="period" id="premiumPeriod">/شهر</span>
+                        <span id="premiumOldPrice" class="old-price" style="display: none;">3000</span>
+                        <span id="premiumDiscount" class="discount-badge" style="display: none;">خصم 50%</span>
                     </div>
-
-                    <div class="coming-soon-banner">
-                        <span>قريباً</span>
-                    </div>
+                    
+                    <span id="limitedTimeOffer" class="limited-time" style="display: none;">* عرض لفترة محدودة</span>
 
                     <div class="plan-features">
                         <div class="feature">
@@ -195,7 +219,13 @@
                             <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
-                            <span>تقارير مفصلة وتحليلات</span>
+                            <span>API للشات (ربط بموقعك أو تطبيقك)</span>
+                        </div>
+                        <div class="feature">
+                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>دعم الرد الآلي (البوت) والرد البشري</span>
                         </div>
                         <div class="feature">
                             <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -207,17 +237,11 @@
                             <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
-                            <span>وصول مبكر للميزات الجديدة</span>
-                        </div>
-                        <div class="feature">
-                            <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
                             <span>شارة خاصة على الملف الشخصي</span>
                         </div>
                     </div>
 
-                    <button class="btn btn-secondary btn-full" disabled>قريباً</button>
+                    <button class="btn btn-primary btn-full">اشترك الآن</button>
                 </div>
             </div>
 
@@ -244,8 +268,13 @@
                             <td>24/7</td>
                         </tr>
                         <tr>
-                            <td>الإبلاغ عن المشاكل</td>
+                            <td>API للشات (ربط خارجي)</td>
+                            <td><span class="cross">✗</span></td>
                             <td><span class="check">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td>الرد الآلي والبشري عبر API</td>
+                            <td><span class="cross">✗</span></td>
                             <td><span class="check">✓</span></td>
                         </tr>
                         <tr>
@@ -254,17 +283,7 @@
                             <td><span class="check">✓ مضاعف</span></td>
                         </tr>
                         <tr>
-                            <td>التقارير والتحليلات</td>
-                            <td><span class="cross">✗</span></td>
-                            <td><span class="check">✓</span></td>
-                        </tr>
-                        <tr>
                             <td>الدعم الأولوي</td>
-                            <td><span class="cross">✗</span></td>
-                            <td><span class="check">✓</span></td>
-                        </tr>
-                        <tr>
-                            <td>وصول مبكر للميزات</td>
                             <td><span class="cross">✗</span></td>
                             <td><span class="check">✓</span></td>
                         </tr>

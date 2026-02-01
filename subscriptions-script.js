@@ -1,21 +1,43 @@
 // ==================== Subscriptions Page Script ====================
 
 // Toggle billing period (monthly/yearly)
-function toggleBilling(section) {
-    const toggleBtn = document.querySelector(`#${section} .toggle-btn`);
+function toggleBilling() {
+    const toggleBtn = document.getElementById('billingToggle');
     if (!toggleBtn) return;
     
     const options = toggleBtn.querySelectorAll('.toggle-option');
+    const isYearly = !options[1].classList.contains('active');
+    
     options.forEach(opt => opt.classList.toggle('active'));
     
     // Update prices based on billing period
-    updatePrices(section, options[1].classList.contains('active') ? 'yearly' : 'monthly');
+    updatePrices(isYearly ? 'yearly' : 'monthly');
 }
 
-function updatePrices(section, period) {
-    // This function can be extended to update prices dynamically
-    // For now, it's a placeholder for future implementation
-    console.log(`Updating prices for ${section} to ${period}`);
+function updatePrices(period) {
+    const premiumAmount = document.getElementById('premiumAmount');
+    const premiumPeriod = document.getElementById('premiumPeriod');
+    const premiumOldPrice = document.getElementById('premiumOldPrice');
+    const premiumDiscount = document.getElementById('premiumDiscount');
+    const limitedTimeOffer = document.getElementById('limitedTimeOffer');
+
+    if (period === 'yearly') {
+        // السعر السنوي 1500 جنيه (بدلاً من 3000)
+        premiumAmount.textContent = '1500';
+        premiumPeriod.textContent = '/سنوياً';
+        premiumOldPrice.style.display = 'inline';
+        premiumDiscount.style.display = 'inline';
+        limitedTimeOffer.style.display = 'block';
+    } else {
+        // السعر الشهري 250 جنيه
+        premiumAmount.textContent = '250';
+        premiumPeriod.textContent = '/شهرياً';
+        premiumOldPrice.style.display = 'none';
+        premiumDiscount.style.display = 'none';
+        limitedTimeOffer.style.display = 'none';
+    }
+    
+    console.log(`Updating prices to ${period}`);
 }
 
 // Scroll to section
@@ -28,7 +50,6 @@ function scrollToSection(sectionId) {
 
 // Contact sales function
 function contactSales() {
-    // This can be extended to open a contact form or redirect to contact page
     alert('يرجى التواصل معنا عبر البريد الإلكتروني: support@mad3oom.online');
 }
 
@@ -49,12 +70,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Initialize toggle buttons
-    const toggleButtons = document.querySelectorAll('.toggle-btn');
-    toggleButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const section = this.closest('.pricing-section')?.id || 'individuals';
-            toggleBilling(section);
+    const toggleBtn = document.getElementById('billingToggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            toggleBilling();
         });
-    });
+    }
 });
-
