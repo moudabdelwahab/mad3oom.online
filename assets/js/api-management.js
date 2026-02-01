@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const apiKeysList = document.getElementById('apiKeysList');
     const firewallRulesList = document.getElementById('firewallRulesList');
     const createBtn = document.getElementById('createNewKeyBtn');
+    const confirmCreateBtn = document.getElementById('confirmCreateBtn');
+    const newKeyModal = document.getElementById('newKeyModal');
     const toast = document.getElementById('toast');
 
     let currentUser = null;
@@ -62,19 +64,51 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                     <div style="display:flex; gap:10px;">
                         <select class="status-select" data-id="${key.id}" style="padding:5px; border-radius:5px; border:1px solid #ddd;">
-                            <option value="active" ${key.status === 'active' ? 'selected' : ''}>Active</option>
-                            <option value="read_only" ${key.status === 'read_only' ? 'selected' : ''}>Read Only</option>
-                            <option value="rate_limited" ${key.status === 'rate_limited' ? 'selected' : ''}>Rate Limited</option>
-                            <option value="maintenance" ${key.status === 'maintenance' ? 'selected' : ''}>Maintenance</option>
+                            <option value="active" ${key.status === 'active' ? 'selected' : ''}>نشط</option>
+                            <option value="read_only" ${key.status === 'read_only' ? 'selected' : ''}>للقراءة فقط</option>
+                            <option value="rate_limited" ${key.status === 'rate_limited' ? 'selected' : ''}>محدد السرعة</option>
+                            <option value="maintenance" ${key.status === 'maintenance' ? 'selected' : ''}>صيانة</option>
                         </select>
                         <button class="delete-key-btn" data-id="${key.id}" style="background:#fff5f5; color:#ff4d4d; border:1px solid #ffebeb; padding:5px 10px; border-radius:5px; cursor:pointer;">حذف</button>
                     </div>
                 </div>
+                
                 <div class="key-display">
                     <span id="key-${key.id}">${key.key_value.substring(0, 10)}****************${key.key_value.substring(key.key_value.length - 5)}</span>
                     <button class="copy-btn" data-key="${key.key_value}" style="background:none; border:none; color:var(--primary-blue); cursor:pointer; font-weight:700;">نسخ المفتاح</button>
                 </div>
-                <div style="font-size:0.8rem; color:#888;">
+
+                <div class="advanced-settings">
+                    <h4>الإعدادات المتقدمة</h4>
+                    <div class="setting-row">
+                        <label>النطاقات / عناوين IP المسموحة (Allowed domains / IPs)</label>
+                        <input type="text" class="allowed-domains-input" data-id="${key.id}" value="${(key.allowed_domains || []).join(', ')}" placeholder="example.com, 1.2.3.4">
+                    </div>
+                    <div style="display: flex; gap: 20px;">
+                        <div class="setting-row" style="flex: 1;">
+                            <label>ربط المنصة (Platform binding)</label>
+                            <select class="platform-binding-select" data-id="${key.id}">
+                                <option value="" ${!key.platform_binding ? 'selected' : ''}>بدون ربط</option>
+                                <option value="web" ${key.platform_binding === 'web' ? 'selected' : ''}>Web Browser</option>
+                                <option value="mobile" ${key.platform_binding === 'mobile' ? 'selected' : ''}>Mobile App</option>
+                                <option value="server" ${key.platform_binding === 'server' ? 'selected' : ''}>Server Side</option>
+                            </select>
+                        </div>
+                        <div class="setting-row" style="flex: 1; align-items: flex-start;">
+                            <label>توثيق HMAC (اختياري)</label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                                <label class="switch">
+                                    <input type="checkbox" class="hmac-toggle" data-id="${key.id}" ${key.hmac_enabled ? 'checked' : ''}>
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="font-size: 0.8rem; color: #666;">HMAC optional per API</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="save-advanced-btn btn btn-primary" data-id="${key.id}" style="padding: 5px 15px; font-size: 0.85rem; margin-top: 10px;">حفظ الإعدادات المتقدمة</button>
+                </div>
+
+                <div style="font-size:0.8rem; color:#888; margin-top: 15px;">
                     الصلاحيات: ${key.permissions.join(' | ')}
                 </div>
             `;
@@ -112,13 +146,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             };
         });
+
+        document.querySelectorAll('.save-advanced-btn').forEach(btn => {
+            btn.onclick = async () => {
+                const id = btn.dataset.id;
+                const card = btn.closest('.api-key-card');
+                const domains = card.querySelector('.allowed-domains-input').value.split(',').map(d => d.trim()).filter(d => d);
+                const platform = card.querySelector('.platform-binding-select').value;
+                const hmac = card.querySelector('.hmac-toggle').checked;
+
+                const { error } = await supabase.from('bot_api_keys').update({
+                    allowed_domains: domains,
+                    platform_binding: platform,
+                    hmac_enabled: hmac
+                }).eq('id', id);
+
+                if (error) alert('خطأ في الحفظ: ' + error.message);
+                else showToast('تم حفظ الإعدادات المتقدمة بنجاح');
+            };
+        });
     }
 
     // 3. توليد مفتاح جديد
-    createBtn.onclick = async () => {
-        const name = prompt('أدخل اسم التطبيق أو الموقع:');
-        if (!name) return;
-        const website = prompt('أدخل رابط الموقع (اختياري):', '');
+    createBtn.onclick = () => {
+        newKeyModal.style.display = 'flex';
+    };
+
+    confirmCreateBtn.onclick = async () => {
+        const name = document.getElementById('modal_key_name').value;
+        const website = document.getElementById('modal_website_url').value;
+        
+        if (!name) {
+            alert('يرجى إدخال اسم المفتاح');
+            return;
+        }
         
         const newKey = 'mb_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         
@@ -128,11 +189,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             key_value: newKey,
             status: 'active',
             permissions: ['chat:send', 'memory:read'],
-            created_by: currentUser.id
+            created_by: currentUser.id,
+            allowed_domains: [],
+            hmac_enabled: false
         }]);
 
         if (error) alert('خطأ: ' + error.message);
         else {
+            newKeyModal.style.display = 'none';
+            document.getElementById('modal_key_name').value = '';
+            document.getElementById('modal_website_url').value = '';
             showToast('تم توليد المفتاح بنجاح');
             loadApiKeys();
         }

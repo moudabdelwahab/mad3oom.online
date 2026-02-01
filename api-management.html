@@ -87,7 +87,7 @@
             border: 1px solid #eee;
             border-radius: 10px;
             padding: 1.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             transition: transform 0.2s;
         }
         .api-key-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
@@ -114,14 +114,26 @@
             margin: 1rem 0;
             border: 1px dashed #ccc;
         }
+
+        .advanced-settings {
+            background: #fafafa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border: 1px solid #eee;
+        }
+        .advanced-settings h4 { margin-top: 0; color: #555; font-size: 0.95rem; }
+        .setting-row { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+        .setting-row label { font-size: 0.85rem; font-weight: 600; color: #666; }
+        .setting-row input, .setting-row select { padding: 0.6rem; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; }
         
         /* Switch Styling */
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--primary-blue); }
-        input:checked + .slider:before { transform: translateX(26px); }
+        input:checked + .slider:before { transform: translateX(22px); }
 
         #toast {
             position: fixed;
@@ -135,6 +147,12 @@
             z-index: 1000;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
+
+        /* Modal for creating key */
+        .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .modal-header { font-weight: 700; font-size: 1.2rem; margin-bottom: 1.5rem; color: var(--primary-blue); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; }
     </style>
 </head>
 <body>
@@ -143,7 +161,12 @@
             <div class="header-title">
                 <h1>إدارة مفاتيح API المتقدمة</h1>
             </div>
-            <a href="/chat-admin.html" class="back-link">
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <a href="/api-docs.html" class="btn" style="background: white; border: 1px solid var(--primary-blue); color: var(--primary-blue);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    عرض التوثيق (Docs)
+                </a>
+                <a href="/chat-admin.html" class="back-link">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                 العودة للوحة التحكم
             </a>
@@ -173,6 +196,25 @@
             <p style="color: #666; margin-bottom: 1.5rem;">تحكم في قواعد حفظ البيانات ومنع تسميم الذاكرة.</p>
             <div id="firewallRulesList">
                 <!-- Rules will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for new key -->
+    <div id="newKeyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">توليد مفتاح API جديد</div>
+            <div class="setting-row">
+                <label>اسم التطبيق أو الموقع</label>
+                <input type="text" id="modal_key_name" placeholder="مثال: متجر مدعوم">
+            </div>
+            <div class="setting-row">
+                <label>رابط الموقع (اختياري)</label>
+                <input type="text" id="modal_website_url" placeholder="https://example.com">
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="document.getElementById('newKeyModal').style.display='none'">إلغاء</button>
+                <button id="confirmCreateBtn" class="btn btn-primary">توليد الآن</button>
             </div>
         </div>
     </div>
