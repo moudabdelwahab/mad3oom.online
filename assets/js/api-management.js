@@ -54,38 +54,38 @@ document.addEventListener('DOMContentLoaded', async () => {
             const card = document.createElement('div');
             card.className = 'api-key-card';
             card.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:15px;">
                     <div>
                         <div style="display:flex; align-items:center; gap:10px;">
                             <strong style="font-size:1.1rem; color:var(--primary-blue);">${key.name}</strong>
-                            <span class="status-badge status-${key.status}">${key.status.toUpperCase()}</span>
+                            <span class="status-badge status-${key.status}">${key.status === 'active' ? 'نشط' : key.status === 'read_only' ? 'للقراءة فقط' : key.status === 'rate_limited' ? 'محدد السرعة' : 'صيانة'}</span>
                         </div>
                         <div style="color:#666; font-size:0.85rem; margin-top:5px;">🌐 ${key.website_url || 'جميع المواقع'}</div>
                     </div>
                     <div style="display:flex; gap:10px;">
-                        <select class="status-select" data-id="${key.id}" style="padding:5px; border-radius:5px; border:1px solid #ddd;">
+                        <select class="status-select" data-id="${key.id}" style="padding:8px; border-radius:5px; border:1px solid #ddd; font-family:inherit;">
                             <option value="active" ${key.status === 'active' ? 'selected' : ''}>نشط</option>
                             <option value="read_only" ${key.status === 'read_only' ? 'selected' : ''}>للقراءة فقط</option>
                             <option value="rate_limited" ${key.status === 'rate_limited' ? 'selected' : ''}>محدد السرعة</option>
                             <option value="maintenance" ${key.status === 'maintenance' ? 'selected' : ''}>صيانة</option>
                         </select>
-                        <button class="delete-key-btn" data-id="${key.id}" style="background:#fff5f5; color:#ff4d4d; border:1px solid #ffebeb; padding:5px 10px; border-radius:5px; cursor:pointer;">حذف</button>
+                        <button class="delete-key-btn" data-id="${key.id}" style="background:#fff5f5; color:#ff4d4d; border:1px solid #ffebeb; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:600; font-family:inherit;">حذف</button>
                     </div>
                 </div>
                 
                 <div class="key-display">
                     <span id="key-${key.id}">${key.key_value.substring(0, 10)}****************${key.key_value.substring(key.key_value.length - 5)}</span>
-                    <button class="copy-btn" data-key="${key.key_value}" style="background:none; border:none; color:var(--primary-blue); cursor:pointer; font-weight:700;">نسخ المفتاح</button>
+                    <button class="copy-btn" data-key="${key.key_value}" style="background:none; border:none; color:var(--primary-blue); cursor:pointer; font-weight:700; font-family:inherit;">نسخ المفتاح</button>
                 </div>
 
                 <div class="advanced-settings">
                     <h4>الإعدادات المتقدمة</h4>
-                    <div class="setting-row">
-                        <label>النطاقات / عناوين IP المسموحة (Allowed domains / IPs)</label>
-                        <input type="text" class="allowed-domains-input" data-id="${key.id}" value="${(key.allowed_domains || []).join(', ')}" placeholder="example.com, 1.2.3.4">
-                    </div>
-                    <div style="display: flex; gap: 20px;">
-                        <div class="setting-row" style="flex: 1;">
+                    <div class="setting-grid">
+                        <div class="setting-row full-width">
+                            <label>النطاقات / عناوين IP المسموحة (Allowed domains / IPs)</label>
+                            <input type="text" class="allowed-domains-input" data-id="${key.id}" value="${(key.allowed_domains || []).join(', ')}" placeholder="example.com, 1.2.3.4">
+                        </div>
+                        <div class="setting-row">
                             <label>ربط المنصة (Platform binding)</label>
                             <select class="platform-binding-select" data-id="${key.id}">
                                 <option value="" ${!key.platform_binding ? 'selected' : ''}>بدون ربط</option>
@@ -94,18 +94,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <option value="server" ${key.platform_binding === 'server' ? 'selected' : ''}>Server Side</option>
                             </select>
                         </div>
-                        <div class="setting-row" style="flex: 1; align-items: flex-start;">
+                        <div class="setting-row">
                             <label>توثيق HMAC (اختياري)</label>
-                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                            <div class="switch-container">
                                 <label class="switch">
                                     <input type="checkbox" class="hmac-toggle" data-id="${key.id}" ${key.hmac_enabled ? 'checked' : ''}>
                                     <span class="slider"></span>
                                 </label>
-                                <span style="font-size: 0.8rem; color: #666;">HMAC optional per API</span>
+                                <span style="font-size: 0.8rem; color: #666;">تفعيل HMAC للطلبات</span>
                             </div>
                         </div>
                     </div>
-                    <button class="save-advanced-btn btn btn-primary" data-id="${key.id}" style="padding: 5px 15px; font-size: 0.85rem; margin-top: 10px;">حفظ الإعدادات المتقدمة</button>
+                    <button class="save-advanced-btn btn btn-primary" data-id="${key.id}" style="padding: 8px 20px; font-size: 0.85rem; margin-top: 10px;">حفظ الإعدادات المتقدمة</button>
                 </div>
 
                 <div style="font-size:0.8rem; color:#888; margin-top: 15px;">
