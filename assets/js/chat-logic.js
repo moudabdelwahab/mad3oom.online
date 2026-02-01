@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const chatHeaderStatus = document.getElementById('chatHeaderStatus');
     const chatHeaderImg = document.getElementById('chatHeaderImg');
     const closeChatBtn = document.getElementById('closeChatBtn');
-    const backLink = document.getElementById('backLink');
 
     let currentUser = null;
     let isAdmin = false;
@@ -45,14 +44,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setupUserChat();
             }
         } else {
-            // Check for guest in localStorage (from auth-client.js logic)
             const guestData = localStorage.getItem('sb-guest-session');
             if (guestData) {
                 currentUser = JSON.parse(guestData);
                 setupUserChat();
             } else if (window.isCustomerChat) {
-                // If it's customer chat and no user/guest, we can allow anonymous chat or redirect
-                // For now, let's create a temporary guest ID if none exists to allow the chat to work
                 const tempGuestId = 'guest-' + Math.random().toString(36).substr(2, 9);
                 currentUser = { id: tempGuestId, email: 'guest@mad3oom.online', isGuest: true };
                 setupUserChat();
@@ -69,7 +65,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             menuItems.forEach(i => i.classList.remove('active'));
             item.classList.add('active');
             
-            // Switch Views
             Object.values(views).forEach(v => {
                 if (v) v.classList.remove('active');
             });
@@ -97,6 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             .order('created_at', { ascending: false });
 
         const grid = document.getElementById('sessionsGrid');
+        if (!grid) return;
         grid.innerHTML = '';
         
         if (sessions && sessions.length > 0) {
@@ -153,14 +149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function setupUserChat() {
-        if (backLink) {
-            backLink.innerText = 'العودة للرئيسية';
-            backLink.href = '/customer-dashboard.html';
-        }
-        
-        // If user is a guest with a non-UUID string, we can't store it in a UUID column
-        // We'll use a fallback or just skip DB storage for non-auth guests for now to prevent errors
-        const isRealUser = currentUser.id && currentUser.id.length > 20; // Simple UUID check
+        const isRealUser = currentUser.id && currentUser.id.length > 20;
 
         if (isRealUser) {
             const { data: session } = await supabase.from('chat_sessions').select('id').eq('user_id', currentUser.id).eq('status', 'active').maybeSingle();
@@ -171,15 +160,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!error && newS) currentSessionId = newS.id;
             }
         } else {
-            // For guests, we use a local session ID to allow bot interaction without DB errors
             currentSessionId = 'guest-session-' + currentUser.id;
-            isTestMode = true; // Treat as test mode to avoid DB inserts
+            isTestMode = true;
         }
         
         if (views['chat-window']) views['chat-window'].classList.add('active');
         loadMessages();
         
-        // Auto welcome if new
         if (chatMessages && chatMessages.children.length === 0 && botSettings && botSettings.is_enabled) {
             appendMessage(botSettings.welcome_message, 'received', new Date(), true);
         }
@@ -213,6 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderKeywords() {
         const list = document.getElementById('keywordsList');
+        if (!list) return;
         list.innerHTML = '';
         currentKeywords.forEach((word, index) => {
             const tag = document.createElement('div');
@@ -228,18 +216,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderCustomReplies() {
         const list = document.getElementById('customRepliesList');
+        if (!list) return;
         list.innerHTML = '';
         customReplies.forEach((item, index) => {
             const div = document.createElement('div');
+            div.className = 'custom-reply-item';
             div.style = 'background:#f8f9fa; padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid #eee;';
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
                     <label style="font-size:0.8rem; font-weight:bold;">الكلمة المفتاحية:</label>
                     <span style="color:red; cursor:pointer; font-size:0.8rem;" class="del-reply">حذف</span>
                 </div>
-                <input type="text" class="form-input reply-trigger" value="${item.trigger}" style="margin-bottom:0.8rem;">
+                <input type="text" class="form-input reply-trigger" value="${item.trigger || ''}" style="margin-bottom:0.8rem;">
                 <label style="font-size:0.8rem; font-weight:bold;">رد البوت:</label>
-                <textarea class="form-input reply-response" rows="1">${item.response}</textarea>
+                <textarea class="form-input reply-response" rows="2">${item.response || ''}</textarea>
             `;
             div.querySelector('.del-reply').onclick = () => {
                 customReplies.splice(index, 1);
@@ -268,9 +258,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('saveBotSettings')?.addEventListener('click', async () => {
         const btn = document.getElementById('saveBotSettings');
         btn.disabled = true;
+        btn.innerText = 'جاري الحفظ...';
         
         const updatedCustomReplies = [];
-        document.querySelectorAll('#customRepliesList > div').forEach(group => {
+        document.querySelectorAll('#customRepliesList > .custom-reply-item').forEach(group => {
             const t = group.querySelector('.reply-trigger').value.trim();
             const r = group.querySelector('.reply-response').value.trim();
             if (t && r) updatedCustomReplies.push({ trigger: t, response: r });
@@ -286,18 +277,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             updated_at: new Date().toISOString()
         };
 
-        const { error } = await supabase.from('bot_settings').update(settings).eq('id', botSettings.id);
-        if (!error) {
-            botSettings = { ...botSettings, ...settings };
-            const alert = document.getElementById('settingsAlert');
-            alert.style.display = 'block';
-            setTimeout(() => alert.style.display = 'none', 3000);
+        try {
+            const { error } = await supabase.from('bot_settings').update(settings).eq('id', botSettings.id);
+            if (!error) {
+                botSettings = { ...botSettings, ...settings };
+                customReplies = [...updatedCustomReplies];
+                const alert = document.getElementById('settingsAlert');
+                if (alert) {
+                    alert.style.display = 'block';
+                    setTimeout(() => alert.style.display = 'none', 3000);
+                }
+            } else {
+                console.error('Error updating settings:', error);
+                alert('حدث خطأ أثناء حفظ الإعدادات');
+            }
+        } catch (err) {
+            console.error('Unexpected error:', err);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = 'حفظ الإعدادات';
         }
-        btn.disabled = false;
     });
 
     // 5. Chat Messaging Core
     function appendMessage(text, type, timestamp = new Date(), isBot = false) {
+        if (!chatMessages) return;
         const messageDiv = document.createElement('div');
         messageDiv.className = `msg ${type}`;
         if (isBot) messageDiv.style.borderRight = '4px solid #003366';
@@ -311,7 +315,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function loadMessages() {
-        if (!currentSessionId || isTestMode) return;
+        if (!currentSessionId || isTestMode || !chatMessages) return;
         const { data: messages } = await supabase.from('chat_messages').select('*').eq('session_id', currentSessionId).order('created_at', { ascending: true });
         chatMessages.innerHTML = '';
         if (messages) {
@@ -323,6 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function sendMessage() {
+        if (!chatInput) return;
         const text = chatInput.value.trim();
         if (!text) return;
         
@@ -347,15 +352,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function handleBotLogic(userText) {
-        if (!botSettings?.is_enabled || (isAdmin && !isTestMode)) return;
+        if (!botSettings || !botSettings.is_enabled || (isAdmin && !isTestMode)) return;
         
         const lowerText = userText.toLowerCase();
         
-        // Custom Replies
+        // 1. Check Custom Replies (Priority)
         const matched = customReplies.find(r => r.trigger && lowerText.includes(r.trigger.toLowerCase()));
         if (matched) return sendBotReply(matched.response);
 
-        // Ticket Triggers
+        // 2. Check Ticket Triggers
         if (currentKeywords.some(k => lowerText.includes(k.toLowerCase()))) {
             sendBotReply(botSettings.ticket_confirmation_message);
             if (!isTestMode) {
@@ -370,8 +375,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function sendBotReply(text) {
+        if (!typingIndicator) return;
         typingIndicator.style.display = 'block';
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
         
         setTimeout(async () => {
             typingIndicator.style.display = 'none';
@@ -388,28 +394,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // UI Events
-    // Fix for input focus issues
-    const handleInputFocus = (e) => {
-        e.stopPropagation();
-        chatInput.focus();
-        // Ensure the input is not readonly or disabled
-        chatInput.removeAttribute('readonly');
-        chatInput.disabled = false;
-    };
-
-    chatInput?.addEventListener('click', handleInputFocus);
-    chatInput?.addEventListener('touchstart', handleInputFocus);
-    chatInput?.addEventListener('focus', () => {
-        chatInput.parentElement.style.borderColor = 'var(--color-accent)';
-    });
-    chatInput?.addEventListener('blur', () => {
-        chatInput.parentElement.style.borderColor = 'var(--color-border)';
-    });
-
-    document.querySelector('.chat-footer')?.addEventListener('click', handleInputFocus);
-    
     if (sendBtn) sendBtn.onclick = sendMessage;
-    if (chatInput) chatInput.onkeypress = (e) => e.key === 'Enter' && sendMessage();
+    if (chatInput) {
+        chatInput.onkeypress = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        };
+    }
+    
     if (closeChatBtn) {
         closeChatBtn.onclick = () => {
             if (isAdmin) {

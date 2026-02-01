@@ -127,7 +127,7 @@
 
         .view-container.active { display: flex; }
 
-        /* Chat Window Styling (Matching User's Image) */
+        /* Chat Window Styling */
         .chat-wrapper {
             width: 100%;
             max-width: 900px;
@@ -143,7 +143,7 @@
         }
 
         .chat-header-blue {
-            background: #003366; /* Dark Blue from Image */
+            background: #003366;
             color: white;
             padding: 1.25rem 2rem;
             display: flex;
@@ -198,7 +198,7 @@
 
         .msg.sent {
             align-self: flex-end;
-            background: var(--color-primary);
+            background: #003366;
             color: white;
             border-bottom-left-radius: 0.2rem;
         }
@@ -212,7 +212,7 @@
 
         .chat-footer {
             padding: 1.25rem 2rem;
-            background: #ffffff !important;
+            background: #ffffff;
             border-top: 1px solid #eee;
             display: flex;
             gap: 1rem;
@@ -220,25 +220,22 @@
             position: relative;
             z-index: 50;
             flex-shrink: 0;
-            pointer-events: auto !important;
         }
 
         .input-box {
             flex-grow: 1;
-            border: 1px solid var(--color-border) !important;
+            border: 1px solid #ddd;
             padding: 0.8rem 1.5rem;
             border-radius: 2rem;
             outline: none;
             font-family: inherit;
-            background: var(--color-surface) !important;
-            color: var(--color-text) !important;
-            position: relative;
-            z-index: 60;
-            pointer-events: auto !important;
-            cursor: text;
+            background: #f9f9f9;
+            color: #333;
+            font-size: 1rem;
         }
         .input-box:focus {
-            border-color: var(--color-accent) !important;
+            border-color: #003366;
+            background: white;
         }
 
         .action-btn {
@@ -253,8 +250,7 @@
             align-items: center;
             justify-content: center;
             transition: transform 0.2s;
-            position: relative;
-            z-index: 60;
+            flex-shrink: 0;
         }
 
         /* Settings UI Styling */
@@ -271,7 +267,7 @@
         .section-title {
             font-size: 1.25rem;
             font-weight: 700;
-            color: var(--color-primary);
+            color: #003366;
             margin-bottom: 1.5rem;
             padding-bottom: 0.5rem;
             border-bottom: 2px solid #f0f0f0;
@@ -299,8 +295,8 @@
             border: 1px solid #eee;
         }
 
-        .session-card:hover { transform: translateY(-3px); border-color: var(--color-primary); }
-        .session-card.active { border: 2px solid var(--color-primary); background: #f0f7ff; }
+        .session-card:hover { transform: translateY(-3px); border-color: #003366; }
+        .session-card.active { border: 2px solid #003366; background: #f0f7ff; }
 
         /* Responsive */
         @media (max-width: 992px) {
@@ -316,7 +312,7 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Menu (Admin Only Control) -->
+        <!-- Sidebar Menu -->
         <aside class="control-sidebar" id="mainSidebar" style="display: none;">
             <div class="sidebar-header">
                 <img src="/assets/images/logo.png" alt="Logo" style="height: 40px;">
@@ -353,7 +349,6 @@
             <!-- Customer Chats View -->
             <div id="customer-chats-view" class="view-container active">
                 <div class="sessions-grid" id="sessionsGrid">
-                    <!-- Session cards will be loaded here -->
                     <div style="text-align: center; grid-column: 1/-1; padding: 3rem; color: #666;">
                         جاري تحميل المحادثات...
                     </div>
@@ -362,7 +357,7 @@
 
             <!-- Bot Settings View -->
             <div id="bot-settings-view" class="view-container">
-                <form class="settings-form" id="botSettingsForm">
+                <div class="settings-form">
                     <div class="section-title">إعدادات ردود البوت</div>
                     
                     <div class="form-row" style="display: flex; align-items: center; gap: 1rem; background: #f8f9fa; padding: 1rem; border-radius: 8px;">
@@ -394,18 +389,18 @@
                     <div class="form-row">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                             <label style="margin-bottom: 0;">الردود المخصصة</label>
-                            <button type="button" id="addCustomReply" style="background: var(--color-primary); color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+ إضافة رد</button>
+                            <button type="button" id="addCustomReply" style="background: #003366; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+ إضافة رد</button>
                         </div>
                         <div id="customRepliesList"></div>
                     </div>
 
                     <div id="settingsAlert" style="display: none; background: #d4edda; color: #155724; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center;">تم حفظ الإعدادات بنجاح!</div>
 
-                    <button type="submit" class="action-btn" id="saveSettingsBtn" style="width: auto; border-radius: 8px; padding: 0 2rem;">حفظ الإعدادات</button>
-                </form>
+                    <button type="button" class="action-btn" id="saveBotSettings" style="width: auto; border-radius: 8px; padding: 0 2rem; height: 50px;">حفظ الإعدادات</button>
+                </div>
             </div>
 
-            <!-- Bot Test View (Chat Window) -->
+            <!-- Chat Window View -->
             <div id="chat-window-view" class="view-container">
                 <div class="chat-wrapper">
                     <div class="chat-header-blue">
@@ -415,7 +410,7 @@
                             </div>
                             <div>
                                 <h3 style="margin: 0; font-size: 1.1rem;" id="chatHeaderName">بوت مدعوم الذكي</h3>
-                                <span style="font-size: 0.8rem; opacity: 0.8;" id="chatHeaderStatus">متصل الآن - رد تلقائي</span>
+                                <span style="font-size: 0.8rem; opacity: 0.8;" id="chatHeaderStatus">متصل الآن</span>
                             </div>
                         </div>
                         <button id="closeChatBtn" style="background: none; border: none; color: white; cursor: pointer;">
@@ -423,9 +418,7 @@
                         </button>
                     </div>
 
-                    <div class="chat-body" id="chatMessages">
-                        <!-- Messages -->
-                    </div>
+                    <div class="chat-body" id="chatMessages"></div>
 
                     <div id="typingIndicator" style="padding: 0.5rem 2rem; font-size: 0.8rem; color: #666; display: none;">جاري الرد...</div>
 
