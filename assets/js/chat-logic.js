@@ -147,27 +147,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const card = document.createElement('div');
                     card.className = 'session-card';
                     card.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span class="card-tag" style="background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'};">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
+                            <span class="card-tag" style="background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'}; font-size: 0.6rem;">
                                 ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
                             </span>
-                            <button class="end-chat-btn-small" data-id="${session.id}">إغلاق</button>
+                            <button class="end-chat-btn-small" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">إغلاق المحادثة</button>
                         </div>
                         
-                        <div style="display:flex; align-items:center; gap:1rem;">
-                            <div style="width:48px; height:48px; background:#eef2ff; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366; font-size:1.2rem; flex-shrink:0;">${firstChar}</div>
-                            <div style="overflow:hidden;">
-                                <div style="font-weight:800; color:#1a1a1a; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeName}</div>
-                                <div style="font-size:0.75rem; color:#888; margin-top:2px;">${date} | ${time}</div>
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div style="width:36px; height:36px; background:#eef2ff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366; font-size:1rem; flex-shrink:0;">${firstChar}</div>
+                            <div style="overflow:hidden; flex-grow:1;">
+                                <div style="font-weight:700; color:#1a1a1a; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeName}</div>
+                                <div style="font-size:0.65rem; color:#999;">${date} | ${time}</div>
                             </div>
                         </div>
 
-                        <div style="background:#f9f9f9; padding:0.8rem; border-radius:10px; font-size:0.85rem; color:#555; line-height:1.4; min-height:45px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                        <div style="background:#f8f9fa; padding:0.6rem; border-radius:8px; font-size:0.8rem; color:#666; line-height:1.3; height:40px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; border:1px solid #f1f5f9;">
                             ${lastMsg}
                         </div>
 
-                        <button class="view-chat-btn" style="width:100%; background:var(--primary-blue); color:white; border:none; padding:10px; border-radius:10px; cursor:pointer; font-size:0.9rem; font-weight:700; transition:opacity 0.2s;">
-                            عرض وتفاصيل المحادثة
+                        <button class="view-chat-btn" style="width:100%; background:var(--primary-blue); color:white; border:none; padding:8px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600; margin-top: auto;">
+                            عرض المحادثة
                         </button>
                     `;
 
