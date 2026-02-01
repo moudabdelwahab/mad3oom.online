@@ -29,7 +29,8 @@ export function updateAdminUI(user) {
         const adminAvatarBtn = document.getElementById('adminAvatarBtn');
 
         if (adminInitial) {
-            adminInitial.textContent = (profile.full_name || user.email).charAt(0).toUpperCase();
+            const nameForInitial = profile.full_name || user.email || 'A';
+            adminInitial.textContent = nameForInitial.charAt(0).toUpperCase();
         }
 
         if (profile.role === 'admin' && adminBadgeContainer) {
@@ -40,7 +41,8 @@ export function updateAdminUI(user) {
             if (profile.avatar_url) {
                 adminAvatarBtn.innerHTML = `<img src="${profile.avatar_url}" class="nav-avatar" alt="Profile">`;
             } else {
-                const initial = (profile.full_name || user.email).charAt(0).toUpperCase();
+                const nameForInitial = profile.full_name || user.email || 'A';
+                const initial = nameForInitial.charAt(0).toUpperCase();
                 adminAvatarBtn.innerHTML = `<div class="avatar-circle">${initial}</div>`;
             }
         }
