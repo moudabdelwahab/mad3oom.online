@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 isAdmin = true;
                 if (mainSidebar) mainSidebar.style.display = 'flex';
                 loadAllSessions();
+                subscribeToAllSessions(); // Subscribe to new sessions for admin
             } else {
                 setupUserChat();
             }
@@ -129,6 +130,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             grid.innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:3rem;">لا توجد محادثات نشطة حالياً.</div>';
         }
+    }
+
+    function subscribeToAllSessions() {
+        if (!isAdmin) return;
+        
+        supabase
+            .channel('admin-sessions-list')
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'chat_sessions'
+            }, () => {
+                // Reload list if any session is created or updated
+                if (views['customer-chats'] && views['customer-chats'].classList.contains('active')) {
+                    loadAllSessions();
+                }
+            })
+            .subscribe();
     }
 
     function openAdminChat(sessionId, name) {
