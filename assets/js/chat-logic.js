@@ -35,26 +35,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 1. Initialize Auth
     async function initAuth() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            currentUser = user;
-            const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-            if (profile && profile.role === 'admin' && !window.isCustomerChat) {
-                isAdmin = true;
-                if (mainSidebar) mainSidebar.style.display = 'flex';
-                loadAllSessions();
-                subscribeToAllSessions();
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                currentUser = user;
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                if (profile && profile.role === 'admin' && !window.isCustomerChat) {
+                    isAdmin = true;
+                    if (mainSidebar) mainSidebar.style.display = 'flex';
+                    loadAllSessions();
+                    subscribeToAllSessions();
+                } else {
+                    setupUserChat();
+                }
             } else {
+                let guestId = localStorage.getItem('mad3oom-guest-id');
+                if (!guestId) {
+                    guestId = 'guest-' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('mad3oom-guest-id', guestId);
+                }
+                currentUser = { id: guestId, email: 'guest@mad3oom.online', isGuest: true };
                 setupUserChat();
             }
-        } else {
-            let guestId = localStorage.getItem('mad3oom-guest-id');
-            if (!guestId) {
-                guestId = 'guest-' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('mad3oom-guest-id', guestId);
-            }
-            currentUser = { id: guestId, email: 'guest@mad3oom.online', isGuest: true };
-            setupUserChat();
+        } catch (error) {
+            console.error("Auth initialization error:", error);
         }
     }
 
@@ -62,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     menuItems.forEach(item => {
         item.addEventListener('click', () => {
             const target = item.dataset.target;
-            if (!target) return; // For items with custom onclick like API Management
+            if (!target) return;
 
             menuItems.forEach(i => i.classList.remove('active'));
             item.classList.add('active');
@@ -85,73 +89,80 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 3. Admin: Load Sessions List
     async function loadAllSessions() {
-        const { data: sessions, error } = await supabase
-            .from('chat_sessions')
-            .select(`
-                id, 
-                created_at, 
-                updated_at,
-                user_id,
-                guest_id,
-                status,
-                is_manual_mode,
-                chat_messages(message_text, created_at)
-            `)
-            .eq('status', 'active')
-            .order('updated_at', { ascending: false });
-
         const grid = document.getElementById('sessionsGrid');
         if (!grid) return;
-        
-        if (!sessions || sessions.length === 0) {
-            grid.innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:3rem; color:#888;">لا توجد محادثات نشطة حالياً.</div>';
-            return;
-        }
 
-        grid.innerHTML = '';
-        for (const session of sessions) {
-            let name = 'مستخدم ضيف';
-            if (!session.guest_id && session.user_id) {
-                const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', session.user_id).single();
-                if (profile) name = profile.full_name;
+        try {
+            const { data: sessions, error } = await supabase
+                .from('chat_sessions')
+                .select(`
+                    id, 
+                    created_at, 
+                    updated_at,
+                    user_id,
+                    guest_id,
+                    status,
+                    is_manual_mode,
+                    chat_messages(message_text, created_at)
+                `)
+                .eq('status', 'active')
+                .order('updated_at', { ascending: false });
+
+            if (error) throw error;
+            
+            if (!sessions || sessions.length === 0) {
+                grid.innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:3rem; color:#888;">لا توجد محادثات نشطة حالياً.</div>';
+                return;
             }
-            
-            const lastMsg = session.chat_messages && session.chat_messages.length > 0 
-                ? session.chat_messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0].message_text 
-                : 'بدأ محادثة جديدة...';
-            
-            const dateObj = new Date(session.updated_at || session.created_at);
-            const time = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-            const date = dateObj.toLocaleDateString('ar-EG');
-            
-            const card = document.createElement('div');
-            card.className = 'session-card';
-            card.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
-                    <div style="display:flex; align-items:center; gap:0.75rem;">
-                        <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${name.charAt(0)}</div>
-                        <div>
-                            <div style="font-weight:700; color:#333;">${name} ${session.guest_id ? '(ضيف)' : ''}</div>
-                            <div style="font-size:0.7rem; color:#999;">${date} | ${time}</div>
+
+            grid.innerHTML = '';
+            for (const session of sessions) {
+                let name = 'مستخدم ضيف';
+                if (!session.guest_id && session.user_id) {
+                    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', session.user_id).single();
+                    if (profile) name = profile.full_name;
+                }
+                
+                const lastMsg = session.chat_messages && session.chat_messages.length > 0 
+                    ? session.chat_messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0].message_text 
+                    : 'بدأ محادثة جديدة...';
+                
+                const dateObj = new Date(session.updated_at || session.created_at);
+                const time = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                const date = dateObj.toLocaleDateString('ar-EG');
+                
+                const card = document.createElement('div');
+                card.className = 'session-card';
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${name.charAt(0)}</div>
+                            <div>
+                                <div style="font-weight:700; color:#333;">${name} ${session.guest_id ? '(ضيف)' : ''}</div>
+                                <div style="font-size:0.7rem; color:#999;">${date} | ${time}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+                            <span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'};">
+                                ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
+                            </span>
+                            <button class="view-chat-btn" style="background:var(--primary-blue); color:white; border:none; padding:4px 12px; border-radius:5px; cursor:pointer; font-size:0.8rem;">عرض المحادثة</button>
                         </div>
                     </div>
-                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
-                        <span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'};">
-                            ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
-                        </span>
-                        <button class="view-chat-btn" style="background:var(--primary-blue); color:white; border:none; padding:4px 12px; border-radius:5px; cursor:pointer; font-size:0.8rem;">عرض المحادثة</button>
+                    <div style="font-size:0.85rem; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:3rem;">
+                        ${lastMsg}
                     </div>
-                </div>
-                <div style="font-size:0.85rem; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:3rem;">
-                    ${lastMsg}
-                </div>
-            `;
-            card.querySelector('.view-chat-btn').onclick = (e) => {
-                e.stopPropagation();
-                openAdminChat(session.id, name, session.is_manual_mode);
-            };
-            card.onclick = () => openAdminChat(session.id, name, session.is_manual_mode);
-            grid.appendChild(card);
+                `;
+                card.querySelector('.view-chat-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    openAdminChat(session.id, name, session.is_manual_mode);
+                };
+                card.onclick = () => openAdminChat(session.id, name, session.is_manual_mode);
+                grid.appendChild(card);
+            }
+        } catch (error) {
+            console.error("Error loading sessions:", error);
+            grid.innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:3rem; color:red;">حدث خطأ أثناء تحميل المحادثات. يرجى المحاولة مرة أخرى.</div>';
         }
     }
 
@@ -185,6 +196,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                 isManualMode = payload.new.is_manual_mode;
                 updateAdminChatHeader();
             }).subscribe();
+            
+        // Add toggle button if it doesn't exist
+        let toggleBtn = document.getElementById('manualModeToggle');
+        if (!toggleBtn) {
+            toggleBtn = document.createElement('button');
+            toggleBtn.id = 'manualModeToggle';
+            toggleBtn.style = "margin-right:10px; padding:5px 15px; border-radius:20px; border:1px solid white; background:transparent; color:white; cursor:pointer; font-size:0.8rem;";
+            document.querySelector('.chat-header-blue .bot-profile').appendChild(toggleBtn);
+        }
+        toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
+        toggleBtn.onclick = async () => {
+            const newMode = !isManualMode;
+            const { error } = await supabase.from('chat_sessions').update({ is_manual_mode: newMode, updated_at: new Date() }).eq('id', currentSessionId);
+            if (!error) {
+                isManualMode = newMode;
+                toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
+                updateAdminChatHeader();
+            }
+        };
     }
 
     function updateAdminChatHeader() {
@@ -197,13 +227,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function loadMessages() {
         if (!currentSessionId || !chatMessages) return;
-        const { data: messages } = await supabase.from('chat_messages').select('*').eq('session_id', currentSessionId).order('created_at', { ascending: true });
-        chatMessages.innerHTML = '';
-        if (messages) {
-            messages.forEach(m => {
-                const type = (m.is_bot_reply || m.is_admin_reply) ? 'received' : 'sent';
-                appendMessage(m.message_text, type, m.created_at);
-            });
+        try {
+            const { data: messages, error } = await supabase.from('chat_messages').select('*').eq('session_id', currentSessionId).order('created_at', { ascending: true });
+            if (error) throw error;
+            chatMessages.innerHTML = '';
+            if (messages) {
+                messages.forEach(m => {
+                    // Logic: If Admin is viewing, messages NOT from admin are "received"
+                    const isReceived = isAdmin ? (!m.is_admin_reply) : (m.is_bot_reply || m.is_admin_reply);
+                    appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at);
+                });
+            }
+        } catch (error) {
+            console.error("Error loading messages:", error);
         }
     }
 
@@ -212,32 +248,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         messageChannel = supabase.channel(`messages-${currentSessionId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${currentSessionId}` }, payload => {
                 const m = payload.new;
-                const type = (m.is_bot_reply || m.is_admin_reply) ? 'received' : 'sent';
-                // Avoid double append for sent messages
+                const isReceived = isAdmin ? (!m.is_admin_reply) : (m.is_bot_reply || m.is_admin_reply);
+                
+                // Avoid double append for our own sent messages
                 if (m.sender_id !== currentUser.id || m.is_bot_reply) {
-                    appendMessage(m.message_text, type, m.created_at);
+                    appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at);
                 }
             }).subscribe();
     }
 
     async function setupUserChat() {
-        let sessionQuery = supabase.from('chat_sessions').select('id, is_manual_mode').eq('status', 'active');
-        if (currentUser.isGuest) sessionQuery = sessionQuery.eq('guest_id', currentUser.id);
-        else sessionQuery = sessionQuery.eq('user_id', currentUser.id);
-        
-        const { data: session } = await sessionQuery.maybeSingle();
-        if (session) {
-            currentSessionId = session.id;
-            isManualMode = session.is_manual_mode;
-        } else {
-            const sessionData = { status: 'active' };
-            if (currentUser.isGuest) sessionData.guest_id = currentUser.id;
-            else sessionData.user_id = currentUser.id;
-            const { data: newSession } = await supabase.from('chat_sessions').insert([sessionData]).select().single();
-            if (newSession) currentSessionId = newSession.id;
+        try {
+            let sessionQuery = supabase.from('chat_sessions').select('id, is_manual_mode').eq('status', 'active');
+            if (currentUser.isGuest) sessionQuery = sessionQuery.eq('guest_id', currentUser.id);
+            else sessionQuery = sessionQuery.eq('user_id', currentUser.id);
+            
+            const { data: session } = await sessionQuery.maybeSingle();
+            if (session) {
+                currentSessionId = session.id;
+                isManualMode = session.is_manual_mode;
+            } else {
+                const sessionData = { status: 'active' };
+                if (currentUser.isGuest) sessionData.guest_id = currentUser.id;
+                else sessionData.user_id = currentUser.id;
+                const { data: newSession } = await supabase.from('chat_sessions').insert([sessionData]).select().single();
+                if (newSession) currentSessionId = newSession.id;
+            }
+            loadMessages();
+            subscribeToMessages();
+        } catch (error) {
+            console.error("Error setting up user chat:", error);
         }
-        loadMessages();
-        subscribeToMessages();
     }
 
     async function sendMessage() {
@@ -251,12 +292,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const msgData = { session_id: currentSessionId, message_text: text, sender_id: currentUser.id };
         if (isAdmin) msgData.is_admin_reply = true;
 
-        await Promise.all([
-            supabase.from('chat_messages').insert([msgData]),
-            supabase.from('chat_sessions').update({ updated_at: new Date() }).eq('id', currentSessionId)
-        ]);
+        try {
+            await Promise.all([
+                supabase.from('chat_messages').insert([msgData]),
+                supabase.from('chat_sessions').update({ updated_at: new Date() }).eq('id', currentSessionId)
+            ]);
 
-        if (!isAdmin && !isManualMode) handleBotLogic(text);
+            if (!isAdmin && !isManualMode) handleBotLogic(text);
+        } catch (error) {
+            console.error("Error sending message:", error);
+        }
     }
 
     function appendMessage(text, type, time) {
@@ -274,6 +319,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function handleBotLogic(text) {
         if (!botSettings?.bot_enabled && !isTestMode) return;
+        if (!typingIndicator) return;
+        
         typingIndicator.style.display = 'block';
         setTimeout(async () => {
             typingIndicator.style.display = 'none';
@@ -290,8 +337,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function loadBotSettings() {
-        const { data } = await supabase.from('bot_settings').select('*').limit(1).maybeSingle();
-        if (data) botSettings = data;
+        try {
+            const { data } = await supabase.from('bot_settings').select('*').limit(1).maybeSingle();
+            if (data) botSettings = data;
+        } catch (error) {
+            console.error("Error loading bot settings:", error);
+        }
     }
 
     async function loadSettingsToForm() {
