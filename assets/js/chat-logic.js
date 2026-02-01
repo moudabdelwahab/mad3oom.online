@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentUser = null;
     let isAdmin = false;
     let currentSessionId = null;
+    let messageChannel = null;
+    let modeChannel = null;
     let currentTicketId = null;
     let botSettings = null;
     let isTestMode = false;
@@ -160,6 +162,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function openAdminChat(sessionId, name, manualMode) {
+        // Unsubscribe from previous channels if they exist
+        if (messageChannel) {
+            supabase.removeChannel(messageChannel);
+            messageChannel = null;
+        }
+        if (modeChannel) {
+            supabase.removeChannel(modeChannel);
+            modeChannel = null;
+        }
+
         currentSessionId = sessionId;
         isManualMode = manualMode;
         isTestMode = false;
@@ -172,6 +184,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         loadMessages();
         subscribeToMessages();
+        
+        // Subscribe to mode changes for this session
+        modeChannel = supabase.channel(`session-mode-${currentSessionId}`)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${currentSessionId}` }, payload => {
+                isManualMode = payload.new.is_manual_mode;
+                updateAdminChatHeader();
+                const toggleBtn = document.getElementById('manualModeToggle');
+                if (toggleBtn) toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
+            }).subscribe();
         
         let toggleBtn = document.getElementById('manualModeToggle');
         if (!toggleBtn) {
@@ -255,8 +276,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function subscribeToMessages() {
         if (!currentSessionId || isTestMode) return;
-        supabase.channel(`messages-${currentSessionId}`)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${currentSessionId}` }, payload => {
+        
+        if (messageChannel) {
+            supabase.removeChannel(messageChannel);
+        }
+
+        messageChannel = supabase.channel(`messages-${currentSessionId}`)
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'chat_messages', 
+                filter: `session_id=eq.${currentSessionId}` 
+            }, payload => {
                 // للعميل: استقبل أي رسالة من البوت أو من الأدمن
                 // للمدير: استقبل أي رسالة ليست من الأدمن (أي من العميل أو البوت)
                 const isReceived = isAdmin ? (!payload.new.is_admin_reply) : (payload.new.is_bot_reply || payload.new.is_admin_reply);
