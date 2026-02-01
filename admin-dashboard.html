@@ -77,6 +77,88 @@
         </div>
     </main>
 
+    <!-- Ticket View Modal -->
+    <div id="ticketModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTicketTitle">تفاصيل التذكرة</h2>
+                <span class="close-modal" id="closeModal">&times;</span>
+            </div>
+            <div class="ticket-details-grid">
+                <div class="ticket-info-section">
+                    <div class="detail-item">
+                        <div class="detail-label">وصف المشكلة</div>
+                        <div id="modalTicketDesc" class="detail-value" style="white-space: pre-wrap; font-weight: 400; line-height: 1.6;"></div>
+                    </div>
+                    
+                    <div id="modalTicketImageContainer" class="detail-item" style="display:none;">
+                        <div class="detail-label">المرفقات</div>
+                        <a id="modalTicketImageLink" target="_blank">
+                            <img id="modalTicketImage" style="max-width: 100%; border-radius: 8px; border: 1px solid #eee; margin-top: 0.5rem;">
+                        </a>
+                    </div>
+
+                    <div class="replies-container">
+                        <h3 style="font-size: 1rem; margin-bottom: 1rem;">المحادثة والردود</h3>
+                        <div id="ticketRepliesList">
+                            <!-- Replies will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div class="reply-form">
+                        <textarea id="replyText" class="reply-textarea" placeholder="اكتب ردك هنا..."></textarea>
+                        <div class="reply-actions">
+                            <div class="reply-btns">
+                                <button id="sendPublicReply" class="btn btn-success">إرسال رد للعميل</button>
+                                <button id="sendInternalNote" class="btn btn-warning">إضافة ملاحظة داخلية</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ticket-meta-section">
+                    <div class="detail-item">
+                        <div class="detail-label">رقم التذكرة</div>
+                        <div id="modalTicketNumber" class="detail-value">#0</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">الحالة الحالية</div>
+                        <div id="modalTicketStatus" class="detail-value"></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">صاحب التذكرة</div>
+                        <div id="modalTicketUser" class="detail-value"></div>
+                        <div id="modalTicketEmail" style="font-size: 0.75rem; color: #666;"></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">تاريخ الإنشاء</div>
+                        <div id="modalTicketDate" class="detail-value"></div>
+                    </div>
+                    
+                    <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                        <button id="resolveTicketBtn" class="btn btn-primary" style="width: 100%;">إغلاق التذكرة (تم الحل)</button>
+                        <button id="impersonateUserBtn" class="btn btn-outline" style="width: 100%;">دخول لحساب العميل</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Close Ticket Modal -->
+    <div id="closeTicketModal" class="close-ticket-modal">
+        <div class="close-ticket-modal-content">
+            <div class="close-ticket-modal-header">إغلاق التذكرة</div>
+            <div class="close-ticket-modal-body">
+                <p>هل أنت متأكد من رغبتك في إغلاق هذه التذكرة؟ يمكنك إضافة تعليق ختامي للعميل قبل الإغلاق.</p>
+                <textarea id="closeTicketComment" class="close-ticket-modal-textarea" placeholder="أضف تعليقاً ختامياً للعميل (اختياري)..."></textarea>
+            </div>
+            <div class="close-ticket-modal-footer">
+                <button id="closeCloseTicketModal" class="btn-cancel">إلغاء</button>
+                <button id="confirmCloseTicket" class="btn-confirm">تأكيد الإغلاق</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="/assets/js/admin/dashboard-logic.js"></script>
 </body>
 </html>
