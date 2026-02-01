@@ -102,7 +102,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function loadAllSessions() {
         const { data: sessions } = await supabase
             .from('chat_sessions')
-            .select('id, created_at, user_id, profiles(full_name)')
+            .select(`
+                id, 
+                created_at, 
+                user_id, 
+                profiles(full_name),
+                chat_messages(message_text, created_at)
+            `)
             .eq('status', 'active')
             .order('created_at', { ascending: false });
 
@@ -113,28 +119,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (sessions && sessions.length > 0) {
             sessions.forEach(session => {
                 const name = session.profiles?.full_name || 'مستخدم ضيف';
+                const lastMsg = session.chat_messages && session.chat_messages.length > 0 
+                    ? session.chat_messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0].message_text 
+                    : 'بدأ محادثة جديدة...';
+                const time = new Date(session.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                
                 const card = document.createElement('div');
                 card.className = 'session-card';
                 card.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:1rem;">
-                        <div style="width:50px; height:50px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${name.charAt(0)}</div>
-                        <div>
-                            <div style="font-weight:700;">${name}</div>
-                            <div style="font-size:0.8rem; color:#666;">#${session.id.slice(0,8)}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${name.charAt(0)}</div>
+                            <div>
+                                <div style="font-weight:700; color:#333;">${name}</div>
+                                <div style="font-size:0.7rem; color:#999;">#${session.id.slice(0,8)}</div>
+                            </div>
                         </div>
+                        <div style="font-size:0.75rem; color:#888;">${time}</div>
+                    </div>
+                    <div style="font-size:0.85rem; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:3rem;">
+                        ${lastMsg}
                     </div>
                 `;
                 card.onclick = () => openAdminChat(session.id, name);
                 grid.appendChild(card);
             });
         } else {
-            grid.innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:3rem;">لا توجد محادثات نشطة حالياً.</div>';
+            grid.innerHTML = '<div style="text-align:center; grid-column:1/-1; padding:3rem; color:#888;">لا توجد محادثات نشطة حالياً.</div>';
         }
     }
 
     function subscribeToAllSessions() {
         if (!isAdmin) return;
         
+        // Listen for new sessions
         supabase
             .channel('admin-sessions-list')
             .on('postgres_changes', { 
@@ -142,7 +160,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 schema: 'public', 
                 table: 'chat_sessions'
             }, () => {
-                // Reload list if any session is created or updated
+                if (views['customer-chats'] && views['customer-chats'].classList.contains('active')) {
+                    loadAllSessions();
+                }
+            })
+            .subscribe();
+
+        // Also listen for new messages to update the "last message" in the list
+        supabase
+            .channel('admin-messages-updates')
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'chat_messages'
+            }, () => {
                 if (views['customer-chats'] && views['customer-chats'].classList.contains('active')) {
                     loadAllSessions();
                 }
@@ -183,8 +214,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function setupUserChat() {
-        const isRealUser = currentUser.id && currentUser.id.length > 20;
-
         // Try to find an active session for this user (real or guest)
         const { data: session } = await supabase
             .from('chat_sessions')
