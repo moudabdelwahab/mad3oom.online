@@ -117,48 +117,56 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             grid.innerHTML = '';
             for (const session of sessions) {
-                let name = 'مستخدم ضيف';
-                if (!session.guest_id && session.user_id) {
-                    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', session.user_id).single();
-                    if (profile) name = profile.full_name;
-                }
-                
-                const lastMsg = session.chat_messages && session.chat_messages.length > 0 
-                    ? session.chat_messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0].message_text 
-                    : 'بدأ محادثة جديدة...';
-                
-                const dateObj = new Date(session.updated_at || session.created_at);
-                const time = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-                const date = dateObj.toLocaleDateString('ar-EG');
-                
-                const card = document.createElement('div');
-                card.className = 'session-card';
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
-                        <div style="display:flex; align-items:center; gap:0.75rem;">
-                            <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${(name || 'م').charAt(0)}</div>
-                            <div>
-                                <div style="font-weight:700; color:#333;">${name} ${session.guest_id ? '(ضيف)' : ''}</div>
-                                <div style="font-size:0.7rem; color:#999;">${date} | ${time}</div>
+                try {
+                    let name = 'مستخدم ضيف';
+                    if (!session.guest_id && session.user_id) {
+                        const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', session.user_id).single();
+                        if (profile && profile.full_name) name = profile.full_name;
+                    }
+                    
+                    // تأمين الاسم بشكل نهائي
+                    const safeName = (name || 'مستخدم').toString();
+                    const firstChar = safeName.charAt(0) || 'م';
+                    
+                    const lastMsg = session.chat_messages && session.chat_messages.length > 0 
+                        ? session.chat_messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0].message_text 
+                        : 'بدأ محادثة جديدة...';
+                    
+                    const dateObj = new Date(session.updated_at || session.created_at);
+                    const time = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                    const date = dateObj.toLocaleDateString('ar-EG');
+                    
+                    const card = document.createElement('div');
+                    card.className = 'session-card';
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${firstChar}</div>
+                                <div>
+                                    <div style="font-weight:700; color:#333;">${safeName} ${session.guest_id ? '(ضيف)' : ''}</div>
+                                    <div style="font-size:0.7rem; color:#999;">${date} | ${time}</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
+                                <span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'};">
+                                    ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
+                                </span>
+                                <button class="view-chat-btn" style="background:var(--primary-blue); color:white; border:none; padding:4px 12px; border-radius:5px; cursor:pointer; font-size:0.8rem;">عرض المحادثة</button>
                             </div>
                         </div>
-                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
-                            <span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'};">
-                                ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
-                            </span>
-                            <button class="view-chat-btn" style="background:var(--primary-blue); color:white; border:none; padding:4px 12px; border-radius:5px; cursor:pointer; font-size:0.8rem;">عرض المحادثة</button>
+                        <div style="font-size:0.85rem; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:3rem;">
+                            ${lastMsg}
                         </div>
-                    </div>
-                    <div style="font-size:0.85rem; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:3rem;">
-                        ${lastMsg}
-                    </div>
-                `;
-                card.querySelector('.view-chat-btn').onclick = (e) => {
-                    e.stopPropagation();
-                    openAdminChat(session.id, name, session.is_manual_mode);
-                };
-                card.onclick = () => openAdminChat(session.id, name, session.is_manual_mode);
-                grid.appendChild(card);
+                    `;
+                    card.querySelector('.view-chat-btn').onclick = (e) => {
+                        e.stopPropagation();
+                        openAdminChat(session.id, safeName, session.is_manual_mode);
+                    };
+                    card.onclick = () => openAdminChat(session.id, safeName, session.is_manual_mode);
+                    grid.appendChild(card);
+                } catch (sessionError) {
+                    console.error("Error processing session:", session.id, sessionError);
+                }
             }
         } catch (error) {
             console.error("Error loading sessions:", error);
