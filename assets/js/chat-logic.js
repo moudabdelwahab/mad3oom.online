@@ -147,29 +147,47 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const card = document.createElement('div');
                     card.className = 'session-card';
                     card.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
-                            <div style="display:flex; align-items:center; gap:0.75rem;">
-                                <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${firstChar}</div>
-                                <div>
-                                    <div style="font-weight:700; color:#333;">${safeName} ${session.guest_id ? '(ضيف)' : ''}</div>
-                                    <div style="font-size:0.7rem; color:#999;">${date} | ${time}</div>
-                                </div>
-                            </div>
-                            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
-                                <span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'};">
-                                    ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
-                                </span>
-                                <button class="view-chat-btn" style="background:var(--primary-blue); color:white; border:none; padding:4px 12px; border-radius:5px; cursor:pointer; font-size:0.8rem;">عرض المحادثة</button>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="card-tag" style="background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'};">
+                                ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
+                            </span>
+                            <button class="end-chat-btn-small" data-id="${session.id}">إغلاق</button>
+                        </div>
+                        
+                        <div style="display:flex; align-items:center; gap:1rem;">
+                            <div style="width:48px; height:48px; background:#eef2ff; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366; font-size:1.2rem; flex-shrink:0;">${firstChar}</div>
+                            <div style="overflow:hidden;">
+                                <div style="font-weight:800; color:#1a1a1a; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeName}</div>
+                                <div style="font-size:0.75rem; color:#888; margin-top:2px;">${date} | ${time}</div>
                             </div>
                         </div>
-                        <div style="font-size:0.85rem; color:#666; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:3rem;">
+
+                        <div style="background:#f9f9f9; padding:0.8rem; border-radius:10px; font-size:0.85rem; color:#555; line-height:1.4; min-height:45px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
                             ${lastMsg}
                         </div>
+
+                        <button class="view-chat-btn" style="width:100%; background:var(--primary-blue); color:white; border:none; padding:10px; border-radius:10px; cursor:pointer; font-size:0.9rem; font-weight:700; transition:opacity 0.2s;">
+                            عرض وتفاصيل المحادثة
+                        </button>
                     `;
-                    card.querySelector('.view-chat-btn').onclick = (e) => {
+
+                    const viewBtn = card.querySelector('.view-chat-btn');
+                    const endBtn = card.querySelector('.end-chat-btn-small');
+
+                    viewBtn.onclick = (e) => {
                         e.stopPropagation();
                         openAdminChat(session.id, safeName, session.is_manual_mode);
                     };
+                    
+                    endBtn.onclick = async (e) => {
+                        e.stopPropagation();
+                        if (confirm('هل أنت متأكد من رغبتك في إغلاق هذه المحادثة؟')) {
+                            const { error } = await supabase.from('chat_sessions').update({ status: 'closed', updated_at: new Date() }).eq('id', session.id);
+                            if (!error) loadAllSessions();
+                            else alert('حدث خطأ أثناء إغلاق المحادثة');
+                        }
+                    };
+
                     card.onclick = () => openAdminChat(session.id, safeName, session.is_manual_mode);
                     grid.appendChild(card);
                 } catch (sessionError) {
