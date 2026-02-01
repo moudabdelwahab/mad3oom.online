@@ -153,7 +153,7 @@
                     <td>${ratingHtml}</td>
                     <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
                     <td style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-primary" onclick="impersonateUser('${t.user_id}')">دخول</button>
+                        <button class="btn btn-primary" onclick="impersonateUser('${t.user_id}')">عرض</button>
                         ${t.chat_session_id ? `<a href="chat-admin.html" class="btn btn-outline">المحادثة</a>` : ''}
                     </td>
                 </tr>

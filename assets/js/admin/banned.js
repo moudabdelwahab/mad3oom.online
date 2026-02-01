@@ -31,7 +31,7 @@ async function renderBannedUsers() {
             <td><span class="status-badge status-danger">محظور</span></td>
             <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
             <td>
-                <button class="btn btn-primary btn-sm impersonate-btn" data-user-id="${u.id}">دخول</button>
+                <button class="btn btn-primary btn-sm impersonate-btn" data-user-id="${u.id}">عرض</button>
                 <button class="btn btn-success btn-sm unban-btn" data-user-id="${u.id}">إلغاء الحظر</button>
             </td>
         </tr>

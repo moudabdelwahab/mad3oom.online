@@ -31,7 +31,7 @@ async function renderUsers() {
             <td>${new Date(u.created_at).toLocaleDateString('ar-EG')}</td>
             <td>
                 <div style="display: flex; gap: 5px;">
-                    <button class="btn btn-primary btn-sm impersonate-btn" data-user-id="${u.id}">دخول</button>
+                    <button class="btn btn-primary btn-sm impersonate-btn" data-user-id="${u.id}">عرض</button>
                     <button class="btn btn-danger btn-sm ban-btn" data-user-id="${u.id}" ${u.status === 'banned' ? 'disabled' : ''}>${u.status === 'banned' ? 'محظور' : 'حظر'}</button>
                     <button class="btn btn-warning btn-sm points-btn" data-user-id="${u.id}" data-user-name="${u.full_name || u.email}">النقاط</button>
                 </div>
@@ -39,7 +39,7 @@ async function renderUsers() {
         </tr>
     `).join('') || '<tr><td colspan="5">لا يوجد مستخدمين</td></tr>';
 
-    // ربط أزرار الدخول
+    // ربط أزرار العرض
     document.querySelectorAll('.impersonate-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const userId = btn.getAttribute('data-user-id');

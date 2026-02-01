@@ -32,7 +32,7 @@ async function renderTickets() {
             <td>${t.title}</td>
             <td><span class="status-badge status-${t.status}">${t.status}</span></td>
             <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
-            <td><button class="btn btn-primary btn-sm impersonate-btn" data-user-id="${t.user_id}">دخول</button></td>
+            <td><button class="btn btn-primary btn-sm impersonate-btn" data-user-id="${t.user_id}">عرض</button></td>
         </tr>
     `).join('') || '<tr><td colspan="5">لا توجد تذاكر</td></tr>';
 
