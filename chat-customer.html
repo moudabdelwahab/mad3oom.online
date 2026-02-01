@@ -145,7 +145,7 @@
         
         .msg.sent { 
             align-self: flex-end; 
-            background: var(--color-primary); 
+            background: #003366; 
             color: white; 
             border-bottom-left-radius: 0.2rem; 
         } 
@@ -166,28 +166,24 @@
             align-items: center; 
             flex-shrink: 0;
             position: relative;
-            z-index: 50; /* ضمان بقاء الفوتر فوق أي عناصر أخرى */
-            pointer-events: auto !important;
+            z-index: 50;
         } 
         
         .input-box { 
             flex-grow: 1; 
-            border: 1px solid var(--color-border); 
+            border: 1px solid #ddd; 
             padding: 0.8rem 1.5rem; 
             border-radius: 2rem; 
             outline: none; 
             font-family: inherit; 
-            background: var(--color-surface) !important; 
-            color: var(--color-text) !important; 
-            position: relative; 
-            z-index: 60; 
-            pointer-events: auto !important; 
-            cursor: text;
+            background: #f9f9f9; 
+            color: #333; 
+            font-size: 1rem;
         } 
         
         .input-box:focus { 
-            border-color: var(--color-accent); 
-            background: var(--color-surface); 
+            border-color: #003366; 
+            background: white; 
         } 
         
         .action-btn { 
@@ -202,8 +198,7 @@
             align-items: center; 
             justify-content: center; 
             transition: transform 0.2s; 
-            position: relative;
-            z-index: 60;
+            flex-shrink: 0;
         } 
         
         /* Responsive */ 
@@ -212,8 +207,7 @@
             .chat-header-blue { padding: 1rem; } 
             .chat-footer { padding: 1rem; } 
         } 
-
-        /* منع أي تداخل من الفوتر العام إذا كان موجوداً */
+        
         footer {
             display: none !important;
         }
@@ -221,7 +215,6 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Main Workspace -->
         <main class="main-content">
             <!-- Navbar -->
             <nav class="top-navbar">
@@ -242,14 +235,12 @@
                             </div>
                             <div>
                                 <h3 style="margin: 0; font-size: 1.1rem;" id="chatHeaderName">بوت مدعوم الذكي</h3>
-                                <span style="font-size: 0.8rem; opacity: 0.8;" id="chatHeaderStatus">متصل الآن - رد تلقائي</span>
+                                <span style="font-size: 0.8rem; opacity: 0.8;" id="chatHeaderStatus">متصل الآن</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="chat-body" id="chatMessages">
-                        <!-- Messages -->
-                    </div>
+                    <div class="chat-body" id="chatMessages"></div>
 
                     <div id="typingIndicator" style="padding: 0.5rem 2rem; font-size: 0.8rem; color: #666; display: none;">جاري الرد...</div>
 
@@ -266,7 +257,6 @@
 
     <script type="module" src="/assets/js/chat-logic.js"></script>
     <script>
-        // Force bot test mode for customers
         window.isCustomerChat = true;
     </script>
 </body>
