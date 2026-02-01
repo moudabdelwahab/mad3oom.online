@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const views = {
         'customer-chats': document.getElementById('customer-chats-view'),
         'chat-window': document.getElementById('chat-window-view'),
-        'bot-settings': document.getElementById('bot-settings-view')
+        'bot-settings': document.getElementById('bot-settings-view'),
+        'api-management': document.getElementById('api-management-view')
     };
     
     // Header Elements
@@ -74,6 +75,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else if (target === 'bot-settings') {
                 if (views['bot-settings']) views['bot-settings'].classList.add('active');
                 loadSettingsToForm();
+            } else if (target === 'api-management') {
+                if (views['api-management']) views['api-management'].classList.add('active');
+                loadApiKeys();
+                loadFirewallRules();
             } else if (target === 'bot-test') {
                 isTestMode = true;
                 setupTestChat();
@@ -381,6 +386,140 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (enabledCheck) enabledCheck.checked = botSettings.is_enabled;
         if (welcomeInput) welcomeInput.value = botSettings.welcome_message;
     }
+
+    // --- API Management Logic ---
+    async function loadApiKeys() {
+        const listContainer = document.getElementById('apiKeysList');
+        if (!listContainer) return;
+
+        const { data: keys, error } = await supabase.from('bot_api_keys').select('*').order('created_at', { ascending: false });
+        
+        if (error) {
+            listContainer.innerHTML = `<div style="color:red; text-align:center; padding:1rem;">خطأ في تحميل البيانات: ${error.message}</div>`;
+            return;
+        }
+
+        if (!keys || keys.length === 0) {
+            listContainer.innerHTML = '<div style="text-align:center; padding:2rem; color:#888;">لا توجد مفاتيح API حالياً.</div>';
+            return;
+        }
+
+        listContainer.innerHTML = '';
+        keys.forEach(key => {
+            const card = document.createElement('div');
+            card.className = 'custom-reply-card';
+            card.style.borderRight = `5px solid ${getStatusColor(key.status)}`;
+            
+            card.innerHTML = `
+                <div class="reply-card-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-weight:bold; color:var(--primary-blue);">${key.name}</span>
+                        <span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:#f0f0f0; color:#666;">${key.status}</span>
+                    </div>
+                    <button class="del-reply-btn" onclick="deleteApiKey('${key.id}')">حذف</button>
+                </div>
+                <div style="font-family:monospace; background:#f8f9fa; padding:8px; border-radius:5px; font-size:0.85rem; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>${key.key_value.substring(0, 8)}...${key.key_value.substring(key.key_value.length - 8)}</span>
+                    <button onclick="navigator.clipboard.writeText('${key.key_value}'); alert('تم نسخ المفتاح!')" style="background:none; border:none; cursor:pointer; color:var(--primary-blue);">نسخ</button>
+                </div>
+                <div style="font-size:0.8rem; color:#666; display:flex; gap:15px; flex-wrap:wrap;">
+                    <span>🌐 ${key.website_url || 'كل المواقع'}</span>
+                    <span>🔒 ${key.permissions.join(', ')}</span>
+                </div>
+                <div style="margin-top:10px; display:flex; gap:5px;">
+                    <select onchange="updateApiKeyStatus('${key.id}', this.value)" style="font-size:0.75rem; padding:3px; border-radius:4px; border:1px solid #ddd;">
+                        <option value="active" ${key.status === 'active' ? 'selected' : ''}>Active</option>
+                        <option value="read_only" ${key.status === 'read_only' ? 'selected' : ''}>Read Only</option>
+                        <option value="rate_limited" ${key.status === 'rate_limited' ? 'selected' : ''}>Rate Limited</option>
+                        <option value="maintenance" ${key.status === 'maintenance' ? 'selected' : ''}>Maintenance</option>
+                    </select>
+                </div>
+            `;
+            listContainer.appendChild(card);
+        });
+    }
+
+    function getStatusColor(status) {
+        switch(status) {
+            case 'active': return '#28a745';
+            case 'read_only': return '#17a2b8';
+            case 'rate_limited': return '#ffc107';
+            case 'maintenance': return '#dc3545';
+            default: return '#ddd';
+        }
+    }
+
+    window.deleteApiKey = async (id) => {
+        if (!confirm('هل أنت متأكد من حذف هذا المفتاح؟')) return;
+        const { error } = await supabase.from('bot_api_keys').delete().eq('id', id);
+        if (!error) loadApiKeys();
+    };
+
+    window.updateApiKeyStatus = async (id, status) => {
+        const { error } = await supabase.from('bot_api_keys').update({ status }).eq('id', id);
+        if (!error) loadApiKeys();
+    };
+
+    const generateBtn = document.getElementById('generateApiKeyBtn');
+    if (generateBtn) {
+        generateBtn.onclick = async () => {
+            const name = prompt('أدخل اسم الموقع/التطبيق:');
+            if (!name) return;
+            const website = prompt('أدخل رابط الموقع (اختياري):', '');
+            
+            const newKey = 'mb_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            
+            const { error } = await supabase.from('bot_api_keys').insert([{
+                name: name,
+                website_url: website,
+                key_value: newKey,
+                status: 'active',
+                permissions: ['chat:send', 'memory:read'],
+                created_by: currentUser.id
+            }]);
+
+            if (error) alert('خطأ: ' + error.message);
+            else loadApiKeys();
+        };
+    }
+
+    // --- Firewall Logic ---
+    async function loadFirewallRules() {
+        const listContainer = document.getElementById('firewallRulesList');
+        if (!listContainer) return;
+
+        const { data: rules, error } = await supabase.from('memory_firewall_rules').select('*');
+        
+        if (error) {
+            listContainer.innerHTML = `<div style="color:red; text-align:center; padding:1rem;">خطأ: ${error.message}</div>`;
+            return;
+        }
+
+        listContainer.innerHTML = '';
+        rules.forEach(rule => {
+            const div = document.createElement('div');
+            div.className = 'custom-reply-card';
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.innerHTML = `
+                <div>
+                    <div style="font-weight:bold; color:var(--primary-blue);">${rule.rule_type}</div>
+                    <div style="font-size:0.8rem; color:#666;">${rule.description}</div>
+                    <div style="font-family:monospace; font-size:0.75rem; background:#f0f0f0; padding:2px 5px; border-radius:3px; margin-top:5px;">القيمة: ${rule.rule_value}</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" ${rule.is_active ? 'checked' : ''} onchange="toggleFirewallRule('${rule.id}', this.checked)">
+                    <span class="slider round"></span>
+                </label>
+            `;
+            listContainer.appendChild(div);
+        });
+    }
+
+    window.toggleFirewallRule = async (id, isActive) => {
+        await supabase.from('memory_firewall_rules').update({ is_active: isActive }).eq('id', id);
+    };
 
     if (sendBtn) sendBtn.onclick = sendMessage;
     if (chatInput) chatInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
