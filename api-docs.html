@@ -34,8 +34,9 @@
         .main-content {
             margin-right: var(--sidebar-width);
             padding: 3rem;
-            width: 100%;
-            max-width: 900px;
+            width: calc(100% - var(--sidebar-width)); /* لضمان عدم التداخل */
+            max-width: 900px; /* يمكن تعديلها حسب الحاجة */
+            box-sizing: border-box; /* لضمان احتساب البادينغ ضمن العرض */
         }
         .nav-item {
             display: block;
