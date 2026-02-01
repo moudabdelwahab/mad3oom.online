@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentSessionId = null;
     let messageChannel = null;
     let modeChannel = null;
+    let adminRealtimeChannel = null;
     let currentTicketId = null;
     let botSettings = null;
     let isTestMode = false;
@@ -124,19 +125,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (profile && profile.full_name) name = profile.full_name;
                     }
                     
-                    // تأمين الاسم بشكل نهائي
                     const safeName = (name || 'مستخدم').toString();
                     const firstChar = (safeName && safeName.length > 0) ? safeName.charAt(0) : 'م';
                     
                     let lastMsg = 'بدأ محادثة جديدة...';
                     if (session.chat_messages && session.chat_messages.length > 0) {
-                        try {
-                            const sortedMsgs = [...session.chat_messages].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-                            if (sortedMsgs[0] && sortedMsgs[0].message_text) {
-                                lastMsg = sortedMsgs[0].message_text;
-                            }
-                        } catch (e) {
-                            console.error("Error sorting messages for session:", session.id, e);
+                        const sortedMsgs = [...session.chat_messages].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+                        if (sortedMsgs[0] && sortedMsgs[0].message_text) {
+                            lastMsg = sortedMsgs[0].message_text;
                         }
                     }
                     
@@ -146,6 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     const card = document.createElement('div');
                     card.className = 'session-card';
+                    card.id = `session-${session.id}`;
                     card.innerHTML = `
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
                             <span class="card-tag" style="background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'}; font-size: 0.6rem;">
@@ -162,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             </div>
                         </div>
 
-                        <div style="background:#f8f9fa; padding:0.6rem; border-radius:8px; font-size:0.8rem; color:#666; line-height:1.3; height:40px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; border:1px solid #f1f5f9;">
+                        <div class="last-message-preview" style="background:#f8f9fa; padding:0.6rem; border-radius:8px; font-size:0.8rem; color:#666; line-height:1.3; height:40px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; border:1px solid #f1f5f9;">
                             ${lastMsg}
                         </div>
 
@@ -202,9 +199,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function subscribeToAllSessions() {
         if (!isAdmin) return;
-        supabase.channel('admin-realtime')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, () => loadAllSessions())
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, () => loadAllSessions())
+        if (adminRealtimeChannel) supabase.removeChannel(adminRealtimeChannel);
+
+        adminRealtimeChannel = supabase.channel('admin-realtime-global')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, (payload) => {
+                console.log("Session change detected:", payload);
+                // إذا كانت الجلسة جديدة أو تم تحديثها، نعيد تحميل القائمة لضمان الترتيب الصحيح
+                loadAllSessions();
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+                console.log("New message detected globally:", payload);
+                // تحديث آخر رسالة في الكارت الخاص بالجلسة بدون إعادة تحميل الكل إذا أمكن
+                const sessionId = payload.new.session_id;
+                const card = document.getElementById(`session-${sessionId}`);
+                if (card) {
+                    const preview = card.querySelector('.last-message-preview');
+                    if (preview) preview.innerText = payload.new.message_text;
+                    // نقل الكارت للأعلى لأنه تم تحديثه
+                    const grid = document.getElementById('sessionsGrid');
+                    if (grid && grid.firstChild !== card) {
+                        grid.insertBefore(card, grid.firstChild);
+                    }
+                } else {
+                    // إذا لم يكن الكارت موجوداً (محادثة جديدة تماماً)، نحمل الكل
+                    loadAllSessions();
+                }
+            })
             .subscribe();
     }
 
@@ -229,26 +249,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${currentSessionId}` }, payload => {
                 isManualMode = payload.new.is_manual_mode;
                 updateAdminChatHeader();
+                const toggleBtn = document.getElementById('manualModeToggle');
+                if (toggleBtn) toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
             }).subscribe();
             
-        // Add toggle button if it doesn't exist
         let toggleBtn = document.getElementById('manualModeToggle');
         if (!toggleBtn) {
             toggleBtn = document.createElement('button');
             toggleBtn.id = 'manualModeToggle';
             toggleBtn.style = "margin-right:10px; padding:5px 15px; border-radius:20px; border:1px solid white; background:transparent; color:white; cursor:pointer; font-size:0.8rem;";
-            document.querySelector('.chat-header-blue .bot-profile').appendChild(toggleBtn);
+            const profileContainer = document.querySelector('.chat-header-blue .bot-profile');
+            if (profileContainer) profileContainer.appendChild(toggleBtn);
         }
-        toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
-        toggleBtn.onclick = async () => {
-            const newMode = !isManualMode;
-            const { error } = await supabase.from('chat_sessions').update({ is_manual_mode: newMode, updated_at: new Date() }).eq('id', currentSessionId);
-            if (!error) {
-                isManualMode = newMode;
-                toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
-                updateAdminChatHeader();
-            }
-        };
+        if (toggleBtn) {
+            toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
+            toggleBtn.onclick = async () => {
+                const newMode = !isManualMode;
+                const { error } = await supabase.from('chat_sessions').update({ is_manual_mode: newMode, updated_at: new Date() }).eq('id', currentSessionId);
+                if (!error) {
+                    isManualMode = newMode;
+                    toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
+                    updateAdminChatHeader();
+                }
+            };
+        }
     }
 
     function updateAdminChatHeader() {
@@ -267,9 +291,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             chatMessages.innerHTML = '';
             if (messages) {
                 messages.forEach(m => {
-                    // Logic: If Admin is viewing, messages NOT from admin are "received"
                     const isReceived = isAdmin ? (!m.is_admin_reply) : (m.is_bot_reply || m.is_admin_reply);
-                    appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at);
+                    appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at, m.id);
                 });
             }
         } catch (error) {
@@ -282,11 +305,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         messageChannel = supabase.channel(`messages-${currentSessionId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${currentSessionId}` }, payload => {
                 const m = payload.new;
+                // التحقق مما إذا كانت الرسالة موجودة بالفعل لتجنب التكرار
+                if (document.getElementById(`msg-${m.id}`)) return;
+
                 const isReceived = isAdmin ? (!m.is_admin_reply) : (m.is_bot_reply || m.is_admin_reply);
                 
-                // Avoid double append for our own sent messages
+                // إذا كانت الرسالة من الطرف الآخر أو من البوت، نضيفها
+                // أما إذا كانت من نفس المستخدم الحالي، فقد تمت إضافتها بالفعل عند الإرسال (Optimistic UI)
                 if (m.sender_id !== currentUser.id || m.is_bot_reply) {
-                    appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at);
+                    appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at, m.id);
                 }
             }).subscribe();
     }
@@ -319,7 +346,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const text = chatInput.value.trim();
         if (!text || !currentSessionId) return;
         chatInput.value = '';
-        appendMessage(text, 'sent', new Date());
+        
+        // Optimistic UI: إضافة الرسالة فوراً للواجهة
+        const tempId = 'temp-' + Date.now();
+        appendMessage(text, 'sent', new Date(), tempId);
         
         if (isTestMode) { handleBotLogic(text); return; }
 
@@ -327,25 +357,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (isAdmin) msgData.is_admin_reply = true;
 
         try {
-            await Promise.all([
-                supabase.from('chat_messages').insert([msgData]),
-                supabase.from('chat_sessions').update({ updated_at: new Date() }).eq('id', currentSessionId)
-            ]);
+            const { data: savedMsg, error } = await supabase.from('chat_messages').insert([msgData]).select().single();
+            if (error) throw error;
+            
+            // تحديث الـ ID المؤقت بالـ ID الحقيقي من قاعدة البيانات
+            const tempMsg = document.getElementById(`msg-${tempId}`);
+            if (tempMsg && savedMsg) tempMsg.id = `msg-${savedMsg.id}`;
+
+            await supabase.from('chat_sessions').update({ updated_at: new Date() }).eq('id', currentSessionId);
 
             if (!isAdmin && !isManualMode) handleBotLogic(text);
         } catch (error) {
             console.error("Error sending message:", error);
+            // في حالة الخطأ، يمكن إظهار علامة خطأ بجانب الرسالة
+            const tempMsg = document.getElementById(`msg-${tempId}`);
+            if (tempMsg) tempMsg.style.opacity = '0.5';
         }
     }
 
-    function appendMessage(text, type, time) {
+    function appendMessage(text, type, time, id) {
         if (!chatMessages) return;
+        
+        // منع التكرار إذا كانت الرسالة موجودة بالفعل
+        if (id && document.getElementById(`msg-${id}`)) return;
+
         const div = document.createElement('div');
         div.className = `msg ${type}`;
+        if (id) div.id = `msg-${id}`;
         div.innerText = text;
+        
         const timeSpan = document.createElement('div');
         timeSpan.style = "font-size:0.65rem; opacity:0.6; margin-top:4px; text-align:" + (type === 'sent' ? 'left' : 'right');
         timeSpan.innerText = new Date(time).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        
         div.appendChild(timeSpan);
         chatMessages.appendChild(div);
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -363,9 +407,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
                 if (matched) reply = matched.reply;
             }
-            appendMessage(reply, 'received', new Date());
-            if (!isTestMode) {
-                await supabase.from('chat_messages').insert([{ session_id: currentSessionId, message_text: reply, is_bot_reply: true }]);
+            
+            if (isTestMode) {
+                appendMessage(reply, 'received', new Date());
+            } else {
+                // في الوضع الحقيقي، الـ Realtime سيتكفل بإضافة الرسالة للواجهة عند حفظها في القاعدة
+                await supabase.from('chat_messages').insert([{ 
+                    session_id: currentSessionId, 
+                    message_text: reply, 
+                    is_bot_reply: true,
+                    sender_id: 'bot'
+                }]);
             }
         }, (botSettings?.response_delay_seconds || 1) * 1000);
     }
