@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة الدفع - منصة مدعوم</title>
+    <link rel="stylesheet" href="subscriptions-styles.css">
+    <script src="theme-manager.js" defer></script>
+    <style>
+        .payment-container {
+            max-width: 600px;
+            margin: 4rem auto;
+            padding: 2rem;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+        }
+        .payment-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .payment-methods {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .method-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            border: 2px solid var(--color-border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .method-card:hover {
+            border-color: var(--color-accent);
+            background: var(--hover-bg);
+        }
+        .method-card.active {
+            border-color: var(--color-accent);
+            background: rgba(0, 119, 204, 0.05);
+        }
+        .method-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-muted);
+            border-radius: 8px;
+        }
+        .method-info h4 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+        .method-info p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+        .order-summary {
+            background: var(--color-muted);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .summary-total {
+            border-top: 1px solid var(--color-border);
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--color-accent);
+        }
+        .payment-footer {
+            text-align: center;
+        }
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--color-success);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="logo.svg" alt="Logo" class="logo-image" style="width: 40px; height: 40px; margin-left: 0.5rem;">
+                <span>منصة مدعوم</span>
+            </div>
+            <a href="subscriptions.html" style="color: white; text-decoration: none;">العودة للاشتراكات</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="payment-container">
+            <div class="payment-header">
+                <h2>إتمام عملية الدفع</h2>
+                <p>اختر وسيلة الدفع المناسبة لك لتفعيل اشتراكك</p>
+            </div>
+
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>الخطة المختارة:</span>
+                    <span id="selectedPlan">الخطة المدفوعة</span>
+                </div>
+                <div class="summary-row">
+                    <span>الفترة:</span>
+                    <span id="selectedPeriod">شهري</span>
+                </div>
+                <div class="summary-total">
+                    <span>الإجمالي:</span>
+                    <span id="totalAmount">250 EGP</span>
+                </div>
+            </div>
+
+            <div class="payment-methods">
+                <div class="method-card" onclick="selectMethod(this)">
+                    <div class="method-icon">💳</div>
+                    <div class="method-info">
+                        <h4>بطاقة بنكية (فيزا / ماستر كارد)</h4>
+                        <p>دفع آمن عبر البطاقات الائتمانية</p>
+                    </div>
+                </div>
+                <div class="method-card" onclick="selectMethod(this)">
+                    <div class="method-icon">📱</div>
+                    <div class="method-info">
+                        <h4>فودافون كاش</h4>
+                        <p>الدفع عبر محفظة فودافون كاش</p>
+                    </div>
+                </div>
+                <div class="method-card" onclick="selectMethod(this)">
+                    <div class="method-icon">⚡</div>
+                    <div class="method-info">
+                        <h4>إنستا باي (InstaPay)</h4>
+                        <p>تحويل لحظي عبر تطبيق إنستا باي</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-footer">
+                <button class="btn btn-primary btn-full btn-large" onclick="processPayment()">تأكيد الدفع</button>
+                <div class="secure-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    دفع آمن ومشفر 100%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function selectMethod(element) {
+            document.querySelectorAll('.method-card').forEach(card => card.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        function processPayment() {
+            const activeMethod = document.querySelector('.method-card.active');
+            if (!activeMethod) {
+                alert('يرجى اختيار وسيلة دفع أولاً');
+                return;
+            }
+            alert('سيتم ربط بوابة الدفع الفعلية قريباً. شكراً لثقتك بمنصة مدعوم!');
+        }
+
+        // استخراج البيانات من الرابط (Query Params)
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const plan = urlParams.get('plan');
+            const period = urlParams.get('period');
+            const amount = urlParams.get('amount');
+
+            if (plan) document.getElementById('selectedPlan').textContent = plan === 'premium' ? 'الخطة المدفوعة' : plan;
+            if (period) document.getElementById('selectedPeriod').textContent = period === 'yearly' ? 'سنوي' : 'شهري';
+            if (amount) document.getElementById('totalAmount').textContent = amount + ' EGP';
+        };
+    </script>
+</body>
+</html>

@@ -76,4 +76,17 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleBilling();
         });
     }
+
+    // Initialize subscribe button
+    const subscribeBtn = document.getElementById('subscribeBtn');
+    if (subscribeBtn) {
+        subscribeBtn.addEventListener('click', function() {
+            const options = document.querySelectorAll('#billingToggle .toggle-option');
+            const isYearly = options[1].classList.contains('active');
+            const amount = isYearly ? '1500' : '250';
+            const period = isYearly ? 'yearly' : 'monthly';
+            
+            window.location.href = `payment.html?plan=premium&period=${period}&amount=${amount}`;
+        });
+    }
 });
