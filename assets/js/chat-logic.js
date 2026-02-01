@@ -70,14 +70,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             item.classList.add('active');
             
             // Switch Views
-            Object.values(views).forEach(v => v.classList.remove('active'));
+            Object.values(views).forEach(v => {
+                if (v) v.classList.remove('active');
+            });
             
             if (target === 'customer-chats') {
-                views['customer-chats'].classList.add('active');
+                if (views['customer-chats']) views['customer-chats'].classList.add('active');
                 isTestMode = false;
                 loadAllSessions();
             } else if (target === 'bot-settings') {
-                views['bot-settings'].classList.add('active');
+                if (views['bot-settings']) views['bot-settings'].classList.add('active');
                 loadSettingsToForm();
             } else if (target === 'bot-test') {
                 isTestMode = true;
@@ -122,26 +124,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     function openAdminChat(sessionId, name) {
         currentSessionId = sessionId;
         isTestMode = false;
-        chatHeaderName.innerText = name;
-        chatHeaderStatus.innerText = 'مراقبة مباشرة للعميل';
-        chatHeaderImg.src = '/assets/images/technical-support.svg';
+        if (chatHeaderName) chatHeaderName.innerText = name;
+        if (chatHeaderStatus) chatHeaderStatus.innerText = 'مراقبة مباشرة للعميل';
+        if (chatHeaderImg) chatHeaderImg.src = '/assets/images/technical-support.svg';
         
-        Object.values(views).forEach(v => v.classList.remove('active'));
-        views['chat-window'].classList.add('active');
+        Object.values(views).forEach(v => {
+            if (v) v.classList.remove('active');
+        });
+        if (views['chat-window']) views['chat-window'].classList.add('active');
         loadMessages();
     }
 
     function setupTestChat() {
         currentSessionId = 'test-session';
-        chatHeaderName.innerText = 'تجربة البوت الذكي';
-        chatHeaderStatus.innerText = 'وضع الاختبار - لن يتم حفظ الرسائل';
-        chatHeaderImg.src = '/assets/images/mad3oom-robot.png';
-        chatMessages.innerHTML = '';
+        if (chatHeaderName) chatHeaderName.innerText = 'تجربة البوت الذكي';
+        if (chatHeaderStatus) chatHeaderStatus.innerText = 'وضع الاختبار - لن يتم حفظ الرسائل';
+        if (chatHeaderImg) chatHeaderImg.src = '/assets/images/mad3oom-robot.png';
+        if (chatMessages) chatMessages.innerHTML = '';
         
-        Object.values(views).forEach(v => v.classList.remove('active'));
-        views['chat-window'].classList.add('active');
+        Object.values(views).forEach(v => {
+            if (v) v.classList.remove('active');
+        });
+        if (views['chat-window']) views['chat-window'].classList.add('active');
         
-        appendMessage(botSettings.welcome_message, 'received', new Date(), true);
+        if (botSettings) {
+            appendMessage(botSettings.welcome_message, 'received', new Date(), true);
+        }
     }
 
     async function setupUserChat() {
@@ -172,7 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadMessages();
         
         // Auto welcome if new
-        if (chatMessages && chatMessages.children.length === 0 && botSettings?.is_enabled) {
+        if (chatMessages && chatMessages.children.length === 0 && botSettings && botSettings.is_enabled) {
             appendMessage(botSettings.welcome_message, 'received', new Date(), true);
         }
     }
@@ -188,10 +196,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function loadSettingsToForm() {
-        document.getElementById('botEnabled').checked = botSettings.is_enabled;
-        document.getElementById('welcomeMessage').value = botSettings.welcome_message || '';
-        document.getElementById('ticketMessage').value = botSettings.ticket_confirmation_message || '';
-        document.getElementById('responseDelay').value = botSettings.response_delay_seconds || 1;
+        if (!botSettings) return;
+        const botEnabled = document.getElementById('botEnabled');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const ticketMessage = document.getElementById('ticketMessage');
+        const responseDelay = document.getElementById('responseDelay');
+
+        if (botEnabled) botEnabled.checked = botSettings.is_enabled;
+        if (welcomeMessage) welcomeMessage.value = botSettings.welcome_message || '';
+        if (ticketMessage) ticketMessage.value = botSettings.ticket_confirmation_message || '';
+        if (responseDelay) responseDelay.value = botSettings.response_delay_seconds || 1;
+        
         renderKeywords();
         renderCustomReplies();
     }
@@ -398,11 +413,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (closeChatBtn) {
         closeChatBtn.onclick = () => {
             if (isAdmin) {
-                views['chat-window'].classList.remove('active');
-                views['customer-chats'].classList.add('active');
+                Object.values(views).forEach(v => {
+                    if (v) v.classList.remove('active');
+                });
+                if (views['customer-chats']) views['customer-chats'].classList.add('active');
+                
                 menuItems.forEach(i => i.classList.remove('active'));
                 const chatTarget = document.querySelector('[data-target="customer-chats"]');
                 if (chatTarget) chatTarget.classList.add('active');
+                
+                isTestMode = false;
+                loadAllSessions();
             }
         };
     }

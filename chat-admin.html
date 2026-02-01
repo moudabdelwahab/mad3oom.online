@@ -119,7 +119,7 @@
             flex-grow: 1;
             display: none;
             padding: 2rem;
-            overflow: hidden;
+            overflow-y: auto;
             justify-content: center;
             position: relative;
             z-index: 10;
@@ -265,6 +265,7 @@
             padding: 2.5rem;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin: 0 auto;
         }
 
         .section-title {
@@ -351,7 +352,7 @@
 
             <!-- Customer Chats View -->
             <div id="customer-chats-view" class="view-container active">
-                <div class="sessions-grid" id="sessionsList">
+                <div class="sessions-grid" id="sessionsGrid">
                     <!-- Session cards will be loaded here -->
                     <div style="text-align: center; grid-column: 1/-1; padding: 3rem; color: #666;">
                         جاري تحميل المحادثات...
@@ -363,24 +364,49 @@
             <div id="bot-settings-view" class="view-container">
                 <form class="settings-form" id="botSettingsForm">
                     <div class="section-title">إعدادات ردود البوت</div>
-                    <div class="form-row">
-                        <label>اسم البوت</label>
-                        <input type="text" class="form-input" id="botName" placeholder="مثال: بوت مدعوم الذكي">
+                    
+                    <div class="form-row" style="display: flex; align-items: center; gap: 1rem; background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                        <label style="margin-bottom: 0;">تفعيل الرد التلقائي</label>
+                        <input type="checkbox" id="botEnabled" style="width: 20px; height: 20px;">
                     </div>
+
                     <div class="form-row">
                         <label>الرسالة الترحيبية</label>
-                        <textarea class="form-input" id="welcomeMsg" rows="3" placeholder="الرسالة التي تظهر عند بدء المحادثة"></textarea>
+                        <textarea class="form-input" id="welcomeMessage" rows="3" placeholder="الرسالة التي تظهر عند بدء المحادثة"></textarea>
                     </div>
+
                     <div class="form-row">
-                        <label>تعليمات البوت (System Prompt)</label>
-                        <textarea class="form-input" id="systemPrompt" rows="6" placeholder="كيف يجب أن يتصرف البوت؟"></textarea>
+                        <label>رسالة تأكيد التذكرة</label>
+                        <textarea class="form-input" id="ticketMessage" rows="3" placeholder="الرسالة التي تظهر عند إنشاء تذكرة تلقائية"></textarea>
                     </div>
-                    <button type="submit" class="action-btn" style="width: auto; border-radius: 8px; padding: 0 2rem;">حفظ الإعدادات</button>
+
+                    <div class="form-row">
+                        <label>تأخير الرد (بالثواني)</label>
+                        <input type="number" class="form-input" id="responseDelay" min="0" max="10" value="1">
+                    </div>
+
+                    <div class="form-row">
+                        <label>الكلمات المفتاحية لفتح تذكرة (اضغط Enter للإضافة)</label>
+                        <input type="text" class="form-input" id="keywordInput" placeholder="مثال: مشكلة، عطل، مساعدة">
+                        <div id="keywordsList" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <label style="margin-bottom: 0;">الردود المخصصة</label>
+                            <button type="button" id="addCustomReply" style="background: var(--color-primary); color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+ إضافة رد</button>
+                        </div>
+                        <div id="customRepliesList"></div>
+                    </div>
+
+                    <div id="settingsAlert" style="display: none; background: #d4edda; color: #155724; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center;">تم حفظ الإعدادات بنجاح!</div>
+
+                    <button type="submit" class="action-btn" id="saveSettingsBtn" style="width: auto; border-radius: 8px; padding: 0 2rem;">حفظ الإعدادات</button>
                 </form>
             </div>
 
             <!-- Bot Test View (Chat Window) -->
-            <div id="bot-test-view" class="view-container">
+            <div id="chat-window-view" class="view-container">
                 <div class="chat-wrapper">
                     <div class="chat-header-blue">
                         <div class="bot-profile">
@@ -392,7 +418,7 @@
                                 <span style="font-size: 0.8rem; opacity: 0.8;" id="chatHeaderStatus">متصل الآن - رد تلقائي</span>
                             </div>
                         </div>
-                        <button id="closeChatBtn" style="background: none; border: none; color: white; cursor: pointer; display: none;">
+                        <button id="closeChatBtn" style="background: none; border: none; color: white; cursor: pointer;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
                         </button>
                     </div>
@@ -414,7 +440,6 @@
         </main>
     </div>
 
-    <script type="module" src="/assets/js/admin/sidebar.js"></script>
     <script type="module" src="/assets/js/chat-logic.js"></script>
 </body>
 </html>
