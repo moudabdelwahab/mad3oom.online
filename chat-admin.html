@@ -421,26 +421,26 @@
         /* Sessions List Styling */
         .sessions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
             width: 100%;
-            padding: 0.5rem;
+            padding: 1rem;
+            align-content: start; /* يمنع تباعد الصفوف بشكل كبير */
         }
 
         .session-card {
             background: white;
-            padding: 1.25rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid #f0f0f0;
+            transition: all 0.2s ease;
+            border: 1px solid #eee;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
-            position: relative;
-            overflow: hidden;
-            height: fit-content;
+            gap: 0.75rem;
+            height: auto;
+            max-height: 220px; /* تحديد أقصى ارتفاع للبطاقة */
         }
 
         .session-card:hover { 
