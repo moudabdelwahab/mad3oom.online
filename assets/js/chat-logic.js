@@ -120,8 +120,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 let name = 'مستخدم ضيف';
                 if (!session.guest_id && session.user_id) {
                     const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', session.user_id).single();
-                    if (profile) name = profile.full_name;
+                    if (profile && profile.full_name) name = profile.full_name;
                 }
+                
+                // التأكد من أن الاسم ليس فارغاً أو null لتجنب أخطاء charAt
+                const displayName = name || 'مستخدم';
                 
                 const lastMsg = session.chat_messages && session.chat_messages.length > 0 
                     ? session.chat_messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0].message_text 
@@ -136,9 +139,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 card.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
                         <div style="display:flex; align-items:center; gap:0.75rem;">
-                            <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${name.charAt(0)}</div>
+                            <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${displayName.charAt(0)}</div>
                             <div>
-                                <div style="font-weight:700; color:#333;">${name} ${session.guest_id ? '(ضيف)' : ''}</div>
+                                <div style="font-weight:700; color:#333;">${displayName} ${session.guest_id ? '(ضيف)' : ''}</div>
                                 <div style="font-size:0.7rem; color:#999;">${date} | ${time}</div>
                             </div>
                         </div>
@@ -155,9 +158,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 `;
                 card.querySelector('.view-chat-btn').onclick = (e) => {
                     e.stopPropagation();
-                    openAdminChat(session.id, name, session.is_manual_mode);
+                    openAdminChat(session.id, displayName, session.is_manual_mode);
                 };
-                card.onclick = () => openAdminChat(session.id, name, session.is_manual_mode);
+                card.onclick = () => openAdminChat(session.id, displayName, session.is_manual_mode);
                 grid.appendChild(card);
             }
         } catch (error) {
