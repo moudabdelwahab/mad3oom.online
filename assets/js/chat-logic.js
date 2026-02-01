@@ -218,24 +218,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         const list = document.getElementById('customRepliesList');
         if (!list) return;
         list.innerHTML = '';
+        
+        if (customReplies.length === 0) {
+            list.innerHTML = '<div style="text-align:center; padding:2rem; color:#888; font-style:italic;">لا توجد ردود مخصصة حالياً. اضغط على "إضافة رد جديد" للبدء.</div>';
+            return;
+        }
+
         customReplies.forEach((item, index) => {
-            const div = document.createElement('div');
-            div.className = 'custom-reply-item';
-            div.style = 'background:#f8f9fa; padding:1rem; border-radius:8px; margin-bottom:1rem; border:1px solid #eee;';
-            div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-                    <label style="font-size:0.8rem; font-weight:bold;">الكلمة المفتاحية:</label>
-                    <span style="color:red; cursor:pointer; font-size:0.8rem;" class="del-reply">حذف</span>
+            const card = document.createElement('div');
+            card.className = 'custom-reply-card';
+            card.innerHTML = `
+                <div class="reply-card-header">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <div class="reply-number">${index + 1}</div>
+                        <span style="font-weight:700; color:#003366; font-size:0.9rem;">رد مخصص</span>
+                    </div>
+                    <button type="button" class="del-reply-btn">حذف الرد</button>
                 </div>
-                <input type="text" class="form-input reply-trigger" value="${item.trigger || ''}" style="margin-bottom:0.8rem;">
-                <label style="font-size:0.8rem; font-weight:bold;">رد البوت:</label>
-                <textarea class="form-input reply-response" rows="2">${item.response || ''}</textarea>
+                <div class="reply-grid">
+                    <div>
+                        <label style="font-size:0.85rem; font-weight:700; color:#555;">الكلمة المفتاحية</label>
+                        <input type="text" class="form-input reply-trigger" value="${item.trigger || ''}" placeholder="مثال: الأسعار">
+                    </div>
+                    <div>
+                        <label style="font-size:0.85rem; font-weight:700; color:#555;">رد البوت الذكي</label>
+                        <textarea class="form-input reply-response" rows="2" placeholder="اكتب الرد الذي سيقوم البوت بإرساله...">${item.response || ''}</textarea>
+                    </div>
+                </div>
             `;
-            div.querySelector('.del-reply').onclick = () => {
+            card.querySelector('.del-reply-btn').onclick = () => {
                 customReplies.splice(index, 1);
                 renderCustomReplies();
             };
-            list.appendChild(div);
+            list.appendChild(card);
         });
     }
 
@@ -261,7 +276,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.innerText = 'جاري الحفظ...';
         
         const updatedCustomReplies = [];
-        document.querySelectorAll('#customRepliesList > .custom-reply-item').forEach(group => {
+        document.querySelectorAll('#customRepliesList .custom-reply-card').forEach(group => {
             const t = group.querySelector('.reply-trigger').value.trim();
             const r = group.querySelector('.reply-response').value.trim();
             if (t && r) updatedCustomReplies.push({ trigger: t, response: r });
