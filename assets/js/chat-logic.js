@@ -81,7 +81,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 3. Admin: Load Sessions List
     async function loadAllSessions() {
-        // نستخدم updated_at لضمان ظهور أحدث المحادثات التي بها رسائل جديدة في الأعلى
         const { data: sessions, error } = await supabase
             .from('chat_sessions')
             .select(`
@@ -154,7 +153,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function subscribeToAllSessions() {
         if (!isAdmin) return;
-        // الاستماع لأي تغيير في الجلسات أو الرسائل لتحديث القائمة فوراً
         supabase.channel('admin-realtime')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, () => loadAllSessions())
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, () => loadAllSessions())
@@ -247,7 +245,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { data: messages } = await supabase.from('chat_messages').select('*').eq('session_id', currentSessionId).order('created_at', { ascending: true });
         if (chatMessages) {
             chatMessages.innerHTML = '';
-            messages?.forEach(m => appendMessage(m.message_text, (m.is_bot_reply || m.is_admin_reply) ? 'received' : 'sent', m.created_at));
+            messages?.forEach(m => {
+                const isReceived = isAdmin ? (!m.is_admin_reply) : (m.is_bot_reply || m.is_admin_reply);
+                appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at);
+            });
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
     }
@@ -256,8 +257,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!currentSessionId || isTestMode) return;
         supabase.channel(`messages-${currentSessionId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${currentSessionId}` }, payload => {
-                const isMine = isAdmin ? payload.new.is_admin_reply : (!payload.new.is_bot_reply && !payload.new.is_admin_reply);
-                if (!isMine) appendMessage(payload.new.message_text, 'received', payload.new.created_at);
+                // للعميل: استقبل أي رسالة من البوت أو من الأدمن
+                // للمدير: استقبل أي رسالة ليست من الأدمن (أي من العميل أو البوت)
+                const isReceived = isAdmin ? (!payload.new.is_admin_reply) : (payload.new.is_bot_reply || payload.new.is_admin_reply);
+                if (isReceived) {
+                    appendMessage(payload.new.message_text, 'received', payload.new.created_at);
+                }
             }).subscribe();
     }
 
@@ -278,7 +283,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             msgData.is_admin_reply = true;
         }
 
-        // إرسال الرسالة وتحديث وقت الجلسة لضمان ظهورها في أعلى القائمة عند المدير
         await Promise.all([
             supabase.from('chat_messages').insert([msgData]),
             supabase.from('chat_sessions').update({ updated_at: new Date() }).eq('id', currentSessionId)
