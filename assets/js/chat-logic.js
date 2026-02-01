@@ -126,11 +126,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     // تأمين الاسم بشكل نهائي
                     const safeName = (name || 'مستخدم').toString();
-                    const firstChar = safeName.charAt(0) || 'م';
+                    const firstChar = (safeName && safeName.length > 0) ? safeName.charAt(0) : 'م';
                     
-                    const lastMsg = session.chat_messages && session.chat_messages.length > 0 
-                        ? session.chat_messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0].message_text 
-                        : 'بدأ محادثة جديدة...';
+                    let lastMsg = 'بدأ محادثة جديدة...';
+                    if (session.chat_messages && session.chat_messages.length > 0) {
+                        try {
+                            const sortedMsgs = [...session.chat_messages].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+                            if (sortedMsgs[0] && sortedMsgs[0].message_text) {
+                                lastMsg = sortedMsgs[0].message_text;
+                            }
+                        } catch (e) {
+                            console.error("Error sorting messages for session:", session.id, e);
+                        }
+                    }
                     
                     const dateObj = new Date(session.updated_at || session.created_at);
                     const time = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
