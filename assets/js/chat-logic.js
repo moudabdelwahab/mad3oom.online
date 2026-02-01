@@ -119,21 +119,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             for (const session of sessions) {
                 let name = 'مستخدم ضيف';
                 if (!session.guest_id && session.user_id) {
-                    try {
-                        const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', session.user_id).single();
-                        if (profile && profile.full_name) {
-                            name = profile.full_name;
-                        } else {
-                            name = 'مستخدم مسجل';
-                        }
-                    } catch (e) {
-                        name = 'مستخدم';
-                    }
+                    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', session.user_id).single();
+                    if (profile) name = profile.full_name;
                 }
-                
-                // تأمين الاسم بشكل نهائي لتجنب خطأ charAt
-                const safeName = (name || 'مستخدم').toString();
-                const firstChar = safeName.charAt(0) || 'U';
                 
                 const lastMsg = session.chat_messages && session.chat_messages.length > 0 
                     ? session.chat_messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0].message_text 
@@ -148,9 +136,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 card.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
                         <div style="display:flex; align-items:center; gap:0.75rem;">
-                            <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${firstChar}</div>
+                            <div style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366;">${(name || 'م').charAt(0)}</div>
                             <div>
-                                <div style="font-weight:700; color:#333;">${safeName} ${session.guest_id ? '(ضيف)' : ''}</div>
+                                <div style="font-weight:700; color:#333;">${name} ${session.guest_id ? '(ضيف)' : ''}</div>
                                 <div style="font-size:0.7rem; color:#999;">${date} | ${time}</div>
                             </div>
                         </div>
@@ -167,9 +155,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 `;
                 card.querySelector('.view-chat-btn').onclick = (e) => {
                     e.stopPropagation();
-                    openAdminChat(session.id, safeName, session.is_manual_mode);
+                    openAdminChat(session.id, name, session.is_manual_mode);
                 };
-                card.onclick = () => openAdminChat(session.id, safeName, session.is_manual_mode);
+                card.onclick = () => openAdminChat(session.id, name, session.is_manual_mode);
                 grid.appendChild(card);
             }
         } catch (error) {
@@ -215,21 +203,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             toggleBtn = document.createElement('button');
             toggleBtn.id = 'manualModeToggle';
             toggleBtn.style = "margin-right:10px; padding:5px 15px; border-radius:20px; border:1px solid white; background:transparent; color:white; cursor:pointer; font-size:0.8rem;";
-            const botProfile = document.querySelector('.chat-header-blue .bot-profile');
-            if (botProfile) botProfile.appendChild(toggleBtn);
+            document.querySelector('.chat-header-blue .bot-profile').appendChild(toggleBtn);
         }
-        if (toggleBtn) {
-            toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
-            toggleBtn.onclick = async () => {
-                const newMode = !isManualMode;
-                const { error } = await supabase.from('chat_sessions').update({ is_manual_mode: newMode, updated_at: new Date() }).eq('id', currentSessionId);
-                if (!error) {
-                    isManualMode = newMode;
-                    toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
-                    updateAdminChatHeader();
-                }
-            };
-        }
+        toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
+        toggleBtn.onclick = async () => {
+            const newMode = !isManualMode;
+            const { error } = await supabase.from('chat_sessions').update({ is_manual_mode: newMode, updated_at: new Date() }).eq('id', currentSessionId);
+            if (!error) {
+                isManualMode = newMode;
+                toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
+                updateAdminChatHeader();
+            }
+        };
     }
 
     function updateAdminChatHeader() {
@@ -248,6 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             chatMessages.innerHTML = '';
             if (messages) {
                 messages.forEach(m => {
+                    // Logic: If Admin is viewing, messages NOT from admin are "received"
                     const isReceived = isAdmin ? (!m.is_admin_reply) : (m.is_bot_reply || m.is_admin_reply);
                     appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at);
                 });
@@ -264,6 +250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const m = payload.new;
                 const isReceived = isAdmin ? (!m.is_admin_reply) : (m.is_bot_reply || m.is_admin_reply);
                 
+                // Avoid double append for our own sent messages
                 if (m.sender_id !== currentUser.id || m.is_bot_reply) {
                     appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at);
                 }
