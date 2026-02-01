@@ -383,7 +383,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         messageDiv.innerHTML = `<span class="msg-text">${text}</span><span style="display:block; font-size:0.7rem; opacity:0.6; margin-top:0.3rem;">${timeStr}</span>`;
         
         chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Ensure scrolling happens after DOM update
+        setTimeout(() => {
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 50);
     }
 
     async function loadMessages() {
