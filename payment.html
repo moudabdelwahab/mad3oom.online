@@ -10,75 +10,116 @@
         .payment-container {
             max-width: 600px;
             margin: 4rem auto;
-            padding: 2rem;
+            padding: 2.5rem;
             background: var(--color-surface);
             border: 1px solid var(--color-border);
-            border-radius: 16px;
+            border-radius: 24px;
             box-shadow: var(--shadow);
         }
         .payment-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
+        }
+        .payment-header h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-accent), var(--color-primary-variant));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .payment-methods {
             display: grid;
-            gap: 1rem;
-            margin-bottom: 2rem;
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
         }
         .method-card {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            padding: 1.25rem;
+            gap: 1.25rem;
+            padding: 1.5rem;
             border: 2px solid var(--color-border);
-            border-radius: 12px;
+            border-radius: 16px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
         .method-card:hover {
             border-color: var(--color-accent);
             background: var(--hover-bg);
+            transform: translateY(-2px);
         }
         .method-card.active {
             border-color: var(--color-accent);
             background: rgba(0, 119, 204, 0.05);
+            box-shadow: 0 4px 12px rgba(0, 119, 204, 0.1);
         }
-        .method-icon {
-            width: 40px;
-            height: 40px;
+        .method-card.active::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            background: var(--color-accent);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--color-muted);
-            border-radius: 8px;
+            font-size: 12px;
+        }
+        .method-icon {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+        .method-icon svg {
+            width: 100%;
+            height: 100%;
         }
         .method-info h4 {
             margin: 0;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--color-text);
         }
         .method-info p {
-            margin: 0;
-            font-size: 0.85rem;
+            margin: 4px 0 0;
+            font-size: 0.9rem;
             color: var(--color-text-secondary);
         }
         .order-summary {
             background: var(--color-muted);
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
+            padding: 1.75rem;
+            border-radius: 16px;
+            margin-bottom: 2.5rem;
+            border: 1px dashed var(--color-border);
         }
         .summary-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
         }
         .summary-total {
-            border-top: 1px solid var(--color-border);
-            padding-top: 0.5rem;
-            margin-top: 0.5rem;
-            font-weight: bold;
-            font-size: 1.2rem;
+            border-top: 2px solid var(--color-border);
+            padding-top: 1rem;
+            margin-top: 1rem;
+            font-weight: 800;
+            font-size: 1.4rem;
             color: var(--color-accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .payment-footer {
             text-align: center;
@@ -87,10 +128,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            margin-top: 1rem;
-            font-size: 0.85rem;
+            gap: 0.6rem;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
             color: var(--color-success);
+            font-weight: 600;
+        }
+        [data-theme='dark'] .method-icon {
+            background: #2a2a2a;
         }
     </style>
 </head>
@@ -101,7 +146,7 @@
                 <img src="logo.svg" alt="Logo" class="logo-image" style="width: 40px; height: 40px; margin-left: 0.5rem;">
                 <span>منصة مدعوم</span>
             </div>
-            <a href="subscriptions.html" style="color: white; text-decoration: none;">العودة للاشتراكات</a>
+            <a href="subscriptions.html" style="color: white; text-decoration: none; font-weight: 600;">العودة للاشتراكات</a>
         </div>
     </nav>
 
@@ -115,11 +160,11 @@
             <div class="order-summary">
                 <div class="summary-row">
                     <span>الخطة المختارة:</span>
-                    <span id="selectedPlan">الخطة المدفوعة</span>
+                    <span id="selectedPlan" style="font-weight: 600;">الخطة المدفوعة</span>
                 </div>
                 <div class="summary-row">
                     <span>الفترة:</span>
-                    <span id="selectedPeriod">شهري</span>
+                    <span id="selectedPeriod" style="font-weight: 600;">شهري</span>
                 </div>
                 <div class="summary-total">
                     <span>الإجمالي:</span>
@@ -128,25 +173,48 @@
             </div>
 
             <div class="payment-methods">
+                <!-- Visa/Mastercard -->
                 <div class="method-card" onclick="selectMethod(this)">
-                    <div class="method-icon">💳</div>
+                    <div class="method-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="2" y="5" width="20" height="14" rx="2" fill="#1A1F71"/>
+                            <rect x="2" y="8" width="20" height="3" fill="#F7B600"/>
+                            <rect x="4" y="14" width="4" height="2" rx="1" fill="white" fill-opacity="0.3"/>
+                        </svg>
+                    </div>
                     <div class="method-info">
-                        <h4>بطاقة بنكية (فيزا / ماستر كارد)</h4>
-                        <p>دفع آمن عبر البطاقات الائتمانية</p>
+                        <h4>بطاقة بنكية</h4>
+                        <p>فيزا، ماستر كارد، أو ميزة</p>
                     </div>
                 </div>
+
+                <!-- Vodafone Cash -->
                 <div class="method-card" onclick="selectMethod(this)">
-                    <div class="method-icon">📱</div>
+                    <div class="method-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="12" fill="#E60000"/>
+                            <path d="M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z" fill="white"/>
+                            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" fill="#E60000"/>
+                        </svg>
+                    </div>
                     <div class="method-info">
                         <h4>فودافون كاش</h4>
-                        <p>الدفع عبر محفظة فودافون كاش</p>
+                        <p>الدفع عبر رقم المحفظة</p>
                     </div>
                 </div>
+
+                <!-- InstaPay -->
                 <div class="method-card" onclick="selectMethod(this)">
-                    <div class="method-icon">⚡</div>
+                    <div class="method-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="24" height="24" rx="12" fill="#4B2C85"/>
+                            <path d="M7 12L10 15L17 8" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+                        </svg>
+                    </div>
                     <div class="method-info">
                         <h4>إنستا باي (InstaPay)</h4>
-                        <p>تحويل لحظي عبر تطبيق إنستا باي</p>
+                        <p>تحويل لحظي عبر العنوان اللحظي (IPA)</p>
                     </div>
                 </div>
             </div>
@@ -154,11 +222,11 @@
             <div class="payment-footer">
                 <button class="btn btn-primary btn-full btn-large" onclick="processPayment()">تأكيد الدفع</button>
                 <div class="secure-badge">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
-                    دفع آمن ومشفر 100%
+                    دفع آمن ومشفر بمعايير عالمية
                 </div>
             </div>
         </div>
@@ -176,10 +244,10 @@
                 alert('يرجى اختيار وسيلة دفع أولاً');
                 return;
             }
-            alert('سيتم ربط بوابة الدفع الفعلية قريباً. شكراً لثقتك بمنصة مدعوم!');
+            const methodName = activeMethod.querySelector('h4').textContent;
+            alert(`سيتم تحويلك إلى بوابة دفع ${methodName} الفعلية قريباً. شكراً لثقتك بمنصة مدعوم!`);
         }
 
-        // استخراج البيانات من الرابط (Query Params)
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
             const plan = urlParams.get('plan');
