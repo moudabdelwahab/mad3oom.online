@@ -48,67 +48,7 @@ import {
     // Initialize Rewards Dashboard
     if (!isGuest) {
         initRewardsDashboard(user);
-        
-        // Wallet Tooltip Logic
-        setTimeout(() => {
-            const walletInfo = document.getElementById('walletInfo');
-            const pointsTooltip = document.getElementById('pointsTooltip');
-            if (walletInfo && pointsTooltip) {
-                walletInfo.addEventListener('mouseenter', () => pointsTooltip.style.display = 'block');
-                walletInfo.addEventListener('mouseleave', () => pointsTooltip.style.display = 'none');
-                walletInfo.addEventListener('click', () => {
-                    const rewardsTab = document.querySelector('.nav-tab[data-tab="rewards"]');
-                    if (rewardsTab) rewardsTab.click();
-                });
-            }
-        }, 1000);
     }
-
-    // Badges Logic
-    async function updateBadges() {
-        const stats = await fetchTicketStats();
-        const total = stats.total || 0;
-        
-        if (total >= 1) {
-            const badge = document.getElementById('badge-first-ticket');
-            if (badge) {
-                badge.style.opacity = '1';
-                badge.style.filter = 'grayscale(0)';
-                badge.style.borderColor = 'var(--color-success)';
-                badge.style.boxShadow = '0 0 15px rgba(46, 138, 58, 0.2)';
-            }
-        }
-        
-        if (total >= 10) {
-            const badge = document.getElementById('badge-ten-tickets');
-            if (badge) {
-                badge.style.opacity = '1';
-                badge.style.filter = 'grayscale(0)';
-                badge.style.borderColor = '#f59e0b';
-                badge.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.2)';
-            }
-        }
-    }
-    updateBadges();
-
-    // Rating Logic
-    const stars = document.querySelectorAll('.star-rating .star');
-    const ratingInput = document.getElementById('ticketRatingValue');
-    
-    stars.forEach(star => {
-        star.addEventListener('click', () => {
-            const val = star.getAttribute('data-value');
-            ratingInput.value = val;
-            
-            stars.forEach(s => {
-                if (s.getAttribute('data-value') <= val) {
-                    s.style.opacity = '1';
-                } else {
-                    s.style.opacity = '0.3';
-                }
-            });
-        });
-    });
 
     // Update Sidebar User Info
     const updateSidebarUserInfo = () => {
@@ -116,49 +56,8 @@ import {
         if (customerInitial) {
             customerInitial.textContent = (user.profile?.full_name || user.email || 'U')[0].toUpperCase();
         }
-        
-        if (isGuest) {
-            const profileSidebarItem = document.getElementById('profileSidebarItem');
-            if (profileSidebarItem) {
-                profileSidebarItem.style.opacity = '0.5';
-                profileSidebarItem.style.pointerEvents = 'auto';
-                profileSidebarItem.addEventListener('click', (e) => {
-                    if (isGuest) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        alert('هذه الميزة غير متاحة في وضع الضيف. يرجى إنشاء حساب.');
-                    }
-                }, true);
-            }
-        }
     };
-
-    // Wait a bit for sidebar to load
     setTimeout(updateSidebarUserInfo, 500);
-
-    /* ================= GUEST MODE ================= */
-
-    if (isGuest) {
-        const restrictedElements = [
-            'openCreateTicket',
-            'userCreateTicketForm',
-            'profileTab'
-        ];
-
-        restrictedElements.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-
-            el.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                alert('هذه الميزة غير متاحة في وضع الضيف. يرجى إنشاء حساب.');
-            }, true);
-
-            el.style.opacity = '0.5';
-            el.style.pointerEvents = 'auto';
-        });
-    }
 
     /* ================= TABS LOGIC ================= */
 
@@ -173,7 +72,6 @@ import {
             }
 
             const target = tab.getAttribute('data-tab');
-            
             tabs.forEach(t => t.classList.remove('active'));
             contents.forEach(c => c.classList.remove('active'));
 
@@ -183,32 +81,6 @@ import {
         });
     });
 
-    /* ================= PROFILE MENU LOGIC ================= */
-
-    const profileNavBtn = document.getElementById('profileNavBtn');
-    const userAvatarMenu = document.getElementById('userAvatarMenu');
-
-    if (profileNavBtn && userAvatarMenu) {
-        profileNavBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userAvatarMenu.style.display = userAvatarMenu.style.display === 'none' ? 'block' : 'none';
-        });
-
-        document.addEventListener('click', () => {
-            userAvatarMenu.style.display = 'none';
-        });
-
-        userAvatarMenu.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (e.target.getAttribute('data-tab')) {
-                const tabName = e.target.getAttribute('data-tab');
-                const tabEl = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
-                if (tabEl) tabEl.click();
-                userAvatarMenu.style.display = 'none';
-            }
-        });
-    }
-
     /* ================= MODALS LOGIC ================= */
 
     const openCreateTicketBtn = document.getElementById('openCreateTicket');
@@ -216,7 +88,7 @@ import {
     
     if (openCreateTicketBtn && createTicketModal) {
         openCreateTicketBtn.addEventListener('click', () => {
-            if (isGuest) return;
+            if (isGuest) return alert('يرجى تسجيل الدخول لإنشاء تذكرة');
             createTicketModal.classList.add('active');
         });
     }
@@ -231,112 +103,7 @@ import {
         });
     });
 
-    /* ================= LOGOUT ================= */
-
-    const signOutLink = document.getElementById('signOutLink');
-    if (signOutLink) {
-        signOutLink.addEventListener('click', async (e) => {
-            e.preventDefault();
-            await logout();
-            window.location.replace('sign-in.html');
-        });
-    }
-
-    /* ================= PROFILE FORM ================= */
-
-    const profileForm = document.getElementById('profileForm');
-    if (profileForm) {
-        const fullNameInput = document.getElementById('profileFullName');
-        const phoneInput = document.getElementById('profilePhone');
-        if (fullNameInput) fullNameInput.value = user.profile?.full_name || '';
-        if (phoneInput) phoneInput.value = user.profile?.phone || '';
-
-        profileForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const updates = {
-                full_name: fullNameInput?.value,
-                phone: phoneInput?.value
-            };
-            const { error } = await updateProfile(updates);
-            if (error) alert('خطأ في التحديث: ' + error.message);
-            else alert('تم تحديث الملف الشخصي بنجاح');
-        });
-    }
-
-    const passwordForm = document.getElementById('changePasswordForm');
-    if (passwordForm) {
-        passwordForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newPass = document.getElementById('newPassword')?.value;
-            const confirmPass = document.getElementById('confirmPassword')?.value;
-
-            if (newPass !== confirmPass) {
-                alert('كلمات المرور غير متطابقة');
-                return;
-            }
-
-            const { error } = await updatePassword(newPass);
-            if (error) alert('خطأ: ' + error.message);
-            else {
-                alert('تم تغيير كلمة المرور بنجاح');
-                passwordForm.reset();
-            }
-        });
-    }
-
-    /* ================= NOTIFICATIONS ================= */
-
-    const notificationBtn = document.getElementById('notificationBtn');
-    const notificationDropdown = document.getElementById('notificationDropdown');
-    if (notificationBtn && notificationDropdown) {
-        notificationBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            notificationDropdown.style.display = notificationDropdown.style.display === 'none' ? 'block' : 'none';
-        });
-
-        document.addEventListener('click', () => {
-            notificationDropdown.style.display = 'none';
-        });
-
-        notificationDropdown.addEventListener('click', (e) => e.stopPropagation());
-    }
-
-    const clearNotificationsBtn = document.getElementById('clearNotifications');
-    if (clearNotificationsBtn) {
-        clearNotificationsBtn.addEventListener('click', async () => {
-            await markAllAsRead();
-            renderNotifications();
-        });
-    }
-
-    async function renderNotifications() {
-        const list = document.getElementById('notificationsList');
-        const badge = document.getElementById('notificationBadge');
-        if (!list) return;
-
-        const notifications = await fetchNotifications();
-        const unreadCount = notifications.filter(n => !n.is_read).length;
-
-        if (badge) {
-            badge.textContent = unreadCount;
-            badge.style.display = unreadCount > 0 ? 'flex' : 'none';
-        }
-
-        if (notifications.length === 0) {
-            list.innerHTML = '<p style="padding: 1rem; text-align: center; font-size: 0.9rem; color: var(--color-text-secondary);">لا توجد إشعارات</p>';
-            return;
-        }
-
-        list.innerHTML = notifications.map(n => `
-            <div class="notification-item ${n.is_read ? '' : 'unread'}" style="padding: 0.75rem; border-bottom: 1px solid var(--color-border); cursor: pointer; ${n.is_read ? '' : 'background: var(--hover-bg);'}">
-                <div style="font-weight: 600; font-size: 0.9rem;">${n.title}</div>
-                <div style="font-size: 0.8rem; color: var(--color-text-secondary);">${n.message}</div>
-                <div style="font-size: 0.7rem; color: var(--color-text-muted); margin-top: 0.25rem;">${new Date(n.created_at).toLocaleString('ar-EG')}</div>
-            </div>
-        `).join('');
-    }
-
-    /* ================= TICKETS ================= */
+    /* ================= TICKETS LOGIC ================= */
 
     let currentTicketId = null;
 
@@ -361,33 +128,32 @@ import {
         const tickets = await fetchUserTickets(filters);
         
         if (!tickets.length) {
-            list.innerHTML = `<p class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 2rem;">لا توجد تذاكر حتى الآن</p>`;
+            list.innerHTML = `<p style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #888;">لا توجد تذاكر حتى الآن</p>`;
             return;
         }
 
-        const statusLabels = { open: 'مفتوحة', 'in-progress': 'قيد المعالجة', resolved: 'تم الحل', closed: 'مغلقة' };
-        const priorityLabels = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية' };
+        const statusLabels = { open: 'مفتوحة', 'in-progress': 'قيد المعالجة', resolved: 'تم الحل' };
 
-        list.innerHTML = '';
-        tickets.forEach(t => {
-            const el = document.createElement('div');
-            el.className = 'ticket-card';
-            el.style.cssText = 'background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); cursor: pointer;';
-            el.innerHTML = `
+        list.innerHTML = tickets.map(t => `
+            <div class="ticket-card" data-id="${t.id}" style="background: var(--color-surface); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--color-border); cursor: pointer;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
                     <span style="color: var(--color-text-secondary); font-size: 0.85rem;">#${t.ticket_number || '---'}</span>
-                    <span style="padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.75rem; background: var(--color-muted);">${statusLabels[t.status] || t.status}</span>
+                    <span class="status-badge status-${t.status}" style="padding: 0.2rem 0.6rem; border-radius: 1rem; font-size: 0.75rem;">${statusLabels[t.status] || t.status}</span>
                 </div>
-                <h3 style="margin-bottom: 0.5rem;">${t.title}</h3>
-                <p style="color: var(--color-text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">${t.description.slice(0, 80)}${t.description.length > 80 ? '...' : ''}</p>
+                <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">${t.title}</h3>
+                <p style="color: var(--color-text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${t.description}</p>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.8rem; color: var(--color-accent); font-weight: 600;">${priorityLabels[t.priority] || t.priority}</span>
-                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">${new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
+                    <span style="font-size: 0.8rem; color: var(--color-accent); font-weight: 700;">${t.priority === 'high' ? 'أولوية عالية' : (t.priority === 'medium' ? 'أولوية متوسطة' : 'أولوية منخفضة')}</span>
+                    <span style="font-size: 0.75rem; color: var(--color-text-secondary);">${new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
                 </div>
-            `;
-            
-            el.addEventListener('click', () => openTicketDetail(t));
-            list.appendChild(el);
+            </div>
+        `).join('');
+
+        list.querySelectorAll('.ticket-card').forEach(card => {
+            card.onclick = () => {
+                const ticket = tickets.find(t => t.id === card.dataset.id);
+                if (ticket) openTicketDetail(ticket);
+            };
         });
     }
 
@@ -398,15 +164,28 @@ import {
 
         document.getElementById('detailTicketTitle').textContent = ticket.title;
         document.getElementById('detailTicketNumber').textContent = `#${ticket.ticket_number}`;
+        document.getElementById('detailTicketDesc').textContent = ticket.description;
+        document.getElementById('detailTicketDate').textContent = new Date(ticket.created_at).toLocaleString('ar-EG');
         
         const statusEl = document.getElementById('detailTicketStatus');
-        statusEl.textContent = ticket.status;
-        statusEl.style.background = 'var(--color-muted)';
-        
-        document.getElementById('detailTicketDescription').textContent = ticket.description;
+        const statusLabels = { open: 'مفتوحة', 'in-progress': 'قيد المعالجة', resolved: 'تم الحل' };
+        statusEl.textContent = statusLabels[ticket.status] || ticket.status;
+        statusEl.className = `status-badge status-${ticket.status}`;
+        statusEl.style.display = 'inline-block';
+        statusEl.style.fontWeight = '700';
 
-        // Show rating section if ticket is resolved
-        const ratingSection = document.getElementById('ticketRatingSection');
+        // Image handling
+        const imgContainer = document.getElementById('detailTicketImageContainer');
+        const imgEl = document.getElementById('detailTicketImage');
+        if (ticket.image_url) {
+            imgContainer.style.display = 'block';
+            imgEl.src = ticket.image_url;
+        } else {
+            imgContainer.style.display = 'none';
+        }
+
+        // Rating section
+        const ratingSection = document.getElementById('ratingSection');
         if (ratingSection) {
             ratingSection.style.display = ticket.status === 'resolved' ? 'block' : 'none';
         }
@@ -419,42 +198,54 @@ import {
         const list = document.getElementById('detailRepliesList');
         if (!list) return;
 
-        const replies = await fetchTicketReplies(ticketId);
-        if (replies.length === 0) {
-            list.innerHTML = '<p style="text-align: center; color: var(--color-text-secondary);">لا توجد ردود بعد</p>';
-            return;
-        }
+        list.innerHTML = '<div style="text-align:center; padding:1rem; color:#999;">جاري تحميل الردود...</div>';
+        
+        try {
+            const replies = await fetchTicketReplies(ticketId);
+            if (replies.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: var(--color-text-secondary); font-size: 0.85rem; padding: 1rem;">لا توجد ردود بعد</p>';
+                return;
+            }
 
-        list.innerHTML = replies.map(r => `
-            <div class="reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'}" style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 0.5rem; background: var(--color-surface);">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.8rem;">
-                    <strong>${r.profiles?.full_name || 'مستخدم'}</strong>
-                    <span style="color: var(--color-text-muted);">${new Date(r.created_at).toLocaleString('ar-EG')}</span>
+            list.innerHTML = replies.map(r => `
+                <div class="reply-item ${r.profiles?.role === 'admin' ? 'reply-admin' : 'reply-user'}" style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 0.5rem; background: var(--color-surface); border: 1px solid var(--color-border);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.75rem;">
+                        <strong style="color: var(--color-accent);">${r.profiles?.role === 'admin' ? 'الدعم الفني' : (r.profiles?.full_name || 'أنت')}</strong>
+                        <span style="color: var(--color-text-secondary);">${new Date(r.created_at).toLocaleString('ar-EG', {hour:'2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; line-height: 1.5;">${r.message}</div>
                 </div>
-                <div style="font-size: 0.9rem;">${r.message}</div>
-            </div>
-        `).join('');
-        list.scrollTop = list.scrollHeight;
+            `).join('');
+            list.scrollTop = list.scrollHeight;
+        } catch (err) {
+            list.innerHTML = '<p style="text-align:center; color:red;">فشل تحميل الردود</p>';
+        }
     }
 
-    const replyForm = document.getElementById('detailReplyForm');
-    if (replyForm) {
-        replyForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const msgInput = document.getElementById('detailReplyMessage');
+    // Send Reply
+    const sendReplyBtn = document.getElementById('sendDetailReply');
+    if (sendReplyBtn) {
+        sendReplyBtn.onclick = async () => {
+            const msgInput = document.getElementById('detailReplyText');
             const message = msgInput?.value.trim();
             if (!message || !currentTicketId) return;
 
             try {
+                sendReplyBtn.disabled = true;
+                sendReplyBtn.textContent = 'جاري الإرسال...';
                 await addTicketReply(currentTicketId, message);
                 msgInput.value = '';
                 await loadReplies(currentTicketId);
             } catch (err) {
                 alert('فشل إرسال الرد: ' + err.message);
+            } finally {
+                sendReplyBtn.disabled = false;
+                sendReplyBtn.textContent = 'إرسال الرد';
             }
-        });
+        };
     }
 
+    // Create Ticket Form
     const createTicketForm = document.getElementById('userCreateTicketForm');
     if (createTicketForm) {
         createTicketForm.addEventListener('submit', async (e) => {
@@ -464,6 +255,10 @@ import {
             const priority = document.getElementById('userTicketPriority')?.value;
 
             try {
+                const submitBtn = createTicketForm.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'جاري الإنشاء...';
+                
                 await createTicket({ title, description, priority });
                 createTicketForm.reset();
                 document.getElementById('createTicketModal')?.classList.remove('active');
@@ -471,8 +266,41 @@ import {
                 await renderTickets();
             } catch (err) {
                 alert('خطأ في إنشاء التذكرة: ' + err.message);
+            } finally {
+                const submitBtn = createTicketForm.querySelector('button[type="submit"]');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'إرسال التذكرة';
             }
         });
+    }
+
+    /* ================= NOTIFICATIONS ================= */
+
+    async function renderNotifications() {
+        const list = document.getElementById('notificationsList');
+        const badge = document.getElementById('notificationBadge');
+        if (!list) return;
+
+        const notifications = await fetchNotifications();
+        const unreadCount = notifications.filter(n => !n.is_read).length;
+
+        if (badge) {
+            badge.textContent = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+        }
+
+        if (notifications.length === 0) {
+            list.innerHTML = '<p style="padding: 1rem; text-align: center; font-size: 0.8rem; color: var(--color-text-secondary);">لا توجد إشعارات</p>';
+            return;
+        }
+
+        list.innerHTML = notifications.map(n => `
+            <div class="notification-item ${n.is_read ? '' : 'unread'}" style="padding: 0.75rem; border-bottom: 1px solid var(--color-border); cursor: pointer; ${n.is_read ? '' : 'background: var(--hover-bg);'}">
+                <div style="font-weight: 700; font-size: 0.85rem;">${n.title}</div>
+                <div style="font-size: 0.8rem; color: var(--color-text-secondary); margin-top: 0.2rem;">${n.message}</div>
+                <div style="font-size: 0.7rem; color: var(--color-text-secondary); margin-top: 0.4rem; opacity: 0.7;">${new Date(n.created_at).toLocaleString('ar-EG')}</div>
+            </div>
+        `).join('');
     }
 
     /* ================= INIT ================= */
@@ -491,6 +319,16 @@ import {
         subscribeToNotifications(user.id, () => {
             renderNotifications();
         });
+    }
+
+    // Logout
+    const signOutLink = document.getElementById('signOutLink');
+    if (signOutLink) {
+        signOutLink.onclick = async (e) => {
+            e.preventDefault();
+            await logout();
+            window.location.replace('sign-in.html');
+        };
     }
 
 })();
