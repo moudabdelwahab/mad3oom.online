@@ -57,6 +57,41 @@ export async function signIn(email, password) {
         };
     }
 
+    // Check for 2FA
+    if (profile?.two_factor_enabled) {
+        // Check if device is trusted
+        const fingerprint = localStorage.getItem('device_fingerprint');
+        if (fingerprint) {
+            const { data: trustedDevice } = await supabase
+                .from('trusted_devices')
+                .select('*')
+                .eq('user_id', result.data.user.id)
+                .eq('device_fingerprint', fingerprint)
+                .maybeSingle();
+
+            if (trustedDevice) {
+                // Update last used
+                await supabase
+                    .from('trusted_devices')
+                    .update({ last_used_at: new Date().toISOString() })
+                    .eq('id', trustedDevice.id);
+
+                await logActivity('login', { email, method: 'trusted_device' });
+                return {
+                    ...result,
+                    profile: profile || { id: result.data.user.id, role: 'customer' }
+                };
+            }
+        }
+
+        // 2FA required
+        return {
+            data: result.data,
+            requires2FA: true,
+            profile: profile || { id: result.data.user.id, role: 'customer' }
+        };
+    }
+
     await logActivity('login', { email });
 
     // إضافة البروفايل للنتيجة لضمان استخدامه فوراً في التوجيه

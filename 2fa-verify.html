@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التحقق بخطوتين - Mad3oom</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="color-system.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .verify-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 20px;
+            text-align: center;
+            letter-spacing: 8px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .trust-device {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+
+        .alert.active {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            margin: 20px auto;
+            width: 30px;
+            height: 30px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-card">
+        <div class="icon">🔐</div>
+        <h1>التحقق بخطوتين</h1>
+        <p>أدخل الكود المكون من 6 أرقام من تطبيق Authenticator أو كود الاسترداد.</p>
+
+        <div class="alert alert-error" id="errorAlert"></div>
+
+        <div class="input-group">
+            <input type="text" id="verifyCode" placeholder="000000" maxlength="8" inputmode="numeric">
+        </div>
+
+        <label class="trust-device">
+            <input type="checkbox" id="trustDevice" style="width: auto; letter-spacing: normal;">
+            ثق بهذا الجهاز لمدة 30 يومًا
+        </label>
+
+        <button class="btn" id="verifyBtn" onclick="verify()">تحقق ودخول</button>
+        <div class="loading" id="loading"></div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './api-config.js';
+        import { addTrustedDevice } from './2fa-service.js';
+
+        async function verify() {
+            const code = document.getElementById('verifyCode').value;
+            const trustDevice = document.getElementById('trustDevice').checked;
+            const errorAlert = document.getElementById('errorAlert');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const loading = document.getElementById('loading');
+
+            if (!code) {
+                errorAlert.textContent = 'الرجاء إدخال الكود';
+                errorAlert.classList.add('active');
+                return;
+            }
+
+            errorAlert.classList.remove('active');
+            verifyBtn.style.display = 'none';
+            loading.style.display = 'block';
+
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = 'sign-in.html';
+                    return;
+                }
+
+                // Verify via Edge Function
+                const { data, error } = await supabase.functions.invoke('verify-2fa', {
+                    body: { userId: user.id, code }
+                });
+
+                if (error || !data?.success) {
+                    throw new Error('الكود غير صحيح');
+                }
+
+                // If trust device is checked
+                if (trustDevice) {
+                    const fingerprint = Math.random().toString(36).substring(2, 15);
+                    localStorage.setItem('device_fingerprint', fingerprint);
+                    await addTrustedDevice(user.id, navigator.userAgent, fingerprint);
+                }
+
+                // Redirect based on role
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+
+                const target = profile?.role === 'admin' ? 'admin-dashboard.html' : 'customer-dashboard.html';
+                window.location.href = target;
+
+            } catch (err) {
+                errorAlert.textContent = err.message;
+                errorAlert.classList.add('active');
+                verifyBtn.style.display = 'block';
+                loading.style.display = 'none';
+            }
+        }
+
+        window.verify = verify;
+    </script>
+</body>
+</html>

@@ -249,6 +249,12 @@ form.addEventListener('submit', async (e) => {
         const result = await signIn(email, password);
         if (result.error) throw result.error;
 
+        if (result.requires2FA) {
+            console.log('[AuthDebug] 2FA required, redirecting to verification page...');
+            window.location.replace('2fa-verify.html');
+            return;
+        }
+
         console.log('[AuthDebug] Sign in successful, redirecting based on role...');
         successMessage.style.display = 'block';
 
