@@ -1,5 +1,5 @@
 // customer-dashboard.js
-import { requireAuth, logout, updateProfile, updatePassword } from './auth-client.js';
+import { requireAuth, logout } from './auth-client.js';
 import { initCustomerSidebar } from './assets/js/customer-sidebar.js';
 import { initRewardsDashboard } from './rewards-dashboard.js';
 import {
@@ -12,7 +12,6 @@ import {
 } from './tickets-service.js';
 import {
     fetchNotifications,
-    markAllAsRead,
     subscribeToNotifications
 } from './notifications-service.js';
 
