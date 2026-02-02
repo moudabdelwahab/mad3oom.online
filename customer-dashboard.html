@@ -51,6 +51,8 @@
         @media (max-width: 768px) {
             #mobileMenuToggle { display: flex !important; }
         }
+        /* Tooltip hover styles for wallet info in sidebar */
+        #walletInfo:hover #pointsTooltip { display: block !important; }
     </style>
 </head>
 <body>
@@ -335,43 +337,8 @@
     </div>
 
     <!-- Ticket Detail Modal -->
-    <div id="ticketDetailModal" class="modal">
-        <div class="modal-content" style="max-width: 800px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 id="detailTicketTitle">تفاصيل التذكرة</h2>
-                <span id="detailTicketNumber" style="color: var(--color-text-secondary);">#000</span>
-            </div>
-            <div id="detailTicketStatus" style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.85rem; margin-bottom: 1rem;"></div>
-            <p id="detailTicketDescription" style="margin-bottom: 2rem; line-height: 1.6;"></p>
-            
-            <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--color-border);">
-            
-            <h3>الردود</h3>
-            <div id="detailRepliesList" style="margin: 1.5rem 0; max-height: 300px; overflow-y: auto; padding: 1rem; background: var(--color-muted); border-radius: 0.5rem;"></div>
-            
-            <form id="detailReplyForm">
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <textarea id="detailReplyMessage" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; min-height: 80px;" placeholder="اكتب ردك هنا..." required></textarea>
-                </div>
-                
-                <!-- Rating System (Visible when ticket is resolved) -->
-                <div id="ticketRatingSection" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem; border: 1px solid #bae6fd;">
-                    <p style="font-weight: 600; margin-bottom: 0.5rem; color: #0369a1;">كيف تقيم مستوى الخدمة؟</p>
-                    <div class="star-rating" style="display: flex; gap: 0.5rem; font-size: 1.5rem; cursor: pointer;">
-                        <span class="star" data-value="1">⭐</span>
-                        <span class="star" data-value="2">⭐</span>
-                        <span class="star" data-value="3">⭐</span>
-                        <span class="star" data-value="4">⭐</span>
-                        <span class="star" data-value="5">⭐</span>
-                    </div>
-                    <input type="hidden" id="ticketRatingValue" value="0">
-                </div>
-
-                <button type="submit" class="btn btn-primary">إرسال الرد</button>
-            </form>
-            <button class="btn btn-secondary close-modal" style="margin-top: 1.5rem; width: 100%;">إغلاق</button>
-        </div>
-    </div>
+    <!-- Not implemented yet - This modal structure duplicates the one above and is not fully wired -->
+    <!-- The functional modal is defined at the top of the body with id="ticketDetailModal" -->
 
     <script type="module" src="customer-dashboard.js"></script>
 </body>

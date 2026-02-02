@@ -51,7 +51,7 @@ async function loadWalletData(userId) {
             document.getElementById('pointsCount').textContent = wallet.total_points || 0;
         }
         if (document.getElementById('pointsTooltip')) {
-            document.getElementById('pointsTooltip').textContent = wallet.total_points || 0;
+            document.getElementById('pointsTooltip').textContent = (wallet.total_points || 0) + ' نقطة';
         }
 
         // تحديث معلومات Pro

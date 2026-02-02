@@ -245,6 +245,36 @@ import {
         };
     }
 
+    // Handle reply form submission (for the second modal structure)
+    const detailReplyForm = document.getElementById('detailReplyForm');
+    if (detailReplyForm) {
+        detailReplyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msgInput = document.getElementById('detailReplyMessage');
+            const message = msgInput?.value.trim();
+            if (!message || !currentTicketId) return;
+
+            try {
+                const submitBtn = detailReplyForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'جاري الإرسال...';
+                }
+                await addTicketReply(currentTicketId, message);
+                msgInput.value = '';
+                await loadReplies(currentTicketId);
+            } catch (err) {
+                alert('فشل إرسال الرد: ' + err.message);
+            } finally {
+                const submitBtn = detailReplyForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'إرسال الرد';
+                }
+            }
+        });
+    }
+
     // Create Ticket Form
     const createTicketForm = document.getElementById('userCreateTicketForm');
     if (createTicketForm) {
