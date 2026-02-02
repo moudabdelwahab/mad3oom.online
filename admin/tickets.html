@@ -9,7 +9,232 @@
     <link rel="stylesheet" href="/robot.css">
     <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* تصميم البطاقات */
+        .tickets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
 
+        .ticket-card {
+            background: var(--color-surface);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .ticket-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            border-color: var(--color-accent);
+        }
+
+        .ticket-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .ticket-number {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .ticket-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--color-text);
+            line-height: 1.4;
+        }
+
+        .ticket-description {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .ticket-user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: var(--color-muted);
+            border-radius: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--color-accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--color-text);
+        }
+
+        .user-email {
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+        }
+
+        .ticket-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .ticket-date {
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+        }
+
+        .priority-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .priority-high {
+            background: #fee;
+            color: #c33;
+        }
+
+        .priority-medium {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+
+        .priority-low {
+            background: #dfe6e9;
+            color: #636e72;
+        }
+
+        /* فلاتر البحث */
+        .filters-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            background: var(--color-surface);
+            color: var(--color-text);
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .search-input {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            background: var(--color-surface);
+            color: var(--color-text);
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+            min-width: 250px;
+        }
+
+        /* إحصائيات */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--color-surface);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .stat-label {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--color-accent);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--color-text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .tickets-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input {
+                min-width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="sidebar-container"></div>
@@ -20,26 +245,54 @@
             <p>عرض ومتابعة جميع تذاكر الدعم الفني في النظام</p>
         </header>
 
-        <div class="section-card">
-            <div class="section-header">
-                <h2 class="section-title">قائمة التذاكر</h2>
+        <!-- الإحصائيات -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">إجمالي التذاكر</div>
+                <div id="statTotal" class="stat-value">0</div>
             </div>
-            <div class="table-container">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>رقم التذكرة</th>
-                            <th>المستخدم</th>
-                            <th>عنوان التذكرة</th>
-                            <th>الحالة</th>
-                            <th>التاريخ</th>
-                            <th>الإجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admTicketsBody">
-                        <tr><td colspan="6" style="text-align: center; padding: 3rem;">جاري تحميل البيانات...</td></tr>
-                    </tbody>
-                </table>
+            <div class="stat-card">
+                <div class="stat-label">المفتوحة</div>
+                <div id="statOpen" class="stat-value" style="color: #f39c12;">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">قيد المعالجة</div>
+                <div id="statInProgress" class="stat-value" style="color: #3498db;">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">المحلولة</div>
+                <div id="statResolved" class="stat-value" style="color: #27ae60;">0</div>
+            </div>
+        </div>
+
+        <!-- الفلاتر -->
+        <div class="filters-section">
+            <div class="filter-group">
+                <label style="font-weight: 600; font-size: 0.9rem;">الحالة:</label>
+                <select id="filterStatus" class="filter-select">
+                    <option value="all">الكل</option>
+                    <option value="open">مفتوحة</option>
+                    <option value="in-progress">قيد المعالجة</option>
+                    <option value="resolved">محلولة</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label style="font-weight: 600; font-size: 0.9rem;">الأولوية:</label>
+                <select id="filterPriority" class="filter-select">
+                    <option value="all">الكل</option>
+                    <option value="high">عالية</option>
+                    <option value="medium">متوسطة</option>
+                    <option value="low">منخفضة</option>
+                </select>
+            </div>
+            <input type="text" id="searchInput" class="search-input" placeholder="ابحث في التذاكر...">
+        </div>
+
+        <!-- شبكة البطاقات -->
+        <div id="ticketsGrid" class="tickets-grid">
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <p>جاري تحميل التذاكر...</p>
             </div>
         </div>
     </main>

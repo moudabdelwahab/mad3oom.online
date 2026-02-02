@@ -312,11 +312,28 @@ export async function addTicketReply(ticketId, message, isInternal = false) {
  * جلب ردود التذكرة
  */
 export async function fetchTicketReplies(ticketId) {
-    const { data, error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // جلب البروفايل لمعرفة الدور
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    let query = supabase
         .from('ticket_replies')
         .select('*, profiles(full_name, role)')
         .eq('ticket_id', ticketId)
         .order('created_at', { ascending: true });
+
+    // إذا كان المستخدم ليس أدمن، نفلتر الملاحظات الداخلية
+    if (!profile || profile.role !== 'admin') {
+        query = query.eq('is_internal', false);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return data;

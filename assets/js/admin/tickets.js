@@ -7,6 +7,7 @@ import { adminImpersonateUser } from '/auth-client.js';
 let user = null;
 let currentTicketId = null;
 let repliesSubscription = null;
+let allTickets = [];
 
 async function init() {
     initSidebar();
@@ -14,15 +15,13 @@ async function init() {
     if (!user) return;
 
     updateAdminUI(user);
-    renderTickets();
-    subscribeToTickets(() => renderTickets());
+    await loadTickets();
+    subscribeToTickets(() => loadTickets());
     setupModalEvents();
+    setupFilters();
 }
 
-async function renderTickets() {
-    const body = document.getElementById('admTicketsBody');
-    if (!body) return;
-
+async function loadTickets() {
     const { data: tickets, error } = await supabase
         .from('tickets')
         .select('*, profiles(full_name, email)')
@@ -33,31 +32,127 @@ async function renderTickets() {
         return;
     }
 
-    body.innerHTML = tickets?.map(t => {
-        const statusMap = {
-            'open': 'مفتوحة',
-            'in-progress': 'قيد التنفيذ',
-            'resolved': 'محلولة'
-        };
-        return `
-            <tr>
-                <td>#${t.ticket_number || '---'}</td>
-                <td>
-                    <div style="font-weight:700;">${t.profiles?.full_name || 'مستخدم'}</div>
-                    <div style="font-size:0.7rem; color:#888;">${t.profiles?.email || ''}</div>
-                </td>
-                <td style="font-weight:600;">${t.title}</td>
-                <td><span class="status-badge status-${t.status}">${statusMap[t.status] || t.status}</span></td>
-                <td>${new Date(t.created_at).toLocaleDateString('ar-EG')}</td>
-                <td>
-                    <button class="btn btn-primary btn-sm view-ticket-btn" data-id="${t.id}">عرض</button>
-                </td>
-            </tr>
-        `;
-    }).join('') || '<tr><td colspan="6" style="text-align:center;">لا توجد تذاكر حالياً</td></tr>';
+    allTickets = tickets || [];
+    updateStats();
+    renderTickets(allTickets);
+}
 
-    document.querySelectorAll('.view-ticket-btn').forEach(btn => {
-        btn.onclick = () => openTicketModal(btn.dataset.id);
+function updateStats() {
+    const stats = {
+        total: allTickets.length,
+        open: allTickets.filter(t => t.status === 'open').length,
+        inProgress: allTickets.filter(t => t.status === 'in-progress').length,
+        resolved: allTickets.filter(t => t.status === 'resolved').length
+    };
+
+    document.getElementById('statTotal').textContent = stats.total;
+    document.getElementById('statOpen').textContent = stats.open;
+    document.getElementById('statInProgress').textContent = stats.inProgress;
+    document.getElementById('statResolved').textContent = stats.resolved;
+}
+
+function setupFilters() {
+    const statusFilter = document.getElementById('filterStatus');
+    const priorityFilter = document.getElementById('filterPriority');
+    const searchInput = document.getElementById('searchInput');
+
+    const applyFilters = () => {
+        let filtered = [...allTickets];
+
+        // فلتر الحالة
+        const status = statusFilter.value;
+        if (status !== 'all') {
+            filtered = filtered.filter(t => t.status === status);
+        }
+
+        // فلتر الأولوية
+        const priority = priorityFilter.value;
+        if (priority !== 'all') {
+            filtered = filtered.filter(t => t.priority === priority);
+        }
+
+        // فلتر البحث
+        const search = searchInput.value.trim().toLowerCase();
+        if (search) {
+            filtered = filtered.filter(t => 
+                t.title.toLowerCase().includes(search) ||
+                t.description.toLowerCase().includes(search) ||
+                t.profiles?.full_name?.toLowerCase().includes(search) ||
+                t.profiles?.email?.toLowerCase().includes(search) ||
+                String(t.ticket_number).includes(search)
+            );
+        }
+
+        renderTickets(filtered);
+    };
+
+    statusFilter.addEventListener('change', applyFilters);
+    priorityFilter.addEventListener('change', applyFilters);
+    searchInput.addEventListener('input', applyFilters);
+}
+
+function renderTickets(tickets) {
+    const grid = document.getElementById('ticketsGrid');
+    
+    if (!tickets || tickets.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <p>لا توجد تذاكر تطابق معايير البحث</p>
+            </div>
+        `;
+        return;
+    }
+
+    const statusMap = {
+        'open': 'مفتوحة',
+        'in-progress': 'قيد المعالجة',
+        'resolved': 'محلولة'
+    };
+
+    const priorityMap = {
+        'high': { label: 'أولوية عالية', class: 'priority-high' },
+        'medium': { label: 'أولوية متوسطة', class: 'priority-medium' },
+        'low': { label: 'أولوية منخفضة', class: 'priority-low' }
+    };
+
+    grid.innerHTML = tickets.map(t => {
+        const userName = t.profiles?.full_name || 'مستخدم';
+        const userEmail = t.profiles?.email || 'لا يوجد بريد';
+        const userInitial = userName[0].toUpperCase();
+        const priority = priorityMap[t.priority] || priorityMap['low'];
+
+        return `
+            <div class="ticket-card" data-id="${t.id}">
+                <div class="ticket-card-header">
+                    <span class="ticket-number">#${t.ticket_number || '---'}</span>
+                    <span class="status-badge status-${t.status}">${statusMap[t.status] || t.status}</span>
+                </div>
+                
+                <h3 class="ticket-title">${t.title}</h3>
+                <p class="ticket-description">${t.description}</p>
+                
+                <div class="ticket-user-info">
+                    <div class="user-avatar">${userInitial}</div>
+                    <div class="user-details">
+                        <div class="user-name">${userName}</div>
+                        <div class="user-email">${userEmail}</div>
+                    </div>
+                </div>
+                
+                <div class="ticket-footer">
+                    <span class="ticket-date">${new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
+                    <span class="priority-badge ${priority.class}">${priority.label}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // إضافة حدث النقر على البطاقات
+    document.querySelectorAll('.ticket-card').forEach(card => {
+        card.addEventListener('click', () => {
+            openTicketModal(card.dataset.id);
+        });
     });
 }
 
@@ -85,7 +180,7 @@ async function openTicketModal(ticketId) {
     document.getElementById('modalTicketEmail').innerText = ticket.profiles?.email || '';
     document.getElementById('modalTicketDate').innerText = new Date(ticket.created_at).toLocaleString('ar-EG');
     
-    const statusMap = { 'open': 'مفتوحة', 'in-progress': 'قيد التنفيذ', 'resolved': 'محلولة' };
+    const statusMap = { 'open': 'مفتوحة', 'in-progress': 'قيد المعالجة', 'resolved': 'محلولة' };
     const statusEl = document.getElementById('modalTicketStatus');
     statusEl.innerText = statusMap[ticket.status] || ticket.status;
     statusEl.className = `detail-value status-badge status-${ticket.status}`;
@@ -164,7 +259,7 @@ async function changeStatus(newStatus) {
     try {
         await updateTicketStatus(currentTicketId, newStatus);
         openTicketModal(currentTicketId); // Refresh modal
-        renderTickets(); // Refresh list
+        await loadTickets(); // Refresh list
     } catch (err) {
         alert('فشل تحديث الحالة');
     }
@@ -187,7 +282,7 @@ async function closeTicket() {
         await closeTicketWithComment(currentTicketId, comment);
         document.getElementById('closeTicketModal').style.display = 'none';
         openTicketModal(currentTicketId); // Refresh modal
-        renderTickets(); // Refresh list
+        await loadTickets(); // Refresh list
     } catch (err) {
         alert('فشل إغلاق التذكرة: ' + err.message);
     }
@@ -222,7 +317,7 @@ function setupModalEvents() {
             await addTicketReply(currentTicketId, text, false);
             document.getElementById('replyText').value = '';
             loadReplies(currentTicketId);
-            renderTickets();
+            await loadTickets();
         } catch (err) {
             alert('فشل إرسال الرد');
         }
