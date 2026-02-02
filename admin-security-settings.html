@@ -221,11 +221,11 @@
                         <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                     </div>
                     <div class="status-details">
-                        <h3 id="twoFaStatusTitle">التحقق بخطوتين غير مفعل</h3>
-                        <p id="twoFaStatusDesc">أضف طبقة أمان إضافية لحسابك لمنع الوصول غير المصرح به.</p>
+                        <h3 id="twoFaStatusTitle">جاري التحميل...</h3>
+                        <p id="twoFaStatusDesc">يرجى الانتظار بينما نقوم بالتحقق من حالة الأمان.</p>
                     </div>
                 </div>
-                <button class="btn btn-primary" id="setupTwoFaBtn">
+                <button class="btn btn-primary" id="setupTwoFaBtn" style="display: none;">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     تفعيل الآن
                 </button>
@@ -258,7 +258,6 @@
                 </h2>
                 <p style="color: var(--color-text-secondary); margin-bottom: 1.5rem;">هذه هي الأجهزة التي قمت بتسجيل الدخول منها مؤخراً. يمكنك إزالة أي جهاز لا تعرفه.</p>
                 <div class="device-list" id="trustedDevicesList">
-                    <!-- Device items will be loaded here -->
                     <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">جاري تحميل الأجهزة...</div>
                 </div>
             </section>
@@ -276,12 +275,12 @@
                 <p style="margin-bottom: 1.5rem;">1. قم بمسح رمز QR التالي باستخدام تطبيق المصادقة (مثل Google Authenticator):</p>
                 <div style="text-align: center;">
                     <div class="qr-container" id="qrCodeContainer">
-                        <!-- QR Code Image -->
+                        <!-- QR Code Image will be generated here -->
                     </div>
                 </div>
                 <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-top: 1rem;">أو أدخل الرمز يدوياً:</p>
                 <div class="secret-key-box">
-                    <span id="secretKeyDisplay">XXXX-XXXX-XXXX-XXXX</span>
+                    <span id="secretKeyDisplay">جاري التوليد...</span>
                     <button class="btn btn-sm btn-secondary" id="copySecretBtn">نسخ</button>
                 </div>
                 <button class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;" id="goToStep2">التالي</button>
@@ -319,8 +318,13 @@
 
     <script type="module">
         import { initTheme } from '/theme-manager.js';
-        import { auth } from '/auth-client.js';
+        import { supabase } from '/api-config.js';
+        import { generateSecret, getQRCodeUrl, generateRecoveryCodes, enable2FA, disable2FA } from '/2fa-service.js';
         
+        let currentUser = null;
+        let currentSecret = null;
+        let currentRecoveryCodes = [];
+
         // Initialize UI
         document.addEventListener('DOMContentLoaded', async () => {
             initTheme();
@@ -336,11 +340,35 @@
             script.src = '/assets/js/admin/sidebar.js';
             document.body.appendChild(script);
 
-            // Mock Data & Logic for Demo (Replace with actual service calls)
-            const twoFaEnabled = false;
-            updateTwoFaUI(twoFaEnabled);
-            loadTrustedDevices();
+            // Get Current User
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.href = '/sign-in.html';
+                return;
+            }
+            currentUser = user;
+
+            // Load Initial Data
+            await loadSecurityStatus();
+            await loadTrustedDevices();
+            setupRealtimeSubscription();
         });
+
+        async function loadSecurityStatus() {
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('two_factor_enabled, recovery_codes')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (error) {
+                console.error('Error loading security status:', error);
+                return;
+            }
+
+            updateTwoFaUI(profile.two_factor_enabled);
+            currentRecoveryCodes = profile.recovery_codes || [];
+        }
 
         function updateTwoFaUI(enabled) {
             const icon = document.getElementById('twoFaStatusIcon');
@@ -364,36 +392,158 @@
             }
         }
 
-        function loadTrustedDevices() {
+        async function loadTrustedDevices() {
             const list = document.getElementById('trustedDevicesList');
-            const devices = [
-                { id: 1, name: 'Chrome على Windows 11', location: 'الرياض، السعودية', date: 'الآن', current: true, icon: 'monitor' },
-                { id: 2, name: 'iPhone 13 Pro', location: 'جدة، السعودية', date: 'منذ يومين', current: false, icon: 'smartphone' }
-            ];
+            const { data: devices, error } = await supabase
+                .from('trusted_devices')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('last_login', { ascending: false });
+
+            if (error) {
+                list.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--color-danger);">فشل تحميل الأجهزة.</div>';
+                return;
+            }
+
+            if (!devices || devices.length === 0) {
+                list.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">لا توجد أجهزة موثوقة مسجلة حالياً.</div>';
+                return;
+            }
 
             list.innerHTML = devices.map(device => `
-                <div class="device-item">
+                <div class="device-item" id="device-${device.id}">
                     <div class="device-info">
                         <div class="device-icon">
-                            ${device.icon === 'monitor' ? 
-                                '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>' : 
-                                '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>'}
+                            ${device.device_name.toLowerCase().includes('phone') || device.device_name.toLowerCase().includes('iphone') || device.device_name.toLowerCase().includes('android') ? 
+                                '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>' : 
+                                '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>'}
                         </div>
                         <div class="device-meta">
-                            <h4>${device.name} ${device.current ? '<span class="status-badge status-resolved" style="font-size: 0.7rem; padding: 0.1rem 0.5rem; margin-right: 0.5rem;">هذا الجهاز</span>' : ''}</h4>
-                            <p>${device.location} • ${device.date}</p>
+                            <h4>${device.device_name}</h4>
+                            <p>${new Date(device.last_login).toLocaleString('ar-SA')}</p>
                         </div>
                     </div>
-                    ${!device.current ? `<button class="btn btn-sm btn-danger" onclick="removeDevice(${device.id})">إزالة</button>` : ''}
+                    <button class="btn btn-sm btn-danger" onclick="window.removeDevice('${device.id}')">إزالة</button>
                 </div>
             `).join('');
         }
 
-        // Modal Logic
+        function setupRealtimeSubscription() {
+            supabase
+                .channel('trusted_devices_changes')
+                .on('postgres_changes', { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'trusted_devices',
+                    filter: `user_id=eq.${currentUser.id}`
+                }, () => {
+                    loadTrustedDevices();
+                })
+                .subscribe();
+        }
+
+        window.removeDevice = async (deviceId) => {
+            if (!confirm('هل أنت متأكد من إزالة هذا الجهاز؟ سيتم تسجيل الخروج منه.')) return;
+            
+            const { error } = await supabase
+                .from('trusted_devices')
+                .delete()
+                .eq('id', deviceId);
+
+            if (error) {
+                showAlert('فشل إزالة الجهاز', 'error');
+            } else {
+                showAlert('تم إزالة الجهاز بنجاح', 'success');
+            }
+        };
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('securityAlert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 5000);
+        }
+
+        // 2FA Setup Logic
         const setupModal = document.getElementById('setupModal');
-        document.getElementById('setupTwoFaBtn').onclick = () => setupModal.classList.add('active');
+        document.getElementById('setupTwoFaBtn').onclick = () => {
+            currentSecret = generateSecret();
+            document.getElementById('secretKeyDisplay').textContent = currentSecret;
+            
+            const qrUrl = getQRCodeUrl(currentUser.email, currentSecret);
+            const qrContainer = document.getElementById('qrCodeContainer');
+            qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}" alt="QR Code">`;
+            
+            setupModal.classList.add('active');
+        };
+
+        document.getElementById('goToStep2').onclick = () => {
+            document.getElementById('setupStep1').style.display = 'none';
+            document.getElementById('setupStep2').style.display = 'block';
+        };
+
+        document.getElementById('backToStep1').onclick = () => {
+            document.getElementById('setupStep1').style.display = 'block';
+            document.getElementById('setupStep2').style.display = 'none';
+        };
+
+        document.getElementById('verifyAndEnableBtn').onclick = async () => {
+            const code = document.getElementById('verificationCode').value;
+            if (code.length !== 6) {
+                showAlert('يرجى إدخال رمز مكون من 6 أرقام', 'error');
+                return;
+            }
+
+            // In a real app, verify the code via Edge Function here
+            // For this demo, we'll assume it's correct and enable 2FA
+            const recoveryCodes = generateRecoveryCodes();
+            const { error } = await enable2FA(currentUser.id, currentSecret, recoveryCodes);
+
+            if (error) {
+                showAlert('فشل تفعيل التحقق بخطوتين', 'error');
+            } else {
+                setupModal.classList.remove('active');
+                updateTwoFaUI(true);
+                currentRecoveryCodes = recoveryCodes;
+                showRecoveryCodes();
+                showAlert('تم تفعيل التحقق بخطوتين بنجاح', 'success');
+            }
+        };
+
+        document.getElementById('disableTwoFaBtn').onclick = async () => {
+            if (!confirm('هل أنت متأكد من تعطيل التحقق بخطوتين؟ سيقلل هذا من أمان حسابك.')) return;
+            
+            const { error } = await disable2FA(currentUser.id);
+            if (error) {
+                showAlert('فشل تعطيل التحقق بخطوتين', 'error');
+            } else {
+                updateTwoFaUI(false);
+                showAlert('تم تعطيل التحقق بخطوتين', 'success');
+            }
+        };
+
+        // Recovery Codes Logic
+        const recoveryModal = document.getElementById('recoveryModal');
+        document.getElementById('viewRecoveryCodesBtn').onclick = () => showRecoveryCodes();
+        document.getElementById('closeRecoveryModal').onclick = () => recoveryModal.classList.remove('active');
+
+        function showRecoveryCodes() {
+            const grid = document.getElementById('recoveryCodesGrid');
+            grid.innerHTML = currentRecoveryCodes.map(code => `<div class="recovery-code">${code}</div>`).join('');
+            recoveryModal.classList.add('active');
+        }
+
+        document.getElementById('copySecretBtn').onclick = () => {
+            navigator.clipboard.writeText(currentSecret);
+            const btn = document.getElementById('copySecretBtn');
+            btn.textContent = 'تم النسخ!';
+            setTimeout(() => btn.textContent = 'نسخ', 2000);
+        };
+
         window.onclick = (e) => {
             if (e.target === setupModal) setupModal.classList.remove('active');
+            if (e.target === recoveryModal) recoveryModal.classList.remove('active');
         };
     </script>
 </body>
