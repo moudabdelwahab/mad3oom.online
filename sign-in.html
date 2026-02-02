@@ -251,6 +251,7 @@ form.addEventListener('submit', async (e) => {
 
         if (result.requires2FA) {
             console.log('[AuthDebug] 2FA required, redirecting to verification page...');
+            // حفظ البريد الإلكتروني مؤقتاً إذا لزم الأمر أو الاعتماد على جلسة Supabase الحالية
             window.location.replace('2fa-verify.html');
             return;
         }
