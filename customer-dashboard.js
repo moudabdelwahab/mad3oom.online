@@ -311,12 +311,15 @@ import {
 
     // اشتراكات لحظية
     if (!isGuest) {
+        console.log('[Customer Dashboard] Setting up realtime subscriptions for user:', user.id);
         subscribeToTickets(() => {
+            console.log('[Customer Dashboard] Tickets callback triggered');
             renderStats();
             renderTickets();
             if (currentTicketId) loadReplies(currentTicketId);
         });
-        subscribeToNotifications(user.id, () => {
+        subscribeToNotifications(user.id, (newNotification) => {
+            console.log('[Customer Dashboard] Notification callback triggered:', newNotification);
             renderNotifications();
         });
     }

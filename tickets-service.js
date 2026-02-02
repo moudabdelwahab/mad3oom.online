@@ -135,24 +135,32 @@ export async function uploadTicketImage(file) {
  * الاشتراك في التحديثات التلقائية للتذاكر
  */
 export function subscribeToTickets(callback) {
+    console.log('[Tickets] Subscribing to tickets realtime updates');
     return supabase
         .channel('public:tickets')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, payload => {
+            console.log('[Tickets] Realtime ticket update received:', payload);
             callback(payload);
         })
-        .subscribe();
+        .subscribe((status) => {
+            console.log('[Tickets] Tickets subscription status:', status);
+        });
 }
 
 /**
  * الاشتراك في التحديثات التلقائية لردود تذكرة معينة
  */
 export function subscribeToTicketReplies(ticketId, callback) {
+    console.log('[Tickets] Subscribing to ticket replies for ticket:', ticketId);
     return supabase
         .channel(`public:ticket_replies:ticket_id=eq.${ticketId}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_replies', filter: `ticket_id=eq.${ticketId}` }, payload => {
+            console.log('[Tickets] Realtime reply received:', payload);
             callback(payload);
         })
-        .subscribe();
+        .subscribe((status) => {
+            console.log('[Tickets] Replies subscription status:', status);
+        });
 }
 
 /**
