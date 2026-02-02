@@ -9,155 +9,479 @@
     <link rel="stylesheet" href="/robot.css">
     <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <!-- مكتبات التصدير -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        /* تصميم فريد للوحة التحكم */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .page-intro {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            color: white;
+            margin-bottom: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(30, 60, 114, 0.3);
+        }
+
+        .page-intro::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(180deg); }
+        }
+
+        .page-intro h1 {
+            margin: 0 0 0.75rem 0;
+            font-size: 2rem;
+            font-weight: 800;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-intro p {
+            margin: 0;
+            opacity: 0.95;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* شبكة البطاقات */
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* تصميم البطاقة */
+        .section-card {
+            background: var(--color-surface);
+            border-radius: 1.25rem;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .section-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            border-color: var(--card-accent-color);
+        }
+
+        .section-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: var(--card-accent-color);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .section-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .card-top {
+            padding: 1.75rem;
+            background: linear-gradient(135deg, var(--card-bg-start) 0%, var(--card-bg-end) 100%);
+            position: relative;
+        }
+
+        .card-icon-wrapper {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .section-card:hover .card-icon-wrapper {
+            transform: rotate(360deg) scale(1.1);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: white;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-body {
+            padding: 1.5rem 1.75rem;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stats-row.single {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-box {
+            background: var(--color-muted);
+            padding: 1.25rem;
+            border-radius: 0.875rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .stat-box:hover {
+            background: var(--card-accent-color);
+            border-color: var(--card-accent-color);
+            transform: scale(1.05);
+        }
+
+        .stat-box:hover .stat-label,
+        .stat-box:hover .stat-value {
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--color-text);
+            line-height: 1;
+            transition: color 0.3s ease;
+        }
+
+        .card-footer {
+            padding: 1rem 1.75rem;
+            background: var(--color-muted);
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            font-weight: 600;
+        }
+
+        /* ألوان مخصصة لكل بطاقة */
+        .card-tickets {
+            --card-accent-color: #6366f1;
+            --card-bg-start: #6366f1;
+            --card-bg-end: #8b5cf6;
+        }
+
+        .card-chat {
+            --card-accent-color: #ec4899;
+            --card-bg-start: #ec4899;
+            --card-bg-end: #f43f5e;
+        }
+
+        .card-users {
+            --card-accent-color: #06b6d4;
+            --card-bg-start: #06b6d4;
+            --card-bg-end: #0ea5e9;
+        }
+
+        .card-banned {
+            --card-accent-color: #f59e0b;
+            --card-bg-start: #f59e0b;
+            --card-bg-end: #ef4444;
+        }
+
+        .card-stats {
+            --card-accent-color: #10b981;
+            --card-bg-start: #10b981;
+            --card-bg-end: #059669;
+        }
+
+        .card-activity {
+            --card-accent-color: #8b5cf6;
+            --card-bg-start: #8b5cf6;
+            --card-bg-end: #a78bfa;
+        }
+
+        .card-settings {
+            --card-accent-color: #64748b;
+            --card-bg-start: #64748b;
+            --card-bg-end: #475569;
+        }
+
+        /* تصميم متجاوب */
+        @media (max-width: 768px) {
+            .sections-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .page-intro {
+                padding: 1.5rem;
+            }
+
+            .page-intro h1 {
+                font-size: 1.5rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* تأثيرات إضافية */
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s ease-in-out infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            margin-right: 0.5rem;
+        }
+    </style>
 </head>
 <body>
     <div id="sidebar-container"></div>
 
     <main class="admin-main">
-        <header class="page-header">
-            <h1 style="font-weight: 800; font-size: 1.75rem; margin: 0;">لوحة التحكم</h1>
-            <p style="color: var(--color-text-secondary); margin-top: 0.5rem;">نظرة عامة على نشاط النظام</p>
-        </header>
+        <div class="dashboard-container">
+            <!-- مقدمة الصفحة -->
+            <div class="page-intro">
+                <h1>🎯 لوحة التحكم الرئيسية</h1>
+                <p>إدارة شاملة لجميع أقسام المنصة من مكان واحد</p>
+            </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon" style="background: #E3F2FD; color: #1976D2;">
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <!-- شبكة الأقسام -->
+            <div class="sections-grid">
+                <!-- بطاقة إدارة التذاكر -->
+                <div class="section-card card-tickets">
+                    <a href="/admin/tickets.html" class="card-link">
+                        <div class="card-top">
+                            <div class="card-icon-wrapper">📋</div>
+                            <h3 class="card-title">إدارة التذاكر</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-row">
+                                <div class="stat-box">
+                                    <div class="stat-label">المفتوحة</div>
+                                    <div class="stat-value" id="ticketsOpen">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">المغلقة</div>
+                                    <div class="stat-value" id="ticketsClosed">0</div>
+                                </div>
+                            </div>
+                            <div class="stats-row">
+                                <div class="stat-box">
+                                    <div class="stat-label">قيد المعالجة</div>
+                                    <div class="stat-value" id="ticketsInProgress">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">تم الحل</div>
+                                    <div class="stat-value" id="ticketsResolved">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            انقر للوصول إلى إدارة التذاكر ←
+                        </div>
+                    </a>
                 </div>
-                <div class="stat-info">
-                    <div style="font-size: 0.9rem; color: var(--color-text-secondary);">إجمالي التذاكر</div>
-                    <div class="stat-value" id="admTotal">0</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background: #FFF3E0; color: #F57C00;">
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                </div>
-                <div class="stat-info">
-                    <div style="font-size: 0.9rem; color: var(--color-text-secondary);">تذاكر مفتوحة</div>
-                    <div class="stat-value" id="admOpen">0</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background: #E8F5E9; color: #2E7D32;">
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <div class="stat-info">
-                    <div style="font-size: 0.9rem; color: var(--color-text-secondary);">تذاكر مكتملة</div>
-                    <div class="stat-value" id="admResolved">0</div>
-                </div>
-            </div>
-        </div>
 
-        <div class="section-card">
-            <div class="section-header">
-                <h2 class="section-title">آخر التذاكر</h2>
-                <a href="/admin/tickets.html" class="btn btn-secondary btn-sm">عرض الكل</a>
-            </div>
-            <div class="table-container">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>المستخدم</th>
-                            <th>العنوان</th>
-                            <th>الحالة</th>
-                            <th>التاريخ</th>
-                            <th>الإجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admTicketsBody">
-                        <tr><td colspan="5" style="text-align: center; padding: 2rem;">جاري التحميل...</td></tr>
-                    </tbody>
-                </table>
+                <!-- بطاقة المحادثات الفورية -->
+                <div class="section-card card-chat">
+                    <a href="/chat-admin.html" class="card-link">
+                        <div class="card-top">
+                            <div class="card-icon-wrapper">💬</div>
+                            <h3 class="card-title">المحادثات الفورية</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-row">
+                                <div class="stat-box">
+                                    <div class="stat-label">محادثة جارية</div>
+                                    <div class="stat-value" id="chatActive">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">محادثة مغلقة</div>
+                                    <div class="stat-value" id="chatClosed">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            انقر للوصول إلى المحادثات ←
+                        </div>
+                    </a>
+                </div>
+
+                <!-- بطاقة المستخدمين -->
+                <div class="section-card card-users">
+                    <a href="/admin/users.html" class="card-link">
+                        <div class="card-top">
+                            <div class="card-icon-wrapper">👥</div>
+                            <h3 class="card-title">إدارة المستخدمين</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-row">
+                                <div class="stat-box">
+                                    <div class="stat-label">إجمالي المستخدمين</div>
+                                    <div class="stat-value" id="usersTotal">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">نشطين حالياً</div>
+                                    <div class="stat-value" id="usersActive">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            انقر لإدارة المستخدمين ←
+                        </div>
+                    </a>
+                </div>
+
+                <!-- بطاقة المحظورين -->
+                <div class="section-card card-banned">
+                    <a href="/admin/banned.html" class="card-link">
+                        <div class="card-top">
+                            <div class="card-icon-wrapper">🚫</div>
+                            <h3 class="card-title">المستخدمين المحظورين</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-row">
+                                <div class="stat-box">
+                                    <div class="stat-label">عدد المحظورين</div>
+                                    <div class="stat-value" id="bannedTotal">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">آخر حظر</div>
+                                    <div class="stat-value" style="font-size: 1rem;" id="bannedRecent">-</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            انقر لعرض المحظورين ←
+                        </div>
+                    </a>
+                </div>
+
+                <!-- بطاقة الإحصائيات -->
+                <div class="section-card card-stats">
+                    <a href="/admin/stats.html" class="card-link">
+                        <div class="card-top">
+                            <div class="card-icon-wrapper">📊</div>
+                            <h3 class="card-title">الإحصائيات والتقارير</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-row">
+                                <div class="stat-box">
+                                    <div class="stat-label">إجمالي الزيارات</div>
+                                    <div class="stat-value" style="font-size: 1.3rem;" id="statsVisits">-</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">معدل الاستجابة</div>
+                                    <div class="stat-value" style="font-size: 1.3rem;" id="statsResponse">-</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            انقر لعرض الإحصائيات التفصيلية ←
+                        </div>
+                    </a>
+                </div>
+
+                <!-- بطاقة سجل النشاطات -->
+                <div class="section-card card-activity">
+                    <a href="/admin/activity-log.html" class="card-link">
+                        <div class="card-top">
+                            <div class="card-icon-wrapper">📝</div>
+                            <h3 class="card-title">سجل النشاطات</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-row">
+                                <div class="stat-box">
+                                    <div class="stat-label">نشاطات اليوم</div>
+                                    <div class="stat-value" id="activityToday">0</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">آخر نشاط</div>
+                                    <div class="stat-value" style="font-size: 1rem;" id="activityRecent">-</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            انقر لعرض سجل النشاطات الكامل ←
+                        </div>
+                    </a>
+                </div>
+
+                <!-- بطاقة الإعدادات -->
+                <div class="section-card card-settings">
+                    <a href="/admin/settings.html" class="card-link">
+                        <div class="card-top">
+                            <div class="card-icon-wrapper">⚙️</div>
+                            <h3 class="card-title">الإعدادات</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-row single">
+                                <div class="stat-box">
+                                    <div class="stat-label">إدارة إعدادات النظام</div>
+                                    <div class="stat-value" style="font-size: 1.2rem;">⚡</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            انقر للوصول إلى الإعدادات ←
+                        </div>
+                    </a>
+                </div>
             </div>
         </div>
     </main>
-
-    <!-- Ticket View Modal -->
-    <div id="ticketModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTicketTitle">تفاصيل التذكرة</h2>
-                <span class="close-modal" id="closeModal">&times;</span>
-            </div>
-            <div class="ticket-details-grid">
-                <div class="ticket-info-section">
-                    <div class="detail-item">
-                        <div class="detail-label">وصف المشكلة</div>
-                        <div id="modalTicketDesc" class="detail-value" style="white-space: pre-wrap; font-weight: 400; line-height: 1.6;"></div>
-                    </div>
-                    
-                    <div id="modalTicketImageContainer" class="detail-item" style="display:none;">
-                        <div class="detail-label">المرفقات</div>
-                        <a id="modalTicketImageLink" target="_blank">
-                            <img id="modalTicketImage" style="max-width: 100%; border-radius: 8px; border: 1px solid #eee; margin-top: 0.5rem;">
-                        </a>
-                    </div>
-
-                    <div class="replies-container">
-                        <h3 style="font-size: 1rem; margin-bottom: 1rem;">المحادثة والردود</h3>
-                        <div id="ticketRepliesList">
-                            <!-- Replies will be loaded here -->
-                        </div>
-                    </div>
-
-                    <div class="reply-form">
-                        <textarea id="replyText" class="reply-textarea" placeholder="اكتب ردك هنا..."></textarea>
-                        <div class="reply-actions">
-                            <div class="reply-btns">
-                                <button id="sendPublicReply" class="btn btn-success">إرسال رد للعميل</button>
-                                <button id="sendInternalNote" class="btn btn-warning">إضافة ملاحظة داخلية</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="ticket-meta-section">
-                    <div class="detail-item">
-                        <div class="detail-label">رقم التذكرة</div>
-                        <div id="modalTicketNumber" class="detail-value">#0</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">الحالة الحالية</div>
-                        <div id="modalTicketStatus" class="detail-value"></div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">صاحب التذكرة</div>
-                        <div id="modalTicketUser" class="detail-value"></div>
-                        <div id="modalTicketEmail" style="font-size: 0.75rem; color: #666;"></div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">تاريخ الإنشاء</div>
-                        <div id="modalTicketDate" class="detail-value"></div>
-                    </div>
-                    
-                    <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                        <button id="resolveTicketBtn" class="btn btn-primary" style="width: 100%;">إغلاق التذكرة (تم الحل)</button>
-                        <button id="impersonateUserBtn" class="btn btn-outline" style="width: 100%;">دخول لحساب العميل</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Close Ticket Modal -->
-    <div id="closeTicketModal" class="close-ticket-modal">
-        <div class="close-ticket-modal-content">
-            <div class="close-ticket-modal-header">إغلاق التذكرة</div>
-            <div class="close-ticket-modal-body">
-                <p>هل أنت متأكد من رغبتك في إغلاق هذه التذكرة؟ يمكنك إضافة تعليق ختامي للعميل قبل الإغلاق.</p>
-                <textarea id="closeTicketComment" class="close-ticket-modal-textarea" placeholder="أضف تعليقاً ختامياً للعميل (اختياري)..."></textarea>
-            </div>
-            <div class="close-ticket-modal-footer">
-                <button id="closeCloseTicketModal" class="btn-cancel">إلغاء</button>
-                <button id="confirmCloseTicket" class="btn-confirm">تأكيد الإغلاق</button>
-            </div>
-        </div>
-    </div>
 
     <script type="module" src="/assets/js/admin/dashboard-logic.js"></script>
 </body>
