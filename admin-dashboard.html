@@ -121,9 +121,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
             margin-bottom: 1rem;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card-icon-wrapper svg {
+            color: var(--card-accent-color);
             transition: all 0.3s ease;
         }
 
@@ -293,7 +297,15 @@
         <div class="dashboard-container">
             <!-- مقدمة الصفحة -->
             <div class="page-intro">
-                <h1>🎯 لوحة التحكم الرئيسية</h1>
+                <h1>
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-left: 0.5rem;">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                لوحة التحكم الرئيسية
+            </h1>
                 <p>إدارة شاملة لجميع أقسام المنصة من مكان واحد</p>
             </div>
 
@@ -303,7 +315,14 @@
                 <div class="section-card card-tickets">
                     <a href="/admin/tickets.html" class="card-link">
                         <div class="card-top">
-                            <div class="card-icon-wrapper">📋</div>
+                            <div class="card-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+                            <rect x="9" y="3" width="6" height="4" rx="2"></rect>
+                            <path d="M9 12h6"></path>
+                            <path d="M9 16h6"></path>
+                        </svg>
+                    </div>
                             <h3 class="card-title">إدارة التذاكر</h3>
                         </div>
                         <div class="card-body">
@@ -338,7 +357,14 @@
                 <div class="section-card card-chat">
                     <a href="/chat-admin.html" class="card-link">
                         <div class="card-top">
-                            <div class="card-icon-wrapper">💬</div>
+                            <div class="card-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            <circle cx="9" cy="10" r="1"></circle>
+                            <circle cx="12" cy="10" r="1"></circle>
+                            <circle cx="15" cy="10" r="1"></circle>
+                        </svg>
+                    </div>
                             <h3 class="card-title">المحادثات الفورية</h3>
                         </div>
                         <div class="card-body">
@@ -363,7 +389,14 @@
                 <div class="section-card card-users">
                     <a href="/admin/users.html" class="card-link">
                         <div class="card-top">
-                            <div class="card-icon-wrapper">👥</div>
+                            <div class="card-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
                             <h3 class="card-title">إدارة المستخدمين</h3>
                         </div>
                         <div class="card-body">
@@ -388,7 +421,12 @@
                 <div class="section-card card-banned">
                     <a href="/admin/banned.html" class="card-link">
                         <div class="card-top">
-                            <div class="card-icon-wrapper">🚫</div>
+                            <div class="card-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                        </svg>
+                    </div>
                             <h3 class="card-title">المستخدمين المحظورين</h3>
                         </div>
                         <div class="card-body">
@@ -413,7 +451,13 @@
                 <div class="section-card card-stats">
                     <a href="/admin/stats.html" class="card-link">
                         <div class="card-top">
-                            <div class="card-icon-wrapper">📊</div>
+                            <div class="card-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                    </div>
                             <h3 class="card-title">الإحصائيات والتقارير</h3>
                         </div>
                         <div class="card-body">
@@ -438,7 +482,15 @@
                 <div class="section-card card-activity">
                     <a href="/admin/activity-log.html" class="card-link">
                         <div class="card-top">
-                            <div class="card-icon-wrapper">📝</div>
+                            <div class="card-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                    </div>
                             <h3 class="card-title">سجل النشاطات</h3>
                         </div>
                         <div class="card-body">
@@ -463,14 +515,23 @@
                 <div class="section-card card-settings">
                     <a href="/admin/settings.html" class="card-link">
                         <div class="card-top">
-                            <div class="card-icon-wrapper">⚙️</div>
+                            <div class="card-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m5.66-14.66l-4.24 4.24m0 5.66l4.24 4.24M23 12h-6m-6 0H1m14.66 5.66l-4.24-4.24m0-5.66l4.24-4.24"></path>
+                        </svg>
+                    </div>
                             <h3 class="card-title">الإعدادات</h3>
                         </div>
                         <div class="card-body">
                             <div class="stats-row single">
                                 <div class="stat-box">
                                     <div class="stat-label">إدارة إعدادات النظام</div>
-                                    <div class="stat-value" style="font-size: 1.2rem;">⚡</div>
+                                    <div class="stat-value" style="font-size: 1.2rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                    </div>
                                 </div>
                             </div>
                         </div>
