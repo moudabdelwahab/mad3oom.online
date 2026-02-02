@@ -4,875 +4,397 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إعدادات الأمان - لوحة العميل</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="color-system.css">
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/robot.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 900px;
+        .security-container {
+            max-width: 1000px;
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
         }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
+        .security-card {
+            background: var(--color-surface);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
         }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .section {
-            margin-bottom: 40px;
-            padding-bottom: 30px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 20px;
+        .security-card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+            color: var(--color-primary);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.75rem;
         }
-
-        .section-title::before {
-            content: '';
-            width: 4px;
+        .security-card h2 svg {
+            width: 24px;
             height: 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 2px;
+            color: var(--color-accent);
         }
-
-        .two-fa-status {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        .status-banner {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            background: var(--color-muted);
+            border: 1px solid var(--color-border);
         }
-
         .status-info {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 1rem;
         }
-
-        .status-icon {
-            width: 50px;
-            height: 50px;
+        .status-icon-wrapper {
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 1.5rem;
         }
-
-        .status-icon.enabled {
-            background: #e8f5e9;
-            color: #4caf50;
+        .status-icon-wrapper.enabled {
+            background: rgba(46, 138, 58, 0.1);
+            color: var(--color-success);
         }
-
-        .status-icon.disabled {
-            background: #ffebee;
-            color: #f44336;
+        .status-icon-wrapper.disabled {
+            background: rgba(217, 83, 79, 0.1);
+            color: var(--color-danger);
         }
-
-        .status-text h3 {
-            font-size: 16px;
-            color: #333;
-            margin-bottom: 5px;
+        .status-details h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
         }
-
-        .status-text p {
-            font-size: 13px;
-            color: #666;
+        .status-details p {
+            margin: 0.25rem 0 0;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
         }
-
-        .button-group {
+        .device-list {
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 1rem;
         }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-danger {
-            background: #f44336;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #da190b;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(244, 67, 54, 0.4);
-        }
-
-        .btn-secondary {
-            background: #e0e0e0;
-            color: #333;
-        }
-
-        .btn-secondary:hover {
-            background: #d0d0d0;
-        }
-
-        .qr-section {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .qr-section.active {
-            display: block;
-        }
-
-        .qr-code {
-            margin: 20px 0;
-            display: inline-block;
-        }
-
-        .qr-code img {
-            width: 200px;
-            height: 200px;
-            border: 2px solid #ddd;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-        }
-
-        .secret-key {
-            background: white;
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px dashed #ddd;
-            margin: 15px 0;
-            font-family: 'Courier New', monospace;
-            word-break: break-all;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .copy-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .copy-btn:hover {
-            background: #764ba2;
-        }
-
-        .verification-code {
-            margin: 20px 0;
-        }
-
-        .verification-code input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-            text-align: center;
-            letter-spacing: 4px;
-        }
-
-        .verification-code input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .recovery-codes {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
-        .recovery-codes h4 {
-            color: #856404;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .recovery-codes p {
-            color: #856404;
-            font-size: 13px;
-            margin-bottom: 10px;
-        }
-
-        .codes-list {
-            background: white;
-            padding: 10px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.8;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .trusted-devices {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
         .device-item {
-            background: white;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 1.25rem;
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            transition: all 0.2s;
         }
-
+        .device-item:hover {
+            border-color: var(--color-accent);
+            transform: translateX(-5px);
+        }
         .device-info {
-            flex: 1;
-        }
-
-        .device-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .device-date {
-            font-size: 12px;
-            color: #999;
-        }
-
-        .device-actions {
             display: flex;
-            gap: 10px;
+            align-items: center;
+            gap: 1rem;
         }
-
-        .remove-btn {
-            background: #f44336;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
+        .device-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--color-surface);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-text-secondary);
+            border: 1px solid var(--color-border);
         }
-
-        .remove-btn:hover {
-            background: #da190b;
+        .device-meta h4 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
         }
-
+        .device-meta p {
+            margin: 0.15rem 0 0;
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+        }
+        .qr-container {
+            text-align: center;
+            padding: 2rem;
+            background: #fff;
+            border-radius: 1rem;
+            margin: 1.5rem 0;
+            display: inline-block;
+            border: 1px solid #eee;
+        }
+        .qr-container img {
+            max-width: 200px;
+            height: auto;
+        }
+        .secret-key-box {
+            background: var(--color-muted);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            margin: 1rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px dashed var(--color-border);
+        }
+        .recovery-codes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        .recovery-code {
+            background: var(--color-muted);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-family: monospace;
+            font-weight: 600;
+            border: 1px solid var(--color-border);
+        }
         .modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            width: 100%;
+            height: 100%;
+            background: var(--modal-overlay);
+            backdrop-filter: blur(4px);
+            z-index: 2001;
             align-items: center;
             justify-content: center;
+            padding: 1rem;
         }
-
         .modal.active {
             display: flex;
         }
-
         .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
+            background: var(--color-surface);
+            padding: 2rem;
+            border-radius: 1.25rem;
+            width: 100%;
             max-width: 500px;
-            width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--color-border);
         }
-
-        .modal-header {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        .modal-body {
-            margin-bottom: 20px;
-        }
-
-        .modal-footer {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
         .alert {
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
             display: none;
+            font-weight: 600;
         }
-
-        .alert.active {
-            display: block;
-        }
-
-        .alert-success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #4caf50;
-        }
-
-        .alert-error {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #f44336;
-        }
-
-        .alert-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffc107;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .info-box {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            color: #1565c0;
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #667eea;
-            text-decoration: none;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                border-radius: 0;
-            }
-
-            .header {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 22px;
-            }
-
-            .content {
-                padding: 20px;
-            }
-
-            .two-fa-status {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
+        .alert-success { background: rgba(46, 138, 58, 0.1); color: var(--color-success); border: 1px solid var(--color-success); }
+        .alert-error { background: rgba(217, 83, 79, 0.1); color: var(--color-danger); border: 1px solid var(--color-danger); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔒 إعدادات الأمان</h1>
-            <p>إدارة التحقق بخطوتين والأجهزة الموثوقة</p>
-        </div>
+    <div id="sidebar-container"></div>
 
-        <div class="content">
-            <a href="customer-dashboard.html" class="back-link">← العودة إلى لوحة التحكم</a>
+    <main class="admin-main">
+        <header class="page-header">
+            <h1>إعدادات الأمان المتقدمة</h1>
+            <p>قم بحماية حسابك باستخدام التحقق بخطوتين وإدارة الأجهزة الموثوقة</p>
+        </header>
 
-            <!-- Alert Messages -->
-            <div class="alert alert-success" id="successAlert"></div>
-            <div class="alert alert-error" id="errorAlert"></div>
-            <div class="alert alert-warning" id="warningAlert"></div>
+        <div class="security-container">
+            <div id="securityAlert" class="alert"></div>
 
-            <!-- Two-Factor Authentication Section -->
-            <div class="section">
-                <div class="section-title">🔐 التحقق بخطوتين (2FA)</div>
-
-                <div class="two-fa-status">
-                    <div class="status-info">
-                        <div class="status-icon disabled" id="statusIcon">
-                            ✕
-                        </div>
-                        <div class="status-text">
-                            <h3 id="statusTitle">التحقق بخطوتين معطّل</h3>
-                            <p id="statusDesc">فعّل التحقق بخطوتين لحماية حسابك بشكل أفضل</p>
-                        </div>
+            <!-- 2FA Status Banner -->
+            <div class="status-banner">
+                <div class="status-info">
+                    <div class="status-icon-wrapper" id="twoFaStatusIcon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                     </div>
-                    <div class="button-group">
-                        <button class="btn btn-primary" id="enableBtn" onclick="startEnable2FA()">
-                            🔘 تفعيل
-                        </button>
-                        <button class="btn btn-danger" id="disableBtn" onclick="startDisable2FA()" style="display: none;">
-                            🔘 إلغاء
-                        </button>
+                    <div class="status-details">
+                        <h3 id="twoFaStatusTitle">التحقق بخطوتين غير مفعل</h3>
+                        <p id="twoFaStatusDesc">أضف طبقة أمان إضافية لحسابك لمنع الوصول غير المصرح به.</p>
                     </div>
                 </div>
-
-                <!-- QR Code Section -->
-                <div class="qr-section" id="qrSection">
-                    <div class="info-box">
-                        ⚠️ امسح رمز QR بتطبيق Authenticator (Google Authenticator، Authy، أو أي تطبيق TOTP)
-                    </div>
-
-                    <h4>1️⃣ امسح رمز QR</h4>
-                    <div class="qr-code" id="qrCode"></div>
-
-                    <h4>2️⃣ أو أدخل المفتاح يدويًا</h4>
-                    <div class="secret-key">
-                        <span id="secretKey"></span>
-                        <button class="copy-btn" onclick="copyToClipboard()">نسخ</button>
-                    </div>
-
-                    <h4>3️⃣ أدخل الكود من التطبيق</h4>
-                    <div class="verification-code">
-                        <input type="text" id="verificationCode" placeholder="000000" maxlength="6" inputmode="numeric">
-                    </div>
-
-                    <div class="button-group">
-                        <button class="btn btn-primary" onclick="confirmEnable2FA()">✓ تأكيد التفعيل</button>
-                        <button class="btn btn-secondary" onclick="cancelEnable2FA()">✕ إلغاء</button>
-                    </div>
-                </div>
-
-                <!-- Recovery Codes Section -->
-                <div class="recovery-codes" id="recoveryCodesSection" style="display: none;">
-                    <h4>⚠️ أكواد الاسترداد (مهمة جدًا)</h4>
-                    <p>احفظ هذه الأكواد في مكان آمن. كل كود يُستخدم مرة واحدة فقط لاسترجاع الوصول إلى حسابك.</p>
-                    <div class="codes-list" id="recoveryCodesList"></div>
-                    <div class="button-group" style="margin-top: 15px;">
-                        <button class="btn btn-primary" onclick="downloadRecoveryCodes()">📥 تحميل الأكواد</button>
-                        <button class="btn btn-secondary" onclick="copyRecoveryCodes()">📋 نسخ الأكواد</button>
-                    </div>
-                </div>
+                <button class="btn btn-primary" id="setupTwoFaBtn">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    تفعيل الآن
+                </button>
             </div>
 
-            <!-- Trusted Devices Section -->
-            <div class="section">
-                <div class="section-title">📱 الأجهزة الموثوقة</div>
-
-                <div class="info-box">
-                    ℹ️ الأجهزة الموثوقة لا تحتاج إلى إدخال كود 2FA في كل مرة
-                </div>
-
-                <div class="trusted-devices" id="trustedDevicesList">
-                    <p style="text-align: center; color: #999;">جاري التحميل...</p>
-                </div>
-
-                <div class="button-group">
-                    <button class="btn btn-danger" id="removeAllDevicesBtn" onclick="removeAllTrustedDevices()">
-                        🗑️ إزالة جميع الأجهزة
+            <!-- 2FA Management Section -->
+            <section class="security-card" id="twoFaManagementSection" style="display: none;">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3-3.5 3.5z"></path></svg>
+                    إدارة التحقق بخطوتين
+                </h2>
+                <p style="color: var(--color-text-secondary); margin-bottom: 1.5rem;">يمكنك إعادة ضبط إعدادات التحقق أو عرض رموز الاستعادة الخاصة بك.</p>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" id="viewRecoveryCodesBtn">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        رموز الاستعادة
+                    </button>
+                    <button class="btn btn-danger" id="disableTwoFaBtn">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        تعطيل التحقق بخطوتين
                     </button>
                 </div>
-            </div>
+            </section>
 
-            <!-- Disable 2FA Modal -->
-            <div class="modal" id="disableModal">
-                <div class="modal-content">
-                    <div class="modal-header">⚠️ تأكيد إلغاء التحقق بخطوتين</div>
-                    <div class="modal-body">
-                        <p>هل أنت متأكد من رغبتك في إلغاء التحقق بخطوتين؟</p>
-                        <p style="margin-top: 10px; font-size: 13px; color: #666;">
-                            ستحتاج إلى إدخال كلمة المرور وكود 2FA الحالي للتأكيد.
-                        </p>
-                        <div style="margin-top: 15px;">
-                            <label style="display: block; margin-bottom: 10px;">كلمة المرور:</label>
-                            <input type="password" id="disablePassword" placeholder="أدخل كلمة المرور" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div style="margin-top: 15px;">
-                            <label style="display: block; margin-bottom: 10px;">كود 2FA:</label>
-                            <input type="text" id="disableCode" placeholder="000000" maxlength="6" inputmode="numeric" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; text-align: center; letter-spacing: 4px;">
-                        </div>
+            <!-- Trusted Devices Section -->
+            <section class="security-card">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="15" x2="23" y2="15"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="15" x2="4" y2="15"></line></svg>
+                    الأجهزة الموثوقة
+                </h2>
+                <p style="color: var(--color-text-secondary); margin-bottom: 1.5rem;">هذه هي الأجهزة التي قمت بتسجيل الدخول منها مؤخراً. يمكنك إزالة أي جهاز لا تعرفه.</p>
+                <div class="device-list" id="trustedDevicesList">
+                    <!-- Device items will be loaded here -->
+                    <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">جاري تحميل الأجهزة...</div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- 2FA Setup Modal -->
+    <div id="setupModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--color-accent)" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                إعداد التحقق بخطوتين
+            </h2>
+            <div id="setupStep1">
+                <p style="margin-bottom: 1.5rem;">1. قم بمسح رمز QR التالي باستخدام تطبيق المصادقة (مثل Google Authenticator):</p>
+                <div style="text-align: center;">
+                    <div class="qr-container" id="qrCodeContainer">
+                        <!-- QR Code Image -->
                     </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" onclick="closeDisableModal()">إلغاء</button>
-                        <button class="btn btn-danger" onclick="confirmDisable2FA()">إلغاء التحقق بخطوتين</button>
-                    </div>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-top: 1rem;">أو أدخل الرمز يدوياً:</p>
+                <div class="secret-key-box">
+                    <span id="secretKeyDisplay">XXXX-XXXX-XXXX-XXXX</span>
+                    <button class="btn btn-sm btn-secondary" id="copySecretBtn">نسخ</button>
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;" id="goToStep2">التالي</button>
+            </div>
+            <div id="setupStep2" style="display: none;">
+                <p style="margin-bottom: 1.5rem;">2. أدخل رمز التحقق المكون من 6 أرقام الظاهر في التطبيق:</p>
+                <div class="form-group">
+                    <input type="text" id="verificationCode" class="form-control" placeholder="000000" maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px;">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button class="btn btn-secondary" style="flex: 1;" id="backToStep1">رجوع</button>
+                    <button class="btn btn-primary" style="flex: 2;" id="verifyAndEnableBtn">تأكيد وتفعيل</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Recovery Codes Modal -->
+    <div id="recoveryModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <h2 style="margin-bottom: 1rem; color: var(--color-warning); display: flex; align-items: center; gap: 0.5rem;">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                رموز الاستعادة الخاصة بك
+            </h2>
+            <p style="margin-bottom: 1rem; font-weight: 600;">احتفظ بهذه الرموز في مكان آمن. ستتمكن من استخدامها للوصول إلى حسابك إذا فقدت هاتفك.</p>
+            <div class="recovery-codes-grid" id="recoveryCodesGrid">
+                <!-- Codes will be loaded here -->
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button class="btn btn-secondary" style="flex: 1;" id="printCodesBtn">طباعة</button>
+                <button class="btn btn-primary" style="flex: 1;" id="closeRecoveryModal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
-        import { supabase } from './api-config.js';
-        import { 
-            generateSecret, 
-            getQRCodeUrl, 
-            generateRecoveryCodes,
-            enable2FA,
-            disable2FA,
-            getTrustedDevices,
-            removeTrustedDevice,
-            removeAllTrustedDevices
-        } from './2fa-service.js';
+        import { initTheme } from '/theme-manager.js';
+        import { auth } from '/auth-client.js';
+        
+        // Initialize UI
+        document.addEventListener('DOMContentLoaded', async () => {
+            initTheme();
+            
+            // Load Sidebar
+            const sidebarContainer = document.getElementById('sidebar-container');
+            const response = await fetch('/assets/components/customer-sidebar.html');
+            const html = await response.text();
+            sidebarContainer.innerHTML = html;
+            
+            // Initialize Sidebar Logic
+            const script = document.createElement('script');
+            script.src = '/assets/js/customer-sidebar.js';
+            document.body.appendChild(script);
 
-        let currentSecret = null;
-        let currentRecoveryCodes = null;
-        let currentUser = null;
+            // Mock Data & Logic for Demo
+            const twoFaEnabled = false;
+            updateTwoFaUI(twoFaEnabled);
+            loadTrustedDevices();
+        });
 
-        // Initialize
-        async function init() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                window.location.href = 'sign-in.html';
-                return;
-            }
+        function updateTwoFaUI(enabled) {
+            const icon = document.getElementById('twoFaStatusIcon');
+            const title = document.getElementById('twoFaStatusTitle');
+            const desc = document.getElementById('twoFaStatusDesc');
+            const btn = document.getElementById('setupTwoFaBtn');
+            const management = document.getElementById('twoFaManagementSection');
 
-            currentUser = user;
-            await loadUserSettings();
-            await loadTrustedDevices();
-        }
-
-        // Load user 2FA settings
-        async function loadUserSettings() {
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('two_factor_enabled')
-                .eq('id', currentUser.id)
-                .single();
-
-            if (profile?.two_factor_enabled) {
-                document.getElementById('statusIcon').className = 'status-icon enabled';
-                document.getElementById('statusIcon').textContent = '✓';
-                document.getElementById('statusTitle').textContent = 'التحقق بخطوتين مفعّل';
-                document.getElementById('statusDesc').textContent = 'حسابك محمي بالتحقق بخطوتين';
-                document.getElementById('enableBtn').style.display = 'none';
-                document.getElementById('disableBtn').style.display = 'flex';
-                document.getElementById('removeAllDevicesBtn').style.display = 'flex';
+            if (enabled) {
+                icon.className = 'status-icon-wrapper enabled';
+                title.textContent = 'التحقق بخطوتين مفعل';
+                desc.textContent = 'حسابك محمي بطبقة أمان إضافية.';
+                btn.style.display = 'none';
+                management.style.display = 'block';
+            } else {
+                icon.className = 'status-icon-wrapper disabled';
+                title.textContent = 'التحقق بخطوتين غير مفعل';
+                desc.textContent = 'أضف طبقة أمان إضافية لحسابك لمنع الوصول غير المصرح به.';
+                btn.style.display = 'flex';
+                management.style.display = 'none';
             }
         }
 
-        // Start enabling 2FA
-        window.startEnable2FA = async function() {
-            currentSecret = generateSecret();
-            currentRecoveryCodes = generateRecoveryCodes();
+        function loadTrustedDevices() {
+            const list = document.getElementById('trustedDevicesList');
+            const devices = [
+                { id: 1, name: 'Chrome على Windows 11', location: 'الرياض، السعودية', date: 'الآن', current: true, icon: 'monitor' },
+                { id: 2, name: 'iPhone 13 Pro', location: 'جدة، السعودية', date: 'منذ يومين', current: false, icon: 'smartphone' }
+            ];
 
-            const qrUrl = getQRCodeUrl(currentUser.email, currentSecret);
-
-            // Generate QR Code using QR Server API
-            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`;
-            document.getElementById('qrCode').innerHTML = `<img src="${qrCodeUrl}" alt="QR Code">`;
-            document.getElementById('secretKey').textContent = currentSecret;
-
-            document.getElementById('qrSection').classList.add('active');
-            document.getElementById('enableBtn').disabled = true;
-        };
-
-        // Confirm 2FA enablement
-        window.confirmEnable2FA = async function() {
-            const code = document.getElementById('verificationCode').value;
-
-            if (!code || code.length !== 6) {
-                showAlert('errorAlert', 'الرجاء إدخال كود صحيح');
-                return;
-            }
-
-            try {
-                // Verify code via Edge Function
-                const { data, error } = await supabase.functions.invoke('verify-2fa', {
-                    body: { userId: currentUser.id, code }
-                });
-
-                if (error || !data?.success) {
-                    showAlert('errorAlert', 'الكود غير صحيح. حاول مرة أخرى.');
-                    return;
-                }
-
-                // Enable 2FA
-                const { error: enableError } = await enable2FA(currentUser.id, currentSecret, currentRecoveryCodes);
-
-                if (enableError) {
-                    showAlert('errorAlert', 'حدث خطأ في تفعيل 2FA');
-                    return;
-                }
-
-                showAlert('successAlert', 'تم تفعيل التحقق بخطوتين بنجاح');
-                document.getElementById('qrSection').classList.remove('active');
-                document.getElementById('recoveryCodesSection').style.display = 'block';
-                document.getElementById('recoveryCodesList').innerHTML = currentRecoveryCodes.map(code => `<div>${code}</div>`).join('');
-
-                // Update UI
-                await loadUserSettings();
-                document.getElementById('verificationCode').value = '';
-
-            } catch (err) {
-                showAlert('errorAlert', 'حدث خطأ: ' + err.message);
-            }
-        };
-
-        // Cancel 2FA enablement
-        window.cancelEnable2FA = function() {
-            document.getElementById('qrSection').classList.remove('active');
-            document.getElementById('enableBtn').disabled = false;
-            document.getElementById('verificationCode').value = '';
-            currentSecret = null;
-            currentRecoveryCodes = null;
-        };
-
-        // Start disabling 2FA
-        window.startDisable2FA = function() {
-            document.getElementById('disableModal').classList.add('active');
-        };
-
-        // Close disable modal
-        window.closeDisableModal = function() {
-            document.getElementById('disableModal').classList.remove('active');
-            document.getElementById('disablePassword').value = '';
-            document.getElementById('disableCode').value = '';
-        };
-
-        // Confirm 2FA disablement
-        window.confirmDisable2FA = async function() {
-            const password = document.getElementById('disablePassword').value;
-            const code = document.getElementById('disableCode').value;
-
-            if (!password || !code || code.length !== 6) {
-                showAlert('errorAlert', 'الرجاء إدخال كلمة المرور والكود');
-                return;
-            }
-
-            try {
-                // Verify password
-                const { error: signInError } = await supabase.auth.signInWithPassword({
-                    email: currentUser.email,
-                    password
-                });
-
-                if (signInError) {
-                    showAlert('errorAlert', 'كلمة المرور غير صحيحة');
-                    return;
-                }
-
-                // Verify 2FA code
-                const { data, error } = await supabase.functions.invoke('verify-2fa', {
-                    body: { userId: currentUser.id, code }
-                });
-
-                if (error || !data?.success) {
-                    showAlert('errorAlert', 'كود 2FA غير صحيح');
-                    return;
-                }
-
-                // Disable 2FA
-                const { error: disableError } = await disable2FA(currentUser.id);
-
-                if (disableError) {
-                    showAlert('errorAlert', 'حدث خطأ في إلغاء 2FA');
-                    return;
-                }
-
-                // Remove all trusted devices
-                await removeAllTrustedDevices(currentUser.id);
-
-                showAlert('successAlert', 'تم إلغاء التحقق بخطوتين بنجاح');
-                closeDisableModal();
-                await loadUserSettings();
-                await loadTrustedDevices();
-
-            } catch (err) {
-                showAlert('errorAlert', 'حدث خطأ: ' + err.message);
-            }
-        };
-
-        // Load trusted devices
-        async function loadTrustedDevices() {
-            const { data: devices } = await getTrustedDevices(currentUser.id);
-
-            if (!devices || devices.length === 0) {
-                document.getElementById('trustedDevicesList').innerHTML = '<p style="text-align: center; color: #999;">لا توجد أجهزة موثوقة</p>';
-                return;
-            }
-
-            const devicesHtml = devices.map(device => `
+            list.innerHTML = devices.map(device => `
                 <div class="device-item">
                     <div class="device-info">
-                        <div class="device-name">📱 ${device.device_name || 'جهاز بدون اسم'}</div>
-                        <div class="device-date">آخر استخدام: ${new Date(device.last_used_at).toLocaleDateString('ar-EG')}</div>
+                        <div class="device-icon">
+                            ${device.icon === 'monitor' ? 
+                                '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>' : 
+                                '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>'}
+                        </div>
+                        <div class="device-meta">
+                            <h4>${device.name} ${device.current ? '<span class="status-badge status-resolved" style="font-size: 0.7rem; padding: 0.1rem 0.5rem; margin-right: 0.5rem;">هذا الجهاز</span>' : ''}</h4>
+                            <p>${device.location} • ${device.date}</p>
+                        </div>
                     </div>
-                    <div class="device-actions">
-                        <button class="remove-btn" onclick="removeDevice('${device.id}')">إزالة</button>
-                    </div>
+                    ${!device.current ? `<button class="btn btn-sm btn-danger" onclick="removeDevice(${device.id})">إزالة</button>` : ''}
                 </div>
             `).join('');
-
-            document.getElementById('trustedDevicesList').innerHTML = devicesHtml;
         }
 
-        // Remove single device
-        window.removeDevice = async function(deviceId) {
-            if (!confirm('هل تريد إزالة هذا الجهاز؟')) return;
-
-            const { error } = await removeTrustedDevice(deviceId);
-
-            if (error) {
-                showAlert('errorAlert', 'حدث خطأ في إزالة الجهاز');
-                return;
-            }
-
-            showAlert('successAlert', 'تم إزالة الجهاز بنجاح');
-            await loadTrustedDevices();
+        // Modal Logic
+        const setupModal = document.getElementById('setupModal');
+        document.getElementById('setupTwoFaBtn').onclick = () => setupModal.classList.add('active');
+        window.onclick = (e) => {
+            if (e.target === setupModal) setupModal.classList.remove('active');
         };
-
-        // Remove all trusted devices
-        window.removeAllTrustedDevices = async function() {
-            if (!confirm('هل تريد إزالة جميع الأجهزة الموثوقة؟')) return;
-
-            const { error } = await removeAllTrustedDevices(currentUser.id);
-
-            if (error) {
-                showAlert('errorAlert', 'حدث خطأ في إزالة الأجهزة');
-                return;
-            }
-
-            showAlert('successAlert', 'تم إزالة جميع الأجهزة بنجاح');
-            await loadTrustedDevices();
-        };
-
-        // Copy to clipboard
-        window.copyToClipboard = function() {
-            navigator.clipboard.writeText(currentSecret);
-            showAlert('successAlert', 'تم نسخ المفتاح');
-        };
-
-        // Download recovery codes
-        window.downloadRecoveryCodes = function() {
-            const text = currentRecoveryCodes.join('\n');
-            const blob = new Blob([text], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'recovery-codes.txt';
-            a.click();
-            window.URL.revokeObjectURL(url);
-        };
-
-        // Copy recovery codes
-        window.copyRecoveryCodes = function() {
-            navigator.clipboard.writeText(currentRecoveryCodes.join('\n'));
-            showAlert('successAlert', 'تم نسخ الأكواد');
-        };
-
-        // Show alert
-        function showAlert(alertId, message) {
-            const alert = document.getElementById(alertId);
-            alert.textContent = message;
-            alert.classList.add('active');
-
-            setTimeout(() => {
-                alert.classList.remove('active');
-            }, 5000);
-        }
-
-        // Initialize on load
-        init();
     </script>
 </body>
 </html>
