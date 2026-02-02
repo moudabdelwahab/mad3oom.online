@@ -1,3 +1,5 @@
+import { supabase } from '/api-config.js';
+
 export function initSidebar() {
     const sidebarContainer = document.getElementById('sidebar-container');
     if (!sidebarContainer) return;
@@ -50,8 +52,9 @@ function setupSidebarLogic() {
         if (!list) return;
 
         try {
-            const { fetchNotifications, markAsRead } = await import('/notifications-service.js');
+            const { fetchNotifications, markAsRead, subscribeToNotifications } = await import('/notifications-service.js');
             const notifications = await fetchNotifications();
+            console.log('[Sidebar] Loaded notifications:', notifications.length);
             
             const unreadCount = notifications.filter(n => !n.is_read).length;
             if (badge) {
@@ -89,8 +92,33 @@ function setupSidebarLogic() {
         }
     }
 
-    // Initial load for badge
+    // Setup realtime subscription for notifications
+    let notificationSubscription = null;
+    async function setupNotificationRealtime() {
+        const { subscribeToNotifications } = await import('/notifications-service.js');
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user && !notificationSubscription) {
+            console.log('[Sidebar] Setting up realtime notifications for user:', user.id);
+            notificationSubscription = subscribeToNotifications(user.id, (newNotification) => {
+                console.log('[Sidebar] New notification received:', newNotification);
+                // Reload notifications to show the new one
+                loadNotifications();
+                
+                // Show browser notification if supported
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(newNotification.title, {
+                        body: newNotification.message,
+                        icon: '/assets/images/logo.png'
+                    });
+                }
+            });
+        }
+    }
+
+    // Initial load for badge and setup realtime
     loadNotifications();
+    setupNotificationRealtime();
 
     const toggleSidebar = () => {
         sidebar.classList.toggle('active');

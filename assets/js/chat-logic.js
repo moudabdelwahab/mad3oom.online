@@ -201,14 +201,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!isAdmin) return;
         if (adminRealtimeChannel) supabase.removeChannel(adminRealtimeChannel);
 
+        console.log('[Chat Logic] Setting up admin realtime subscription for sessions and messages');
         adminRealtimeChannel = supabase.channel('admin-realtime-global')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, (payload) => {
-                console.log("Session change detected:", payload);
+                console.log("[Chat Logic] Session change detected:", payload);
                 // إذا كانت الجلسة جديدة أو تم تحديثها، نعيد تحميل القائمة لضمان الترتيب الصحيح
                 loadAllSessions();
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
-                console.log("New message detected globally:", payload);
+                console.log("[Chat Logic] New message detected globally:", payload);
                 // تحديث آخر رسالة في الكارت الخاص بالجلسة بدون إعادة تحميل الكل إذا أمكن
                 const sessionId = payload.new.session_id;
                 const card = document.getElementById(`session-${sessionId}`);
@@ -225,7 +226,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     loadAllSessions();
                 }
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log('[Chat Logic] Admin realtime subscription status:', status);
+            });
     }
 
     async function openAdminChat(sessionId, name, manualMode) {

@@ -15,7 +15,11 @@ async function init() {
     
     updateAdminUI(user);
     renderTickets();
-    subscribeToTickets(() => renderTickets());
+    console.log('[Admin Dashboard] Setting up tickets subscription');
+    subscribeToTickets((payload) => {
+        console.log('[Admin Dashboard] Tickets callback triggered:', payload);
+        renderTickets();
+    });
     setupModalEvents();
 }
 

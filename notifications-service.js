@@ -66,7 +66,9 @@ export async function createNotification({ userId, title, message, type = 'info'
  * الاشتراك في الإشعارات اللحظية
  */
 export function subscribeToNotifications(userId, callback) {
-    return supabase
+    console.log('[Notifications] Subscribing to notifications for user:', userId);
+    
+    const channel = supabase
         .channel(`user-notifications-${userId}`)
         .on('postgres_changes', { 
             event: 'INSERT', 
@@ -74,7 +76,13 @@ export function subscribeToNotifications(userId, callback) {
             table: 'notifications',
             filter: `user_id=eq.${userId}`
         }, payload => {
+            console.log('[Notifications] Realtime notification received:', payload);
             callback(payload.new);
         })
-        .subscribe();
+        .subscribe((status) => {
+            console.log('[Notifications] Subscription status:', status);
+        });
+    
+    console.log('[Notifications] Channel created:', channel);
+    return channel;
 }
