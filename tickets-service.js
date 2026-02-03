@@ -50,16 +50,6 @@ export async function createTicket({ title, description, priority, image_url = n
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    // جلب آخر رقم تذكرة لإنشاء رقم جديد
-    const { data: lastTicket } = await supabase
-        .from('tickets')
-        .select('ticket_number')
-        .order('ticket_number', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-    const nextNumber = (lastTicket?.ticket_number || 0) + 1;
-
     const { data, error } = await supabase
         .from('tickets')
         .insert({
@@ -67,100 +57,30 @@ export async function createTicket({ title, description, priority, image_url = n
             title,
             description,
             priority,
-            status: 'open',
             image_url,
-            ticket_number: nextNumber
+            status: 'open'
         })
-        .select();
+        .select()
+        .single();
 
     if (error) throw error;
-    const ticket = (data && data.length > 0) ? data[0] : null;
 
-    if (ticket) {
-        // إشعار للأدمن عند إنشاء تذكرة جديدة
-        const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
-        if (admins) {
-            for (const admin of admins) {
-                await createNotification({
-                    userId: admin.id,
-                    title: 'تذكرة جديدة',
-                    message: `تم إنشاء تذكرة جديدة #${ticket.ticket_number}: ${ticket.title}`,
-                    type: 'info',
-                    link: `admin-dashboard.html?ticket=${ticket.id}`
-                });
-            }
+    // إشعار للأدمن
+    const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+    if (admins) {
+        for (const admin of admins) {
+            await createNotification({
+                userId: admin.id,
+                title: 'تذكرة دعم جديدة',
+                message: `قام العميل بفتح تذكرة جديدة: ${title}`,
+                type: 'info',
+                link: `admin/tickets.html?ticket=${data.id}`
+            });
         }
-        await logActivity('ticket_created', { ticket_id: ticket.id, ticket_number: ticket.ticket_number });
     }
 
-    return ticket;
-}
-
-/**
- * رفع صورة إلى Supabase Storage
- */
-export async function uploadTicketImage(file) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    const bucketName = 'tickets';
-
-    const { data, error: uploadError } = await supabase.storage
-        .from(bucketName)
-        .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
-        });
-
-    if (uploadError) {
-        console.error('Upload error details:', uploadError);
-        if (uploadError.message?.includes('bucket not found') || uploadError.error === 'Bucket not found') {
-            throw new Error(`Storage Bucket 'tickets' غير موجود. يرجى إنشاؤه في Supabase وجعله Public.`);
-        }
-        throw new Error(`فشل رفع الصورة: ${uploadError.message}`);
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(filePath);
-
-    return publicUrl;
-}
-
-/**
- * الاشتراك في التحديثات التلقائية للتذاكر
- */
-export function subscribeToTickets(callback) {
-    console.log('[Tickets] Subscribing to tickets realtime updates');
-    return supabase
-        .channel('public:tickets')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, payload => {
-            console.log('[Tickets] Realtime ticket update received:', payload);
-            callback(payload);
-        })
-        .subscribe((status) => {
-            console.log('[Tickets] Tickets subscription status:', status);
-        });
-}
-
-/**
- * الاشتراك في التحديثات التلقائية لردود تذكرة معينة
- */
-export function subscribeToTicketReplies(ticketId, callback) {
-    console.log('[Tickets] Subscribing to ticket replies for ticket:', ticketId);
-    return supabase
-        .channel(`public:ticket_replies:ticket_id=eq.${ticketId}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'ticket_replies', filter: `ticket_id=eq.${ticketId}` }, payload => {
-            console.log('[Tickets] Realtime reply received:', payload);
-            callback(payload);
-        })
-        .subscribe((status) => {
-            console.log('[Tickets] Replies subscription status:', status);
-        });
+    await logActivity('ticket_create', { ticket_id: data.id });
+    return data;
 }
 
 /**
@@ -168,16 +88,18 @@ export function subscribeToTicketReplies(ticketId, callback) {
  */
 export async function fetchTicketStats() {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { total: 0, open: 0, inProgress: 0, resolved: 0 };
+    if (!user) throw new Error('User not authenticated');
 
+    // جلب البروفايل لمعرفة الدور
     const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .maybeSingle();
 
-    let query = supabase.from('tickets').select('status');
-    
+    let query = supabase.from('tickets').select('status', { count: 'exact' });
+
+    // إذا كان المستخدم عميلاً، نفلتر التذاكر الخاصة به فقط
     if (!profile || profile.role !== 'admin') {
         query = query.eq('user_id', user.id);
     }
@@ -185,20 +107,20 @@ export async function fetchTicketStats() {
     const { data, error } = await query;
     if (error) throw error;
 
-    return {
+    const stats = {
         total: data.length,
         open: data.filter(t => t.status === 'open').length,
         inProgress: data.filter(t => t.status === 'in-progress').length,
         resolved: data.filter(t => t.status === 'resolved').length
     };
+
+    return stats;
 }
 
 /**
  * تحديث حالة التذكرة
  */
 export async function updateTicketStatus(ticketId, status) {
-    const { data: ticket } = await supabase.from('tickets').select('*, profiles(id)').eq('id', ticketId).single();
-    
     const { error } = await supabase
         .from('tickets')
         .update({ status })
@@ -206,53 +128,58 @@ export async function updateTicketStatus(ticketId, status) {
 
     if (error) throw error;
 
-    // إشعار للعميل عند تغيير حالة تذكرته
+    // جلب بيانات التذكرة لإرسال إشعار
+    const { data: ticket } = await supabase.from('tickets').select('*').eq('id', ticketId).single();
     if (ticket) {
+        const statusMap = { 'open': 'مفتوحة', 'in-progress': 'قيد المعالجة', 'resolved': 'محلولة' };
         await createNotification({
             userId: ticket.user_id,
             title: 'تحديث حالة التذكرة',
-            message: `تم تغيير حالة تذكرتك #${ticket.ticket_number} إلى: ${status}`,
+            message: `تم تغيير حالة تذكرتك #${ticket.ticket_number} إلى ${statusMap[status]}`,
             type: 'info',
             link: `customer-dashboard.html?ticket=${ticket.id}`
         });
-        await logActivity('status_change', { ticket_id: ticketId, new_status: status });
     }
+
+    await logActivity('ticket_status_update', { ticket_id: ticketId, status });
 }
 
 /**
- * إغلاق التذكرة مع تعليق للعميل
+ * إغلاق التذكرة مع تعليق (للأدمن)
  */
-export async function closeTicketWithComment(ticketId, closingComment) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const { data: ticket } = await supabase.from('tickets').select('*').eq('id', ticketId).single();
-    
-    if (!ticket) throw new Error('التذكرة غير موجودة');
-
-    // إضافة التعليق الختامي للعميل
-    if (closingComment && closingComment.trim()) {
-        await addTicketReply(ticketId, closingComment, false);
+export async function closeTicketWithComment(ticketId, comment) {
+    // إضافة الرد أولاً
+    if (comment) {
+        await addTicketReply(ticketId, comment, false);
     }
+    
+    // ثم إغلاق التذكرة
+    await updateTicketStatus(ticketId, 'resolved');
+}
 
-    // تحديث حالة التذكرة إلى resolved
-    const { error } = await supabase
-        .from('tickets')
-        .update({ status: 'resolved' })
-        .eq('id', ticketId);
+/**
+ * الاشتراك في تحديثات التذاكر (Realtime)
+ */
+export function subscribeToTickets(callback) {
+    return supabase
+        .channel('public:tickets')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, callback)
+        .subscribe();
+}
 
-    if (error) throw error;
-
-    // إشعار للعميل بإغلاق التذكرة
-    await createNotification({
-        userId: ticket.user_id,
-        title: 'تم إغلاق التذكرة',
-        message: `تم إغلاق تذكرتك #${ticket.ticket_number}`,
-        type: 'success',
-        link: `customer-dashboard.html?ticket=${ticket.id}`
-    });
-
-    await logActivity('ticket_closed', { ticket_id: ticketId, ticket_number: ticket.ticket_number });
+/**
+ * الاشتراك في تحديثات الردود (Realtime)
+ */
+export function subscribeToTicketReplies(ticketId, callback) {
+    return supabase
+        .channel(`public:ticket_replies:ticket_id=eq.${ticketId}`)
+        .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'ticket_replies',
+            filter: `ticket_id=eq.${ticketId}`
+        }, callback)
+        .subscribe();
 }
 
 /**
