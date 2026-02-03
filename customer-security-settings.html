@@ -510,21 +510,30 @@
 
         // 2FA Setup Logic
         const setupModal = document.getElementById('setupModal');
-        document.getElementById('setupTwoFaBtn').onclick = () => {
-            if (!currentUser) {
-                showAlert('يرجى تسجيل الدخول أولاً', 'error');
-                return;
-            }
-            
-            currentSecret = generateSecret();
-            document.getElementById('secretKeyDisplay').textContent = currentSecret;
-            
-            const qrUrl = getQRCodeUrl(currentUser.email, currentSecret);
-            const qrContainer = document.getElementById('qrCodeContainer');
-            qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}" alt="QR Code">`;
-            
-            setupModal.classList.add('active');
-        };
+        const setupTwoFaBtn = document.getElementById('setupTwoFaBtn');
+        
+        if (setupTwoFaBtn) {
+            setupTwoFaBtn.onclick = () => {
+                console.log('Setup 2FA button clicked');
+                if (!currentUser) {
+                    showAlert('يرجى تسجيل الدخول أولاً', 'error');
+                    return;
+                }
+                
+                currentSecret = generateSecret();
+                document.getElementById('secretKeyDisplay').textContent = currentSecret;
+                
+                const qrUrl = getQRCodeUrl(currentUser.email, currentSecret);
+                const qrContainer = document.getElementById('qrCodeContainer');
+                qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}" alt="QR Code">`;
+                
+                // Reset steps
+                document.getElementById('setupStep1').style.display = 'block';
+                document.getElementById('setupStep2').style.display = 'none';
+                
+                setupModal.classList.add('active');
+            };
+        }
 
         document.getElementById('goToStep2').onclick = () => {
             document.getElementById('setupStep1').style.display = 'none';
@@ -580,12 +589,14 @@
             recoveryModal.classList.add('active');
         }
 
-        document.getElementById('copySecretBtn').onclick = () => {
-            navigator.clipboard.writeText(currentSecret);
-            const btn = document.getElementById('copySecretBtn');
-            btn.textContent = 'تم النسخ!';
-            setTimeout(() => btn.textContent = 'نسخ', 2000);
-        };
+        const copySecretBtn = document.getElementById('copySecretBtn');
+        if (copySecretBtn) {
+            copySecretBtn.onclick = () => {
+                navigator.clipboard.writeText(currentSecret);
+                copySecretBtn.textContent = 'تم النسخ!';
+                setTimeout(() => copySecretBtn.textContent = 'نسخ', 2000);
+            };
+        }
 
         document.getElementById('printCodesBtn').onclick = () => {
             window.print();

@@ -15,7 +15,7 @@ export function generateSecret(length = 16) {
 /**
  * Generate a TOTP QR Code URL
  */
-export function getQRCodeUrl(email, secret, issuer = 'Mad3oom') {
+export function getQRCodeUrl(email, secret, issuer = 'Mad3oom.online') {
     const label = encodeURIComponent(`${issuer}:${email}`);
     const issuerParam = encodeURIComponent(issuer);
     return `otpauth://totp/${label}?secret=${secret}&issuer=${issuerParam}`;
