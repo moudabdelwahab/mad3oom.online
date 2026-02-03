@@ -242,8 +242,15 @@
     }
 
     // Export for use in other scripts
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = ThemeManager;
-    }
+    window.initTheme = function() {
+        if (!window.themeManager) {
+            window.themeManager = new ThemeManager();
+        }
+        return window.themeManager;
+    };
 })();
+
+export function initTheme() {
+    return window.initTheme();
+}
 
