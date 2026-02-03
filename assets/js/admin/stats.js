@@ -3,6 +3,7 @@ import { checkAdminAuth, updateAdminUI } from './auth.js';
 import { initSidebar } from './sidebar.js';
 
 let user = null;
+let charts = {};
 
 async function init() {
     initSidebar();
@@ -11,6 +12,9 @@ async function init() {
 
     updateAdminUI(user);
     
+    // Initialize Charts
+    initCharts();
+    
     // Initial fetch
     fetchAllStats();
     
@@ -18,146 +22,210 @@ async function init() {
     setupRealtimeSubscriptions();
 }
 
+function initCharts() {
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { font: { family: 'Cairo' } } }
+        }
+    };
+
+    // 1. Users Chart (Doughnut)
+    charts.users = new Chart(document.getElementById('usersChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['نشطين', 'محظورين', 'مفعلين 2FA'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: ['#4F46E5', '#E11D48', '#16A34A']
+            }]
+        },
+        options: chartOptions
+    });
+
+    // 2. Tickets Chart (Bar)
+    charts.tickets = new Chart(document.getElementById('ticketsChart'), {
+        type: 'bar',
+        data: {
+            labels: ['مفتوحة', 'محلولة', 'إجمالي الردود'],
+            datasets: [{
+                label: 'العدد',
+                data: [0, 0, 0],
+                backgroundColor: ['#EA580C', '#16A34A', '#9333EA']
+            }]
+        },
+        options: {
+            ...chartOptions,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // 3. Chats Chart (Pie)
+    charts.chats = new Chart(document.getElementById('chatsChart'), {
+        type: 'pie',
+        data: {
+            labels: ['رسائل المستخدمين', 'ردود البوت'],
+            datasets: [{
+                data: [0, 0],
+                backgroundColor: ['#059669', '#D97706']
+            }]
+        },
+        options: chartOptions
+    });
+
+    // 4. Activity Chart (Line)
+    charts.activity = new Chart(document.getElementById('activityChart'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'النشاطات اليومية',
+                data: [],
+                borderColor: '#2563EB',
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(37, 99, 235, 0.1)'
+            }]
+        },
+        options: {
+            ...chartOptions,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
 async function fetchAllStats() {
-    console.log('[Stats] Fetching all statistics...');
-    
-    // 1. Users & Security
     fetchUserStats();
-    
-    // 2. Tickets & Support
     fetchTicketStats();
-    
-    // 3. Chat & API
     fetchChatStats();
-    
-    // 4. Rewards & Activity
     fetchRewardStats();
+    fetchActivityChartData();
 }
 
 async function fetchUserStats() {
     try {
-        // Total Users
-        const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-        updateValue('totalUsers', totalUsers);
+        const { count: total } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+        const { count: banned } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('status', 'banned');
+        const { count: tfa } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('two_factor_enabled', true);
+        const { count: devices } = await supabase.from('trusted_devices').select('*', { count: 'exact', head: true });
 
-        // Banned Users
-        const { count: bannedUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('status', 'banned');
-        updateValue('bannedUsers', bannedUsers);
+        updateValue('totalUsers', total);
+        updateValue('bannedUsers', banned);
+        updateValue('users2FA', tfa);
+        updateValue('trustedDevices', devices);
 
-        // Users with 2FA enabled
-        const { count: users2FA } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('two_factor_enabled', true);
-        updateValue('users2FA', users2FA);
-
-        // Trusted Devices
-        const { count: trustedDevices } = await supabase.from('trusted_devices').select('*', { count: 'exact', head: true });
-        updateValue('trustedDevices', trustedDevices);
-    } catch (e) { console.error('Error fetching user stats:', e); }
+        charts.users.data.datasets[0].data = [total - banned, banned, tfa];
+        charts.users.update();
+    } catch (e) { console.error(e); }
 }
 
 async function fetchTicketStats() {
     try {
-        // Total Tickets
-        const { count: totalTickets } = await supabase.from('tickets').select('*', { count: 'exact', head: true });
-        updateValue('totalTickets', totalTickets);
+        const { count: total } = await supabase.from('tickets').select('*', { count: 'exact', head: true });
+        const { count: open } = await supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'open');
+        const { count: resolved } = await supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'resolved');
+        const { count: replies } = await supabase.from('ticket_replies').select('*', { count: 'exact', head: true });
 
-        // Open Tickets
-        const { count: openTickets } = await supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'open');
-        updateValue('openTickets', openTickets);
+        updateValue('totalTickets', total);
+        updateValue('openTickets', open);
+        updateValue('resolvedTickets', resolved);
+        updateValue('totalReplies', replies);
 
-        // Resolved Tickets
-        const { count: resolvedTickets } = await supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('status', 'resolved');
-        updateValue('resolvedTickets', resolvedTickets);
-
-        // Total Replies
-        const { count: totalReplies } = await supabase.from('ticket_replies').select('*', { count: 'exact', head: true });
-        updateValue('totalReplies', totalReplies);
-    } catch (e) { console.error('Error fetching ticket stats:', e); }
+        charts.tickets.data.datasets[0].data = [open, resolved, replies];
+        charts.tickets.update();
+    } catch (e) { console.error(e); }
 }
 
 async function fetchChatStats() {
     try {
-        // Chat Sessions
-        const { count: chatSessions } = await supabase.from('chat_sessions').select('*', { count: 'exact', head: true });
-        updateValue('chatSessions', chatSessions);
+        const { count: sessions } = await supabase.from('chat_sessions').select('*', { count: 'exact', head: true });
+        const { count: messages } = await supabase.from('chat_messages').select('*', { count: 'exact', head: true });
+        const { count: bot } = await supabase.from('chat_messages').select('*', { count: 'exact', head: true }).eq('is_bot_reply', true);
+        const { count: api } = await supabase.from('bot_api_keys').select('*', { count: 'exact', head: true }).eq('status', 'active');
 
-        // Chat Messages
-        const { count: chatMessages } = await supabase.from('chat_messages').select('*', { count: 'exact', head: true });
-        updateValue('chatMessages', chatMessages);
+        updateValue('chatSessions', sessions);
+        updateValue('chatMessages', messages);
+        updateValue('botReplies', bot);
+        updateValue('activeApiKeys', api);
 
-        // Bot Replies
-        const { count: botReplies } = await supabase.from('chat_messages').select('*', { count: 'exact', head: true }).eq('is_bot_reply', true);
-        updateValue('botReplies', botReplies);
-
-        // Active API Keys
-        const { count: activeApiKeys } = await supabase.from('bot_api_keys').select('*', { count: 'exact', head: true }).eq('status', 'active');
-        updateValue('activeApiKeys', activeApiKeys);
-    } catch (e) { console.error('Error fetching chat stats:', e); }
+        charts.chats.data.datasets[0].data = [messages - bot, bot];
+        charts.chats.update();
+    } catch (e) { console.error(e); }
 }
 
 async function fetchRewardStats() {
     try {
-        // Total Points Distributed
         const { data: wallets } = await supabase.from('user_wallets').select('total_points');
         const totalPoints = wallets?.reduce((sum, w) => sum + (w.total_points || 0), 0) || 0;
         updateValue('totalPoints', totalPoints.toLocaleString('ar-EG'));
 
-        // Approved Reports
-        const { count: approvedReports } = await supabase.from('user_reports').select('*', { count: 'exact', head: true }).eq('status', 'approved');
-        updateValue('approvedReports', approvedReports);
+        const { count: approved } = await supabase.from('user_reports').select('*', { count: 'exact', head: true }).eq('status', 'approved');
+        updateValue('approvedReports', approved);
 
-        // PRO Members
-        const { count: proMembers } = await supabase.from('user_wallets').select('*', { count: 'exact', head: true }).eq('is_pro', true);
-        updateValue('proMembers', proMembers);
+        const { count: pro } = await supabase.from('user_wallets').select('*', { count: 'exact', head: true }).eq('is_pro', true);
+        updateValue('proMembers', pro);
 
-        // Activity Logs
-        const { count: activityLogs } = await supabase.from('activity_logs').select('*', { count: 'exact', head: true });
-        updateValue('activityLogs', activityLogs);
-    } catch (e) { console.error('Error fetching reward stats:', e); }
+        const { count: logs } = await supabase.from('activity_logs').select('*', { count: 'exact', head: true });
+        updateValue('activityLogs', logs);
+    } catch (e) { console.error(e); }
+}
+
+async function fetchActivityChartData() {
+    try {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        const { data: logs } = await supabase
+            .from('activity_logs')
+            .select('created_at')
+            .gte('created_at', sevenDaysAgo.toISOString());
+
+        const countsByDay = {};
+        const labels = [];
+        const data = [];
+
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const label = d.toLocaleDateString('ar-EG', { weekday: 'short' });
+            const dateStr = d.toISOString().split('T')[0];
+            countsByDay[dateStr] = 0;
+            labels.push(label);
+        }
+
+        logs?.forEach(log => {
+            const dateStr = log.created_at.split('T')[0];
+            if (countsByDay[dateStr] !== undefined) countsByDay[dateStr]++;
+        });
+
+        Object.keys(countsByDay).sort().forEach(key => data.push(countsByDay[key]));
+
+        charts.activity.data.labels = labels;
+        charts.activity.data.datasets[0].data = data;
+        charts.activity.update();
+    } catch (e) { console.error(e); }
 }
 
 function updateValue(id, value) {
     const el = document.getElementById(id);
     if (el) {
-        // Simple animation effect
-        const startValue = parseInt(el.textContent.replace(/,/g, '')) || 0;
-        const endValue = typeof value === 'string' ? parseInt(value.replace(/,/g, '')) : value;
-        
-        if (isNaN(startValue) || isNaN(endValue) || startValue === endValue) {
-            el.textContent = value;
-            return;
-        }
-
         el.textContent = value;
-        el.style.transition = 'color 0.3s';
         el.style.color = '#10b981';
-        setTimeout(() => {
-            el.style.color = '';
-        }, 1000);
+        setTimeout(() => el.style.color = '', 1000);
     }
 }
 
 function setupRealtimeSubscriptions() {
-    console.log('[Stats] Setting up realtime subscriptions...');
-    
-    const tables = [
-        'profiles', 'tickets', 'ticket_replies', 'chat_sessions', 
-        'chat_messages', 'user_wallets', 'user_reports', 'activity_logs',
-        'bot_api_keys', 'trusted_devices'
-    ];
-
+    const tables = ['profiles', 'tickets', 'ticket_replies', 'chat_sessions', 'chat_messages', 'user_wallets', 'user_reports', 'activity_logs'];
     tables.forEach(table => {
-        supabase
-            .channel(`stats-${table}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: table }, (payload) => {
-                console.log(`[Stats] Change detected in ${table}:`, payload.event);
-                
-                // Refresh relevant stats based on table
-                if (table === 'profiles' || table === 'trusted_devices') fetchUserStats();
-                if (table === 'tickets' || table === 'ticket_replies') fetchTicketStats();
-                if (table === 'chat_sessions' || table === 'chat_messages' || table === 'bot_api_keys') fetchChatStats();
-                if (table === 'user_wallets' || table === 'user_reports' || table === 'activity_logs') fetchRewardStats();
-            })
-            .subscribe();
+        supabase.channel(`stats-${table}`).on('postgres_changes', { event: '*', schema: 'public', table }, () => {
+            if (table === 'profiles') fetchUserStats();
+            if (table === 'tickets' || table === 'ticket_replies') fetchTicketStats();
+            if (table === 'chat_sessions' || table === 'chat_messages') fetchChatStats();
+            if (table === 'user_wallets' || table === 'user_reports') fetchRewardStats();
+            if (table === 'activity_logs') { fetchRewardStats(); fetchActivityChartData(); }
+        }).subscribe();
     });
 }
 
