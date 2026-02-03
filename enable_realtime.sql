@@ -10,8 +10,12 @@ begin;
   -- إضافة الجداول
   alter publication supabase_realtime add table chat_sessions;
   alter publication supabase_realtime add table chat_messages;
+  alter publication supabase_realtime add table profiles;
+  alter publication supabase_realtime add table notifications;
 commit;
 
 -- 2. التأكد من أن الجداول لديها REPLICA IDENTITY FULL لضمان وصول كافة البيانات في التحديثات
 alter table chat_sessions replica identity full;
 alter table chat_messages replica identity full;
+alter table profiles replica identity full;
+alter table notifications replica identity full;

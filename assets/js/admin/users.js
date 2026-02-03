@@ -12,6 +12,15 @@ async function init() {
 
     updateAdminUI(user);
     renderUsers();
+    
+    // تفعيل التحديث اللحظي لجدول المستخدمين
+    supabase
+        .channel('public:profiles')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+            console.log('Profiles updated, re-rendering...');
+            renderUsers();
+        })
+        .subscribe();
 }
 
 async function renderUsers() {

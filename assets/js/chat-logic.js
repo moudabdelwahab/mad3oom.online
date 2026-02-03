@@ -369,6 +369,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             await supabase.from('chat_sessions').update({ updated_at: new Date() }).eq('id', currentSessionId);
 
+            // إرسال إشعار عند إرسال رسالة جديدة
+            if (!isAdmin) {
+                // رسالة من عميل -> إشعار للأدمن
+                const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+                if (admins) {
+                    for (const admin of admins) {
+                        await supabase.from('notifications').insert({
+                            user_id: admin.id,
+                            title: 'رسالة جديدة من عميل',
+                            message: `لديك رسالة جديدة في المحادثة المباشرة: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`,
+                            type: 'chat',
+                            link: 'chat-admin.html'
+                        });
+                    }
+                }
+            } else {
+                // رسالة من أدمن -> إشعار للعميل (إذا كان مسجل دخول)
+                const { data: session } = await supabase.from('chat_sessions').select('user_id').eq('id', currentSessionId).single();
+                if (session && session.user_id) {
+                    await supabase.from('notifications').insert({
+                        user_id: session.user_id,
+                        title: 'رد جديد من الدعم',
+                        message: `لديك رد جديد في المحادثة المباشرة: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`,
+                        type: 'chat',
+                        link: 'chat-customer.html'
+                    });
+                }
+            }
+
             if (!isAdmin && !isManualMode) handleBotLogic(text);
         } catch (error) {
             console.error("Error sending message:", error);

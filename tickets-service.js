@@ -287,15 +287,32 @@ export async function addTicketReply(ticketId, message, isInternal = false) {
 
     const { data: ticket } = await supabase.from('tickets').select('*').eq('id', ticketId).single();
 
-    // إشعار للعميل إذا كان الرد من الأدمن وليس ملاحظة داخلية
-    if (!isInternal && ticket && ticket.user_id !== user.id) {
-        await createNotification({
-            userId: ticket.user_id,
-            title: 'رد جديد على تذكرتك',
-            message: `هناك رد جديد على تذكرتك #${ticket.ticket_number}`,
-            type: 'success',
-            link: `customer-dashboard.html?ticket=${ticket.id}`
-        });
+    // إشعار للجهة المقابلة
+    if (!isInternal && ticket) {
+        if (ticket.user_id !== user.id) {
+            // الرد من الأدمن -> إشعار للعميل
+            await createNotification({
+                userId: ticket.user_id,
+                title: 'رد جديد على تذكرتك',
+                message: `هناك رد جديد على تذكرتك #${ticket.ticket_number}`,
+                type: 'success',
+                link: `customer-dashboard.html?ticket=${ticket.id}`
+            });
+        } else {
+            // الرد من العميل -> إشعار للأدمن
+            const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+            if (admins) {
+                for (const admin of admins) {
+                    await createNotification({
+                        userId: admin.id,
+                        title: 'رد جديد من عميل',
+                        message: `قام العميل بالرد على التذكرة #${ticket.ticket_number}`,
+                        type: 'info',
+                        link: `admin/tickets.html?ticket=${ticket.id}`
+                    });
+                }
+            }
+        }
     }
 
     // تحديث حالة التذكرة إلى 'in-progress' إذا كانت 'open'

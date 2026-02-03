@@ -121,7 +121,7 @@
             <a href="#" class="recovery-link" id="useRecoveryCode">استخدام رمز الاستعادة؟</a>
             
             <div style="margin-top: 2rem; text-align: center;">
-                <button class="btn btn-secondary" onclick="window.location.href='sign-in.html'" style="width: 100%;">إلغاء والعودة</button>
+                <button type="button" class="btn btn-secondary" id="cancelBtn" style="width: 100%;">إلغاء والعودة</button>
             </div>
         </section>
     </main>
@@ -168,12 +168,24 @@
                 if (!user) throw new Error('لم يتم العثور على جلسة نشطة. يرجى تسجيل الدخول مرة أخرى.');
 
                 // Verify via Edge Function
-                const { data, error } = await supabase.functions.invoke('verify-2fa', {
-                    body: { userId: user.id, code }
-                });
+                let data, error;
+                try {
+                    const response = await supabase.functions.invoke('verify-2fa', {
+                        body: { userId: user.id, code }
+                    });
+                    data = response.data;
+                    error = response.error;
+                } catch (invokeError) {
+                    console.error('Edge Function invocation failed:', invokeError);
+                    // Fallback for testing or if Edge Function is not deployed
+                    // In a real production environment, we should not fallback to success
+                    // But for the sake of fixing the "incorrect code" issue when it might be a function error:
+                    throw new Error('حدث خطأ أثناء الاتصال بخادم التحقق. يرجى المحاولة لاحقاً.');
+                }
 
                 if (error || !data?.success) {
-                    throw new Error('رمز التحقق غير صحيح. حاول مرة أخرى.');
+                    console.error('Verification failed:', error, data);
+                    throw new Error(data?.message || 'رمز التحقق غير صحيح. حاول مرة أخرى.');
                 }
 
                 // If trust device is checked
@@ -218,6 +230,12 @@
             btnLoader.style.display = state ? 'inline' : 'none';
             digits.forEach(d => d.disabled = state);
         }
+
+        document.getElementById('cancelBtn').onclick = async (e) => {
+            e.preventDefault();
+            await supabase.auth.signOut();
+            window.location.href = 'sign-in.html';
+        };
 
         document.getElementById('useRecoveryCode').onclick = (e) => {
             e.preventDefault();
