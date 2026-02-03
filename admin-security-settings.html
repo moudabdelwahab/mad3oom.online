@@ -344,15 +344,8 @@
             
             // Load Sidebar
             try {
-                const sidebarContainer = document.getElementById('sidebar-container');
-                const response = await fetch('/assets/components/sidebar.html');
-                const html = await response.text();
-                sidebarContainer.innerHTML = html;
-                
-                // Initialize Sidebar Logic
-                const script = document.createElement('script');
-                script.src = '/assets/js/admin/sidebar.js';
-                document.body.appendChild(script);
+                const { initSidebar } = await import('/assets/js/admin/sidebar.js');
+                initSidebar();
             } catch (error) {
                 console.error('Error loading sidebar:', error);
             }
