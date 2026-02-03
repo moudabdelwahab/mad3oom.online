@@ -29,7 +29,13 @@
             border-radius: 1rem;
             border: 1px solid var(--color-border);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
         }
         .chart-header {
             display: flex;
@@ -152,13 +158,13 @@
                 <div class="chart-header">
                     <h3 class="chart-title">توزيع المستخدمين والحالات</h3>
                 </div>
-                <canvas id="usersChart"></canvas>
+                <div class="chart-wrapper"><canvas id="usersChart"></canvas></div>
             </div>
             <div class="chart-card">
                 <div class="chart-header">
                     <h3 class="chart-title">نشاط التذاكر والدعم</h3>
                 </div>
-                <canvas id="ticketsChart"></canvas>
+                <div class="chart-wrapper"><canvas id="ticketsChart"></canvas></div>
             </div>
         </div>
 
@@ -255,13 +261,13 @@
                 <div class="chart-header">
                     <h3 class="chart-title">تحليل المحادثات والرسائل</h3>
                 </div>
-                <canvas id="chatsChart"></canvas>
+                <div class="chart-wrapper"><canvas id="chatsChart"></canvas></div>
             </div>
             <div class="chart-card">
                 <div class="chart-header">
                     <h3 class="chart-title">نمو النشاط (آخر 7 أيام)</h3>
                 </div>
-                <canvas id="activityChart"></canvas>
+                <div class="chart-wrapper"><canvas id="activityChart"></canvas></div>
             </div>
         </div>
 
