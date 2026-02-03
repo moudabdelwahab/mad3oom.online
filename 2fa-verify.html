@@ -180,7 +180,18 @@
                 if (trustDeviceCheckbox.checked) {
                     const fingerprint = Math.random().toString(36).substring(2, 15);
                     localStorage.setItem('device_fingerprint', fingerprint);
-                    await addTrustedDevice(user.id, navigator.userAgent, fingerprint);
+                    
+                    // Get user's IP address
+                    let ipAddress = null;
+                    try {
+                        const ipResponse = await fetch('https://api.ipify.org?format=json');
+                        const ipData = await ipResponse.json();
+                        ipAddress = ipData.ip;
+                    } catch (e) {
+                        console.error('Failed to get IP:', e);
+                    }
+                    
+                    await addTrustedDevice(user.id, navigator.userAgent, fingerprint, ipAddress);
                 }
 
                 const { data: profile } = await supabase

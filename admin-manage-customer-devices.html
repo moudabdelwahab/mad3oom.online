@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة أجهزة العملاء - لوحة الإدارة</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/robot.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .devices-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .search-bar {
+            background: var(--color-surface);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background: var(--color-background);
+            color: var(--color-text);
+        }
+        .devices-table {
+            background: var(--color-surface);
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
+        }
+        .table-header {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1.5fr 1.5fr 1fr;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: var(--color-muted);
+            font-weight: 700;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .device-row {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1.5fr 1.5fr 1fr;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--color-border);
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .device-row:hover {
+            background: var(--color-muted);
+        }
+        .device-row:last-child {
+            border-bottom: none;
+        }
+        .customer-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .customer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--color-accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .customer-details h4 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .customer-details p {
+            margin: 0.15rem 0 0;
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+        }
+        .device-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--color-muted);
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+        }
+        .ip-badge {
+            display: inline-block;
+            background: var(--color-muted);
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .alert {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            font-weight: 600;
+        }
+        .alert-success { background: rgba(46, 138, 58, 0.1); color: var(--color-success); border: 1px solid var(--color-success); }
+        .alert-error { background: rgba(217, 83, 79, 0.1); color: var(--color-danger); border: 1px solid var(--color-danger); }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--color-text-secondary);
+        }
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+
+    <main class="admin-main">
+        <header class="page-header">
+            <h1>إدارة أجهزة العملاء</h1>
+            <p>عرض وإدارة الأجهزة الموثوقة لجميع العملاء</p>
+        </header>
+
+        <div class="devices-container">
+            <div id="alertMessage" class="alert"></div>
+
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="ابحث عن عميل بالاسم أو البريد الإلكتروني...">
+            </div>
+
+            <div class="devices-table">
+                <div class="table-header">
+                    <div>العميل</div>
+                    <div>الجهاز</div>
+                    <div>عنوان IP</div>
+                    <div>آخر تسجيل دخول</div>
+                    <div>إجراءات</div>
+                </div>
+                <div id="devicesListContainer">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
+                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                            <rect x="9" y="9" width="6" height="6"></rect>
+                            <line x1="9" y1="1" x2="9" y2="4"></line>
+                            <line x1="15" y1="1" x2="15" y2="4"></line>
+                            <line x1="9" y1="20" x2="9" y2="23"></line>
+                            <line x1="15" y1="20" x2="15" y2="23"></line>
+                            <line x1="20" y1="9" x2="23" y2="9"></line>
+                            <line x1="20" y1="15" x2="23" y2="15"></line>
+                            <line x1="1" y1="9" x2="4" y2="9"></line>
+                            <line x1="1" y1="15" x2="4" y2="15"></line>
+                        </svg>
+                        <p>جاري تحميل الأجهزة...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initTheme } from '/theme-manager.js';
+        import { supabase } from '/api-config.js';
+
+        let allDevices = [];
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            initTheme();
+            
+            // Load Sidebar
+            try {
+                const sidebarContainer = document.getElementById('sidebar-container');
+                const response = await fetch('/assets/components/sidebar.html');
+                const html = await response.text();
+                sidebarContainer.innerHTML = html;
+                
+                const script = document.createElement('script');
+                script.src = '/assets/js/admin/sidebar.js';
+                document.body.appendChild(script);
+            } catch (error) {
+                console.error('Error loading sidebar:', error);
+            }
+
+            // Check if user is admin
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error || !user) {
+                    window.location.href = '/sign-in.html';
+                    return;
+                }
+
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile?.role !== 'admin' && profile?.role !== 'support') {
+                    window.location.href = '/customer-dashboard.html';
+                    return;
+                }
+
+                currentUser = user;
+                await loadAllDevices();
+                setupSearch();
+                setupRealtimeSubscription();
+            } catch (error) {
+                console.error('Error initializing:', error);
+                showAlert('حدث خطأ أثناء التحميل', 'error');
+            }
+        });
+
+        async function loadAllDevices() {
+            const container = document.getElementById('devicesListContainer');
+            
+            try {
+                // Get all trusted devices with customer info
+                const { data: devices, error } = await supabase
+                    .from('trusted_devices')
+                    .select(`
+                        *,
+                        profiles:user_id (
+                            id,
+                            full_name,
+                            email
+                        )
+                    `)
+                    .order('last_login', { ascending: false });
+
+                if (error) {
+                    throw error;
+                }
+
+                allDevices = devices || [];
+
+                if (allDevices.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none">
+                                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                                <rect x="9" y="9" width="6" height="6"></rect>
+                            </svg>
+                            <p>لا توجد أجهزة موثوقة مسجلة حالياً</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                renderDevices(allDevices);
+            } catch (error) {
+                console.error('Error loading devices:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p style="color: var(--color-danger);">حدث خطأ أثناء تحميل الأجهزة</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderDevices(devices) {
+            const container = document.getElementById('devicesListContainer');
+            
+            if (devices.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>لم يتم العثور على نتائج</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = devices.map(device => {
+                const customer = device.profiles;
+                const customerName = customer?.full_name || 'عميل غير معروف';
+                const customerEmail = customer?.email || '';
+                const initials = customerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                
+                const deviceName = device.device_name || 'جهاز غير معروف';
+                const isPhone = deviceName.toLowerCase().includes('phone') || 
+                               deviceName.toLowerCase().includes('iphone') || 
+                               deviceName.toLowerCase().includes('android');
+                
+                return `
+                    <div class="device-row">
+                        <div class="customer-info">
+                            <div class="customer-avatar">${initials}</div>
+                            <div class="customer-details">
+                                <h4>${customerName}</h4>
+                                <p>${customerEmail}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="device-badge">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                                    ${isPhone ? 
+                                        '<rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line>' :
+                                        '<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>'
+                                    }
+                                </svg>
+                                <span>${deviceName.length > 30 ? deviceName.substring(0, 30) + '...' : deviceName}</span>
+                            </div>
+                        </div>
+                        <div>
+                            ${device.ip_address ? `<span class="ip-badge">${device.ip_address}</span>` : '<span style="color: var(--color-text-secondary); font-size: 0.85rem;">غير متوفر</span>'}
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--color-text-secondary);">
+                            ${new Date(device.last_login).toLocaleString('ar-SA', { 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-danger" onclick="window.removeCustomerDevice('${device.id}', '${customerName}')">
+                                حذف
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                
+                if (!query) {
+                    renderDevices(allDevices);
+                    return;
+                }
+
+                const filtered = allDevices.filter(device => {
+                    const customerName = device.profiles?.full_name?.toLowerCase() || '';
+                    const customerEmail = device.profiles?.email?.toLowerCase() || '';
+                    const deviceName = device.device_name?.toLowerCase() || '';
+                    
+                    return customerName.includes(query) || 
+                           customerEmail.includes(query) || 
+                           deviceName.includes(query);
+                });
+
+                renderDevices(filtered);
+            });
+        }
+
+        function setupRealtimeSubscription() {
+            supabase
+                .channel('all_trusted_devices_changes')
+                .on('postgres_changes', { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'trusted_devices'
+                }, () => {
+                    loadAllDevices();
+                })
+                .subscribe();
+        }
+
+        window.removeCustomerDevice = async (deviceId, customerName) => {
+            if (!confirm(`هل أنت متأكد من حذف هذا الجهاز للعميل "${customerName}"؟\n\nسيتطلب من العميل إعادة التحقق في المرة القادمة.`)) {
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from('trusted_devices')
+                    .delete()
+                    .eq('id', deviceId);
+
+                if (error) throw error;
+
+                showAlert('تم حذف الجهاز بنجاح', 'success');
+                await loadAllDevices();
+            } catch (error) {
+                console.error('Error removing device:', error);
+                showAlert('فشل حذف الجهاز', 'error');
+            }
+        };
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alertMessage');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 5000);
+        }
+    </script>
+</body>
+</html>

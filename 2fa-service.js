@@ -86,13 +86,15 @@ export async function getTrustedDevices(userId) {
         .eq('user_id', userId);
 }
 
-export async function addTrustedDevice(userId, deviceName, fingerprint) {
+export async function addTrustedDevice(userId, deviceName, fingerprint, ipAddress = null) {
     return await supabase
         .from('trusted_devices')
         .insert({
             user_id: userId,
             device_name: deviceName,
-            device_fingerprint: fingerprint
+            device_fingerprint: fingerprint,
+            ip_address: ipAddress,
+            last_login: new Date().toISOString()
         });
 }
 

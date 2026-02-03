@@ -102,6 +102,7 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+            flex: 1;
         }
         .device-icon {
             width: 40px;
@@ -114,6 +115,9 @@
             color: var(--color-text-secondary);
             border: 1px solid var(--color-border);
         }
+        .device-meta {
+            flex: 1;
+        }
         .device-meta h4 {
             margin: 0;
             font-size: 1rem;
@@ -123,6 +127,15 @@
             margin: 0.15rem 0 0;
             font-size: 0.8rem;
             color: var(--color-text-secondary);
+        }
+        .device-ip {
+            display: inline-block;
+            background: var(--color-muted);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-family: monospace;
+            margin-top: 0.25rem;
         }
         .qr-container {
             text-align: center;
@@ -217,15 +230,15 @@
             <!-- 2FA Status Banner -->
             <div class="status-banner">
                 <div class="status-info">
-                    <div class="status-icon-wrapper" id="twoFaStatusIcon">
+                    <div class="status-icon-wrapper disabled" id="twoFaStatusIcon">
                         <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                     </div>
                     <div class="status-details">
-                        <h3 id="twoFaStatusTitle">جاري التحميل...</h3>
-                        <p id="twoFaStatusDesc">يرجى الانتظار بينما نقوم بالتحقق من حالة الأمان.</p>
+                        <h3 id="twoFaStatusTitle">التحقق بخطوتين غير مفعل</h3>
+                        <p id="twoFaStatusDesc">أضف طبقة أمان إضافية لحسابك لمنع الوصول غير المصرح به.</p>
                     </div>
                 </div>
-                <button class="btn btn-primary" id="setupTwoFaBtn" style="display: none;">
+                <button class="btn btn-primary" id="setupTwoFaBtn">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     تفعيل الآن
                 </button>
@@ -258,7 +271,7 @@
                 </h2>
                 <p style="color: var(--color-text-secondary); margin-bottom: 1.5rem;">هذه هي الأجهزة التي قمت بتسجيل الدخول منها مؤخراً. يمكنك إزالة أي جهاز لا تعرفه.</p>
                 <div class="device-list" id="trustedDevicesList">
-                    <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">جاري تحميل الأجهزة...</div>
+                    <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">لا توجد أجهزة موثوقة مسجلة حالياً.</div>
                 </div>
             </section>
         </div>
@@ -330,44 +343,60 @@
             initTheme();
             
             // Load Sidebar
-            const sidebarContainer = document.getElementById('sidebar-container');
-            const response = await fetch('/assets/components/customer-sidebar.html');
-            const html = await response.text();
-            sidebarContainer.innerHTML = html;
-            
-            // Initialize Sidebar Logic
-            const script = document.createElement('script');
-            script.src = '/assets/js/customer-sidebar.js';
-            document.body.appendChild(script);
+            try {
+                const sidebarContainer = document.getElementById('sidebar-container');
+                const response = await fetch('/assets/components/customer-sidebar.html');
+                const html = await response.text();
+                sidebarContainer.innerHTML = html;
+                
+                // Initialize Sidebar Logic
+                const script = document.createElement('script');
+                script.src = '/assets/js/customer-sidebar.js';
+                document.body.appendChild(script);
+            } catch (error) {
+                console.error('Error loading sidebar:', error);
+            }
 
             // Get Current User
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                window.location.href = '/sign-in.html';
-                return;
-            }
-            currentUser = user;
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error || !user) {
+                    // User not logged in - show default disabled state
+                    updateTwoFaUI(false);
+                    return;
+                }
+                currentUser = user;
 
-            // Load Initial Data
-            await loadSecurityStatus();
-            await loadTrustedDevices();
-            setupRealtimeSubscription();
+                // Load Initial Data
+                await loadSecurityStatus();
+                await loadTrustedDevices();
+                setupRealtimeSubscription();
+            } catch (error) {
+                console.error('Error initializing:', error);
+                updateTwoFaUI(false);
+            }
         });
 
         async function loadSecurityStatus() {
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('two_factor_enabled, recovery_codes')
-                .eq('id', currentUser.id)
-                .single();
+            try {
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('two_factor_enabled, recovery_codes')
+                    .eq('id', currentUser.id)
+                    .single();
 
-            if (error) {
-                console.error('Error loading security status:', error);
-                return;
+                if (error) {
+                    console.error('Error loading security status:', error);
+                    updateTwoFaUI(false);
+                    return;
+                }
+
+                updateTwoFaUI(profile?.two_factor_enabled || false);
+                currentRecoveryCodes = profile?.recovery_codes || [];
+            } catch (error) {
+                console.error('Error in loadSecurityStatus:', error);
+                updateTwoFaUI(false);
             }
-
-            updateTwoFaUI(profile.two_factor_enabled);
-            currentRecoveryCodes = profile.recovery_codes || [];
         }
 
         function updateTwoFaUI(enabled) {
@@ -394,41 +423,55 @@
 
         async function loadTrustedDevices() {
             const list = document.getElementById('trustedDevicesList');
-            const { data: devices, error } = await supabase
-                .from('trusted_devices')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .order('last_login', { ascending: false });
-
-            if (error) {
-                list.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--color-danger);">فشل تحميل الأجهزة.</div>';
+            
+            if (!currentUser) {
+                list.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">يرجى تسجيل الدخول لعرض الأجهزة الموثوقة.</div>';
                 return;
             }
 
-            if (!devices || devices.length === 0) {
-                list.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">لا توجد أجهزة موثوقة مسجلة حالياً.</div>';
-                return;
-            }
+            try {
+                const { data: devices, error } = await supabase
+                    .from('trusted_devices')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('last_login', { ascending: false });
 
-            list.innerHTML = devices.map(device => `
-                <div class="device-item" id="device-${device.id}">
-                    <div class="device-info">
-                        <div class="device-icon">
-                            ${device.device_name.toLowerCase().includes('phone') || device.device_name.toLowerCase().includes('iphone') || device.device_name.toLowerCase().includes('android') ? 
-                                '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>' : 
-                                '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>'}
+                if (error) {
+                    list.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--color-danger);">فشل تحميل الأجهزة.</div>';
+                    return;
+                }
+
+                if (!devices || devices.length === 0) {
+                    list.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">لا توجد أجهزة موثوقة مسجلة حالياً.</div>';
+                    return;
+                }
+
+                list.innerHTML = devices.map(device => `
+                    <div class="device-item" id="device-${device.id}">
+                        <div class="device-info">
+                            <div class="device-icon">
+                                ${device.device_name.toLowerCase().includes('phone') || device.device_name.toLowerCase().includes('iphone') || device.device_name.toLowerCase().includes('android') ? 
+                                    '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>' : 
+                                    '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>'}
+                            </div>
+                            <div class="device-meta">
+                                <h4>${device.device_name || 'جهاز غير معروف'}</h4>
+                                <p>${new Date(device.last_login).toLocaleString('ar-SA')}</p>
+                                ${device.ip_address ? `<span class="device-ip">IP: ${device.ip_address}</span>` : ''}
+                            </div>
                         </div>
-                        <div class="device-meta">
-                            <h4>${device.device_name}</h4>
-                            <p>${new Date(device.last_login).toLocaleString('ar-SA')}</p>
-                        </div>
+                        <button class="btn btn-sm btn-danger" onclick="window.removeDevice('${device.id}')">إزالة</button>
                     </div>
-                    <button class="btn btn-sm btn-danger" onclick="window.removeDevice('${device.id}')">إزالة</button>
-                </div>
-            `).join('');
+                `).join('');
+            } catch (error) {
+                console.error('Error loading devices:', error);
+                list.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--color-danger);">حدث خطأ أثناء تحميل الأجهزة.</div>';
+            }
         }
 
         function setupRealtimeSubscription() {
+            if (!currentUser) return;
+            
             supabase
                 .channel('trusted_devices_changes')
                 .on('postgres_changes', { 
@@ -468,6 +511,11 @@
         // 2FA Setup Logic
         const setupModal = document.getElementById('setupModal');
         document.getElementById('setupTwoFaBtn').onclick = () => {
+            if (!currentUser) {
+                showAlert('يرجى تسجيل الدخول أولاً', 'error');
+                return;
+            }
+            
             currentSecret = generateSecret();
             document.getElementById('secretKeyDisplay').textContent = currentSecret;
             
@@ -497,7 +545,7 @@
 
             const recoveryCodes = generateRecoveryCodes();
             const { error } = await enable2FA(currentUser.id, currentSecret, recoveryCodes);
-
+            
             if (error) {
                 showAlert('فشل تفعيل التحقق بخطوتين', 'error');
             } else {
@@ -537,6 +585,10 @@
             const btn = document.getElementById('copySecretBtn');
             btn.textContent = 'تم النسخ!';
             setTimeout(() => btn.textContent = 'نسخ', 2000);
+        };
+
+        document.getElementById('printCodesBtn').onclick = () => {
+            window.print();
         };
 
         window.onclick = (e) => {
