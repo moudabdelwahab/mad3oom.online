@@ -57,7 +57,7 @@ export async function signIn(email, password) {
         };
     }
 
-    // Check for 2FA
+    // Check for 2FA (App-based)
     if (profile?.two_factor_enabled) {
         // Check if device is trusted
         const fingerprint = localStorage.getItem('device_fingerprint');
@@ -88,6 +88,28 @@ export async function signIn(email, password) {
         return {
             data: result.data,
             requires2FA: true,
+            profile: profile || { id: result.data.user.id, role: 'customer' }
+        };
+    }
+
+    // Check for Telegram OTP
+    if (profile?.telegram_otp_enabled && profile?.telegram_chat_id) {
+        // Trigger OTP send via Edge Function
+        try {
+            await supabase.functions.invoke('telegram-webhook', {
+                body: { 
+                    internal_trigger: true,
+                    user_id: result.data.user.id,
+                    action: 'send_otp'
+                }
+            });
+        } catch (e) {
+            console.error('Failed to trigger Telegram OTP:', e);
+        }
+
+        return {
+            data: result.data,
+            requiresTelegramOTP: true,
             profile: profile || { id: result.data.user.id, role: 'customer' }
         };
     }

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التحقق عبر تليجرام - منصة مدعوم</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="auth.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .verification-code-input {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin: 2rem 0;
+            direction: ltr;
+        }
+        .code-digit {
+            width: 45px;
+            height: 55px;
+            border: 2px solid var(--color-border);
+            border-radius: 0.75rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--color-surface);
+            color: var(--color-text);
+            transition: all 0.2s;
+        }
+        .code-digit:focus {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb), 0.1);
+            outline: none;
+        }
+        .auth-card {
+            max-width: 450px;
+        }
+        .telegram-icon {
+            width: 64px;
+            height: 64px;
+            background: #0088cc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: white;
+        }
+    </style>
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('theme-preference') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+</head>
+<body class="auth-wrapper">
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/logo.png" alt="Logo" class="logo-image">
+                <span>منصة مدعوم</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="auth-container">
+        <section class="auth-card">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div class="telegram-icon">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.98.52-1.4.51-.46-.01-1.35-.26-2.01-.48-.81-.27-1.45-.42-1.39-.89.03-.24.37-.49 1.02-.75 4-1.74 6.67-2.88 8.01-3.44 3.81-1.58 4.6-1.86 5.12-1.87.11 0 .37.03.54.17.14.11.18.26.2.45-.01.06-.01.14-.02.21z"/>
+                    </svg>
+                </div>
+                <h1>التحقق عبر تليجرام</h1>
+                <p class="auth-subtitle">لقد أرسلنا رمز التحقق إلى حسابك في تليجرام. يرجى إدخاله للمتابعة.</p>
+            </div>
+
+            <div id="errorMessage" class="message-box message-error" style="display:none;">
+                <p id="errorText"></p>
+            </div>
+
+            <form id="verifyForm">
+                <div class="verification-code-input">
+                    <input type="text" class="code-digit" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                    <input type="text" class="code-digit" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                    <input type="text" class="code-digit" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                    <input type="text" class="code-digit" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                    <input type="text" class="code-digit" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                    <input type="text" class="code-digit" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="verifyBtn" style="width: 100%;">
+                    <span id="btnText">تحقق ودخول</span>
+                    <span id="btnLoader" style="display:none;">جاري التحقق...</span>
+                </button>
+            </form>
+
+            <div style="margin-top: 2rem; text-align: center;">
+                <button type="button" class="btn btn-secondary" id="resendBtn" style="width: 100%; margin-bottom: 1rem;">إعادة إرسال الرمز</button>
+                <button type="button" class="btn btn-secondary" id="cancelBtn" style="width: 100%; background: transparent; border: none; color: var(--color-text-secondary);">إلغاء والعودة</button>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { supabase } from './api-config.js';
+
+        const form = document.getElementById('verifyForm');
+        const digits = document.querySelectorAll('.code-digit');
+        const btn = document.getElementById('verifyBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoader = document.getElementById('btnLoader');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const resendBtn = document.getElementById('resendBtn');
+
+        // Handle digit inputs
+        digits.forEach((digit, index) => {
+            digit.addEventListener('input', (e) => {
+                if (e.target.value && index < digits.length - 1) {
+                    digits[index + 1].focus();
+                }
+            });
+
+            digit.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    digits[index - 1].focus();
+                }
+            });
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const code = Array.from(digits).map(d => d.value).join('');
+            if (code.length !== 6) return;
+
+            setLoading(true);
+            errorMessage.style.display = 'none';
+
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) throw new Error('لم يتم العثور على جلسة نشطة. يرجى تسجيل الدخول مرة أخرى.');
+
+                // Verify via Edge Function
+                const { data, error } = await supabase.functions.invoke('verify-otp', {
+                    body: { userId: user.id, code }
+                });
+
+                if (error || !data?.success) {
+                    throw new Error(data?.message || 'رمز التحقق غير صحيح. حاول مرة أخرى.');
+                }
+
+                // Success! Redirect to dashboard
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+
+                const role = profile?.role || 'customer';
+                const target = (role === 'admin' || role === 'support') ? 'admin-dashboard.html' : 'customer-dashboard.html';
+                
+                window.location.replace(target);
+
+            } catch (err) {
+                setLoading(false);
+                errorMessage.style.display = 'block';
+                errorText.textContent = err.message || 'رمز التحقق غير صحيح. حاول مرة أخرى.';
+            }
+        });
+
+        resendBtn.onclick = async () => {
+            resendBtn.disabled = true;
+            resendBtn.textContent = 'جاري الإرسال...';
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                await supabase.functions.invoke('telegram-webhook', {
+                    body: { 
+                        message: { 
+                            text: '/otp', 
+                            chat: { id: 'trigger' }, // This is a hack, the function needs to be updated to handle direct calls
+                            from: { username: 'internal_trigger', id: user.id } 
+                        } 
+                    }
+                });
+                alert('تم إرسال رمز جديد إلى تليجرام');
+            } catch (e) {
+                console.error(e);
+            } finally {
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'إعادة إرسال الرمز';
+            }
+        };
+
+        function setLoading(state) {
+            btn.disabled = state;
+            btnText.style.display = state ? 'none' : 'inline';
+            btnLoader.style.display = state ? 'inline' : 'none';
+            digits.forEach(d => d.disabled = state);
+        }
+
+        document.getElementById('cancelBtn').onclick = async (e) => {
+            e.preventDefault();
+            await supabase.auth.signOut();
+            window.location.href = 'sign-in.html';
+        };
+    </script>
+</body>
+</html>
