@@ -332,7 +332,7 @@
     <script type="module">
         import { initTheme } from '/theme-manager.js';
         import { supabase } from '/api-config.js';
-        import { generateSecret, getQRCodeUrl, generateRecoveryCodes, enable2FA, disable2FA } from '/2fa-service.js';
+        import { generate2FASecret, getQRCodeUrl, generateRecoveryCodes, enable2FA, disable2FA } from '/2fa-service.js';
         
         let currentUser = null;
         let currentSecret = null;
