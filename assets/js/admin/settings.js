@@ -79,7 +79,7 @@ function setupEventListeners() {
         try {
             const { error } = await supabase
                 .from('profiles')
-                .update({ full_name: fullName, updated_at: new Date() })
+                .update({ full_name: fullName })
                 .eq('id', user.id);
 
             if (error) throw error;
@@ -161,8 +161,7 @@ function setupEventListeners() {
                 .from('profiles')
                 .update({ 
                     telegram_username: username, 
-                    telegram_otp_enabled: enabled,
-                    updated_at: new Date() 
+                    telegram_otp_enabled: enabled
                 })
                 .eq('id', user.id);
 
@@ -217,8 +216,7 @@ function setupEventListeners() {
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({ 
-                    avatar_url: publicUrl,
-                    updated_at: new Date().toISOString()
+                    avatar_url: publicUrl
                 })
                 .eq('id', user.id);
 
