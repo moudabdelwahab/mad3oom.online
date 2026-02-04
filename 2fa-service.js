@@ -1,63 +1,66 @@
 import { supabase } from './api-config.js';
 
+/* ======================================================
+   2FA – FRONTEND SAFE IMPLEMENTATION
+   ====================================================== */
+
 /**
- * Generate a random base32 secret for TOTP
+ * Generate 2FA Secret + QR Code
+ * (Server-side via Edge Function)
  */
-export function generateSecret(length = 16) {
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    let secret = '';
-    for (let i = 0; i < length; i++) {
-        secret += charset.charAt(Math.floor(Math.random() * charset.length));
+export async function generate2FASecret() {
+    const { data, error } = await supabase.functions.invoke('generate-2fa-secret');
+
+    if (error) {
+        console.error('Generate 2FA Secret Error:', error);
+        throw error;
     }
-    return secret;
+
+    // data => { base32, otpauth_url }
+    return data;
 }
 
 /**
- * Generate a TOTP QR Code URL
- */
-export function getQRCodeUrl(email, secret, issuer = 'Mad3oom.online') {
-    const label = encodeURIComponent(`${issuer}:${email}`);
-    const issuerParam = encodeURIComponent(issuer);
-    return `otpauth://totp/${label}?secret=${secret}&issuer=${issuerParam}`;
-}
-
-/**
- * Generate recovery codes
- */
-export function generateRecoveryCodes(count = 8) {
-    const codes = [];
-    for (let i = 0; i < count; i++) {
-        codes.push(Math.random().toString(36).substring(2, 10).toUpperCase());
-    }
-    return codes;
-}
-
-/**
- * Verify TOTP Code (Client-side simulation or via Edge Function)
- * Note: For real security, this should be verified on the server.
- * Since we are using Supabase, we'll implement an Edge Function for verification.
+ * Verify TOTP Code
+ * (Server-side verification)
  */
 export async function verify2FACode(userId, code) {
     const { data, error } = await supabase.functions.invoke('verify-2fa', {
-        body: { userId, code }
+        body: {
+            userId,
+            code
+        }
     });
-    return { data, error };
+
+    if (error) {
+        console.error('Verify 2FA Error:', error);
+        throw error;
+    }
+
+    // data => { verified: true | false }
+    return data;
 }
 
 /**
  * Enable 2FA for user
+ * (CALL ONLY AFTER verify === true)
  */
-export async function enable2FA(userId, secret, recoveryCodes) {
+export async function enable2FA(userId, secretBase32, recoveryCodes) {
     const { data, error } = await supabase
         .from('profiles')
         .update({
             two_factor_enabled: true,
-            two_factor_secret: secret,
+            two_factor_secret: secretBase32,
             recovery_codes: recoveryCodes
         })
         .eq('id', userId);
-    
-    return { data, error };
+
+    if (error) {
+        console.error('Enable 2FA Error:', error);
+        throw error;
+    }
+
+    return data;
 }
 
 /**
@@ -72,22 +75,53 @@ export async function disable2FA(userId) {
             recovery_codes: null
         })
         .eq('id', userId);
-    
-    return { data, error };
+
+    if (error) {
+        console.error('Disable 2FA Error:', error);
+        throw error;
+    }
+
+    return data;
 }
 
-/**
- * Manage Trusted Devices
- */
+/* ======================================================
+   RECOVERY CODES (Frontend – acceptable, not critical)
+   ====================================================== */
+
+export function generateRecoveryCodes(count = 8) {
+    const codes = [];
+    for (let i = 0; i < count; i++) {
+        codes.push(
+            crypto.randomUUID()
+                .replace(/-/g, '')
+                .substring(0, 10)
+                .toUpperCase()
+        );
+    }
+    return codes;
+}
+
+/* ======================================================
+   TRUSTED DEVICES
+   ====================================================== */
+
 export async function getTrustedDevices(userId) {
-    return await supabase
+    const { data, error } = await supabase
         .from('trusted_devices')
         .select('*')
         .eq('user_id', userId);
+
+    if (error) throw error;
+    return data;
 }
 
-export async function addTrustedDevice(userId, deviceName, fingerprint, ipAddress = null) {
-    return await supabase
+export async function addTrustedDevice(
+    userId,
+    deviceName,
+    fingerprint,
+    ipAddress = null
+) {
+    const { data, error } = await supabase
         .from('trusted_devices')
         .insert({
             user_id: userId,
@@ -96,18 +130,25 @@ export async function addTrustedDevice(userId, deviceName, fingerprint, ipAddres
             ip_address: ipAddress,
             last_login: new Date().toISOString()
         });
+
+    if (error) throw error;
+    return data;
 }
 
 export async function removeTrustedDevice(deviceId) {
-    return await supabase
+    const { error } = await supabase
         .from('trusted_devices')
         .delete()
         .eq('id', deviceId);
+
+    if (error) throw error;
 }
 
 export async function removeAllTrustedDevices(userId) {
-    return await supabase
+    const { error } = await supabase
         .from('trusted_devices')
         .delete()
         .eq('user_id', userId);
+
+    if (error) throw error;
 }
