@@ -138,9 +138,16 @@ export async function logout() {
         await logActivity('logout');
     } catch (e) {}
 
+    // مسح جلسة الضيف
     localStorage.removeItem('mad3oom-guest-session');
+    
+    // مسح أي بيانات أخرى متعلقة بالجلسة في localStorage إذا وجدت
+    // localStorage.clear(); // خيار جذري إذا لزم الأمر
 
-    return await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error('Error during signOut:', error);
+    
+    return { error };
 }
 
 /* =========================================================
@@ -337,31 +344,34 @@ export async function signInAsGuest() {
  * التوجيه التلقائي بناءً على حالة المصادقة
  */
 export async function autoRedirect() {
+    // جلب الجلسة الحالية أولاً
+    const { data: { session } } = await supabase.auth.getSession();
     const guestSession = localStorage.getItem('mad3oom-guest-session');
+    
+    // إذا لم يكن هناك مستخدم مسجل ولا ضيف، لا نفعل شيئاً (نحن بالفعل في صفحة عامة)
+    if (!session?.user && !guestSession) return;
+
     const isAuthPage = window.location.pathname.includes('sign-in.html') || 
                       window.location.pathname.includes('sign-up.html') || 
                       window.location.pathname === '/' || 
                       window.location.pathname.endsWith('index.html');
 
-    if (guestSession) {
-        if (isAuthPage) {
+    // إذا كنا في صفحة مصادقة (تسجيل دخول/إنشاء حساب) وهناك جلسة نشطة، نوجه للوحة التحكم
+    if (isAuthPage) {
+        if (guestSession) {
             window.location.replace('customer-dashboard.html');
+            return;
         }
-        return;
-    }
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .maybeSingle();
-        
-        const role = profile?.role || 'customer';
-        const isAdmin = role === 'admin' || role === 'support';
-
-        if (isAuthPage) {
+        if (session?.user) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', session.user.id)
+                .maybeSingle();
+            
+            const role = profile?.role || 'customer';
+            const isAdmin = role === 'admin' || role === 'support';
             const target = isAdmin ? 'admin-dashboard.html' : 'customer-dashboard.html';
             window.location.replace(target);
         }
