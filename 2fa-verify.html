@@ -167,26 +167,28 @@
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) throw new Error('لم يتم العثور على جلسة نشطة. يرجى تسجيل الدخول مرة أخرى.');
 
+                // Retrieve tempSecret from sessionStorage
+                const tempSecret = sessionStorage.getItem('tempSecret');
+                if (!tempSecret) {
+                    throw new Error('انتهت صلاحية جلسة التحقق. يرجى تسجيل الدخول مرة أخرى.');
+                }
+
                 // Verify via Edge Function
-                let data, error;
-                try {
-                    const response = await supabase.functions.invoke('verify-2fa', {
-                        body: { userId: user.id, code }
-                    });
-                    data = response.data;
-                    error = response.error;
-                } catch (invokeError) {
-                    console.error('Edge Function invocation failed:', invokeError);
-                    // Fallback for testing or if Edge Function is not deployed
-                    // In a real production environment, we should not fallback to success
-                    // But for the sake of fixing the "incorrect code" issue when it might be a function error:
+                const { data, error } = await supabase.functions.invoke('verify-2fa', {
+                    body: { code, tempSecret }
+                });
+
+                if (error) {
+                    console.error('Verify 2FA Error:', error);
                     throw new Error('حدث خطأ أثناء الاتصال بخادم التحقق. يرجى المحاولة لاحقاً.');
                 }
 
-                if (error || !data?.success) {
-                    console.error('Verification failed:', error, data);
-                    throw new Error(data?.message || 'رمز التحقق غير صحيح. حاول مرة أخرى.');
+                if (data.verified !== true) {
+                    throw new Error('رمز التحقق غير صحيح. حاول مرة أخرى.');
                 }
+
+                // Clear tempSecret after successful verification
+                sessionStorage.removeItem('tempSecret');
 
                 // If trust device is checked
                 if (trustDeviceCheckbox.checked) {
