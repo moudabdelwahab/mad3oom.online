@@ -53,19 +53,9 @@ async function getLocationInfo() {
         console.warn('ipapi.co failed');
     }
 
-    try {
-        const response = await fetch('http://ip-api.com/json/');
-        if (response.ok) {
-            const data = await response.json();
-            return {
-                country: data.country,
-                city: data.city,
-                ip: data.query || ip
-            };
-        }
-    } catch (e) {
-        console.error('All location services failed');
-    }
+    // Note: http://ip-api.com doesn't support HTTPS on free tier
+    // Removed to avoid mixed content issues on HTTPS sites
+    // If needed, consider upgrading to paid tier or using alternative service
 
     return ip ? { ip, country: null, city: null } : null;
 }

@@ -316,7 +316,7 @@ export async function updateEmail(newEmail) {
  * تسجيل الدخول كضيف
  */
 export async function signInAsGuest() {
-    const guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
+    const guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
     const guestUser = {
         id: guestId,
         email: `${guestId}@mad3oom.guest`,
