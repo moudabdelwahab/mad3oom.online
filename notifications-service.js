@@ -77,6 +77,38 @@ export async function createNotification({ userId, title, message, type = 'info'
 }
 
 /**
+ * إرسال إشعار لجميع المستخدمين
+ */
+export async function broadcastNotification({ title, message, type = 'info', link = null }) {
+    // جلب جميع معرفات المستخدمين من جدول البروفايلات
+    const { data: profiles, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id');
+
+    if (fetchError) throw fetchError;
+    if (!profiles || profiles.length === 0) return;
+
+    // تجهيز مصفوفة الإشعارات للإدخال الجماعي
+    const notifications = profiles.map(profile => ({
+        user_id: profile.id,
+        title,
+        message,
+        type,
+        link
+    }));
+
+    // إدخال جماعي في جدول الإشعارات
+    const { error: insertError } = await supabase
+        .from('notifications')
+        .insert(notifications);
+
+    if (insertError) {
+        console.error('[Notifications] Error broadcasting notifications:', insertError);
+        throw insertError;
+    }
+}
+
+/**
  * الاشتراك في الإشعارات اللحظية للمستخدم الحالي
  */
 export function subscribeToNotifications(userId, callback) {

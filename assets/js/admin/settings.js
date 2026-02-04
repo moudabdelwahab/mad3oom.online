@@ -179,6 +179,36 @@ function setupEventListeners() {
         }
     });
 
+    // Broadcast Form
+    document.getElementById('broadcastForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('broadcastTitle').value.trim();
+        const message = document.getElementById('broadcastMessage').value.trim();
+        const btn = document.getElementById('sendBroadcastBtn');
+
+        if (!title || !message) return showAlert('يرجى ملء جميع الحقول', 'error');
+
+        if (!confirm('هل أنت متأكد من إرسال هذا الإشعار لجميع المستخدمين؟')) return;
+
+        btn.disabled = true;
+        const originalText = btn.innerHTML;
+        btn.textContent = 'جاري الإرسال...';
+
+        try {
+            const { broadcastNotification } = await import('/notifications-service.js');
+            await broadcastNotification({ title, message, type: 'info' });
+            
+            showAlert('تم إرسال الإشعار الجماعي بنجاح لجميع المستخدمين', 'success');
+            e.target.reset();
+        } catch (error) {
+            console.error('Broadcast error:', error);
+            showAlert('فشل إرسال الإشعار الجماعي: ' + error.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
+
     // Avatar Upload
     document.getElementById('avatarInput').addEventListener('change', async (e) => {
         const file = e.target.files[0];
