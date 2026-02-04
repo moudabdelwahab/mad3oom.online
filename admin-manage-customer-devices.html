@@ -174,14 +174,13 @@
     </main>
 
     <script type="module">
-        import { initTheme } from '/theme-manager.js';
         import { supabase } from '/api-config.js';
 
         let allDevices = [];
         let currentUser = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
-            initTheme();
+            if (window.initTheme) window.initTheme();
             
             // Load Sidebar
             try {

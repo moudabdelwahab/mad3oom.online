@@ -250,7 +250,3 @@
     };
 })();
 
-export function initTheme() {
-    return window.initTheme();
-}
-

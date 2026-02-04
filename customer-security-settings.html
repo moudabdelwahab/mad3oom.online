@@ -330,7 +330,6 @@
     </div>
 
     <script type="module">
-        import { initTheme } from '/theme-manager.js';
         import { supabase } from '/api-config.js';
         import { generate2FASecret, generateRecoveryCodes, enable2FA, disable2FA } from '/2fa-service.js';
         
@@ -340,7 +339,7 @@
 
         // Initialize UI
         document.addEventListener('DOMContentLoaded', async () => {
-            initTheme();
+            if (window.initTheme) window.initTheme();
             
             // Load Sidebar
             try {
