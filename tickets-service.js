@@ -65,7 +65,7 @@ export async function createTicket({ title, description, priority, image_url = n
 
     if (error) throw error;
 
-    // إشعار للأدمن
+    // إشعار للأدمن فقط عند إنشاء تذكرة جديدة من قبل العميل
     const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
     if (admins) {
         for (const admin of admins) {
@@ -128,10 +128,11 @@ export async function updateTicketStatus(ticketId, status) {
 
     if (error) throw error;
 
-    // جلب بيانات التذكرة لإرسال إشعار
+    // جلب بيانات التذكرة لإرسال إشعار للعميل فقط
     const { data: ticket } = await supabase.from('tickets').select('*').eq('id', ticketId).single();
     if (ticket) {
         const statusMap = { 'open': 'مفتوحة', 'in-progress': 'قيد المعالجة', 'resolved': 'محلولة' };
+        // إشعار للعميل فقط عند تغيير حالة تذكرته من قبل الإدارة
         await createNotification({
             userId: ticket.user_id,
             title: 'تحديث حالة التذكرة',
@@ -221,7 +222,7 @@ export async function addTicketReply(ticketId, message, isInternal = false) {
             await createNotification({
                 userId: ticket.user_id,
                 title: 'رد جديد على تذكرتك',
-                message: `هناك رد جديد على تذكرتك #${ticket.ticket_number}`,
+                message: `هناك رد جديد من الإدارة على تذكرتك #${ticket.ticket_number}`,
                 type: 'success',
                 link: `customer-dashboard.html?ticket=${ticket.id}`
             });
@@ -242,12 +243,14 @@ export async function addTicketReply(ticketId, message, isInternal = false) {
         }
     }
 
-    // تحديث حالة التذكرة إلى 'in-progress' إذا كانت 'open'
-    await supabase
-        .from('tickets')
-        .update({ status: 'in-progress' })
-        .eq('id', ticketId)
-        .eq('status', 'open');
+    // تحديث حالة التذكرة إلى 'in-progress' إذا كانت 'open' والرد من الأدمن
+    if (ticket && ticket.user_id !== user.id) {
+        await supabase
+            .from('tickets')
+            .update({ status: 'in-progress' })
+            .eq('id', ticketId)
+            .eq('status', 'open');
+    }
     
     await logActivity('ticket_reply', { ticket_id: ticketId, is_internal: isInternal });
 }

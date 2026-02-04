@@ -1,19 +1,24 @@
 import { supabase } from './api-config.js';
 
 /**
- * جلب إشعارات المستخدم الحالي
+ * جلب إشعارات المستخدم الحالي فقط
  */
 export async function fetchNotifications() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
+    // نضمن دائماً فلترة الإشعارات حسب معرف المستخدم الحالي
     const { data, error } = await supabase
         .from('notifications')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20);
 
-    if (error) throw error;
+    if (error) {
+        console.error('[Notifications] Error fetching notifications:', error);
+        throw error;
+    }
     return data;
 }
 
@@ -21,16 +26,20 @@ export async function fetchNotifications() {
  * تحديد إشعار كمقروء
  */
 export async function markAsRead(notificationId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
-        .eq('id', notificationId);
+        .eq('id', notificationId)
+        .eq('user_id', user.id); // ضمان الأمان: لا يمكن للمستخدم تحديث إشعار غير خاص به
 
     if (error) throw error;
 }
 
 /**
- * تحديد كل الإشعارات كمقروءة
+ * تحديد كل الإشعارات كمقروءة للمستخدم الحالي
  */
 export async function markAllAsRead() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -46,9 +55,11 @@ export async function markAllAsRead() {
 }
 
 /**
- * إنشاء إشعار جديد (يستخدم غالباً من جانب السيرفر أو الأدمن)
+ * إنشاء إشعار جديد
  */
 export async function createNotification({ userId, title, message, type = 'info', link = null }) {
+    if (!userId) return;
+
     const { error } = await supabase
         .from('notifications')
         .insert({
@@ -59,13 +70,18 @@ export async function createNotification({ userId, title, message, type = 'info'
             link
         });
 
-    if (error) throw error;
+    if (error) {
+        console.error('[Notifications] Error creating notification:', error);
+        throw error;
+    }
 }
 
 /**
- * الاشتراك في الإشعارات اللحظية
+ * الاشتراك في الإشعارات اللحظية للمستخدم الحالي
  */
 export function subscribeToNotifications(userId, callback) {
+    if (!userId) return null;
+    
     console.log('[Notifications] Subscribing to notifications for user:', userId);
     
     const channel = supabase
@@ -83,6 +99,5 @@ export function subscribeToNotifications(userId, callback) {
             console.log('[Notifications] Subscription status:', status);
         });
     
-    console.log('[Notifications] Channel created:', channel);
     return channel;
 }

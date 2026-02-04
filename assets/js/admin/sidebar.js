@@ -52,10 +52,10 @@ function setupSidebarLogic() {
         if (!list) return;
 
         try {
-            const { fetchNotifications, markAsRead, subscribeToNotifications } = await import('/notifications-service.js');
+            const { fetchNotifications, markAsRead } = await import('/notifications-service.js');
             const notifications = await fetchNotifications();
-            console.log('[Sidebar] Loaded notifications:', notifications.length);
             
+            // في لوحة الإدارة، نعرض فقط الإشعارات الموجهة للأدمن (التي تم جلبها بالفعل بناءً على user_id في الخدمة)
             const unreadCount = notifications.filter(n => !n.is_read).length;
             if (badge) {
                 badge.textContent = unreadCount;
@@ -63,7 +63,7 @@ function setupSidebarLogic() {
             }
 
             if (notifications.length === 0) {
-                list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--color-text-secondary); font-size: 0.85rem;">لا توجد إشعارات</div>';
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--color-text-secondary); font-size: 0.85rem;">لا توجد إشعارات إدارية</div>';
                 return;
             }
 
@@ -88,6 +88,7 @@ function setupSidebarLogic() {
                 });
             });
         } catch (err) {
+            console.error('[Sidebar] Error loading notifications:', err);
             list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--color-danger); font-size: 0.85rem;">فشل تحميل الإشعارات</div>';
         }
     }
@@ -99,10 +100,7 @@ function setupSidebarLogic() {
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user && !notificationSubscription) {
-            console.log('[Sidebar] Setting up realtime notifications for user:', user.id);
             notificationSubscription = subscribeToNotifications(user.id, (newNotification) => {
-                console.log('[Sidebar] New notification received:', newNotification);
-                // Reload notifications to show the new one
                 loadNotifications();
                 
                 // Show browser notification if supported
@@ -116,7 +114,7 @@ function setupSidebarLogic() {
         }
     }
 
-    // Initial load for badge and setup realtime
+    // Initial load
     loadNotifications();
     setupNotificationRealtime();
     checkAdminForErrorTracker();
@@ -143,7 +141,7 @@ function setupSidebarLogic() {
         });
 
         document.addEventListener('click', () => {
-            adminAvatarMenu.style.display = 'none';
+            if (adminAvatarMenu) adminAvatarMenu.style.display = 'none';
             if (notificationMenu) notificationMenu.style.display = 'none';
         });
     }
@@ -154,7 +152,6 @@ function setupSidebarLogic() {
     
     const onLogout = async (e) => {
         e.preventDefault();
-        // Dynamic import to avoid circular dependency
         const { handleLogout } = await import('./auth.js');
         await handleLogout();
     };
@@ -165,9 +162,12 @@ function setupSidebarLogic() {
 
 async function checkAdminForErrorTracker() {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user && (user.role === 'admin' || user.user_metadata?.is_admin)) {
-        const errorLink = document.getElementById('errorTrackerLink');
-        if (errorLink) errorLink.style.display = 'flex';
+    if (user) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+        if (profile && profile.role === 'admin') {
+            const errorLink = document.getElementById('errorTrackerLink');
+            if (errorLink) errorLink.style.display = 'flex';
+        }
     }
 }
 
@@ -179,11 +179,9 @@ function highlightActiveLink() {
         const href = item.getAttribute('href');
         if (!href || href === '#') return;
 
-        // Clean paths for comparison
         const cleanPath = currentPath.replace(/\/$/, '');
         const cleanHref = href.replace(/\/$/, '');
 
-        // Check if current path ends with href or if it's the dashboard
         if (cleanPath.endsWith(cleanHref) || 
            (cleanPath === '' && cleanHref === '/admin-dashboard.html') ||
            (cleanPath.endsWith('/admin/') && cleanHref.endsWith('/admin/dashboard.html')) ||
