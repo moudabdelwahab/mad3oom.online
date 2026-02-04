@@ -24,11 +24,11 @@ export async function generate2FASecret() {
  * Verify TOTP Code
  * (Server-side verification)
  */
-export async function verify2FACode(userId, code) {
+export async function verify2FACode(code, tempSecret) {
     const { data, error } = await supabase.functions.invoke('verify-2fa', {
         body: {
-            userId,
-            code
+            code,
+            tempSecret
         }
     });
 
@@ -37,9 +37,9 @@ export async function verify2FACode(userId, code) {
         throw error;
     }
 
-    // data => { verified: true | false }
-    return data;
+    return data; // { verified: true | false }
 }
+
 
 /**
  * Enable 2FA for user
