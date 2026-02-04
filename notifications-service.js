@@ -80,31 +80,53 @@ export async function createNotification({ userId, title, message, type = 'info'
  * إرسال إشعار لجميع المستخدمين
  */
 export async function broadcastNotification({ title, message, type = 'info', link = null }) {
-    // جلب جميع معرفات المستخدمين من جدول البروفايلات
-    const { data: profiles, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id');
+    try {
+        // 1. جلب جميع معرفات المستخدمين من جدول البروفايلات
+        const { data: profiles, error: fetchError } = await supabase
+            .from('profiles')
+            .select('id');
 
-    if (fetchError) throw fetchError;
-    if (!profiles || profiles.length === 0) return;
+        if (fetchError) {
+            console.error('[Notifications] Error fetching profiles for broadcast:', fetchError);
+            throw new Error('فشل جلب قائمة المستخدمين: ' + fetchError.message);
+        }
+        
+        if (!profiles || profiles.length === 0) {
+            console.warn('[Notifications] No profiles found to broadcast to');
+            return;
+        }
 
-    // تجهيز مصفوفة الإشعارات للإدخال الجماعي
-    const notifications = profiles.map(profile => ({
-        user_id: profile.id,
-        title,
-        message,
-        type,
-        link
-    }));
+        console.log(`[Notifications] Broadcasting to ${profiles.length} users`);
 
-    // إدخال جماعي في جدول الإشعارات
-    const { error: insertError } = await supabase
-        .from('notifications')
-        .insert(notifications);
+        // 2. تجهيز مصفوفة الإشعارات للإدخال الجماعي
+        const notifications = profiles.map(profile => ({
+            user_id: profile.id,
+            title,
+            message,
+            type,
+            link,
+            is_read: false
+        }));
 
-    if (insertError) {
-        console.error('[Notifications] Error broadcasting notifications:', insertError);
-        throw insertError;
+        // 3. إدخال جماعي في جدول الإشعارات
+        // نقوم بتقسيم الإرسال إلى دفعات (Chunks) إذا كان العدد كبيراً جداً لتجنب تجاوز حدود الطلب
+        const chunkSize = 100;
+        for (let i = 0; i < notifications.length; i += chunkSize) {
+            const chunk = notifications.slice(i, i + chunkSize);
+            const { error: insertError } = await supabase
+                .from('notifications')
+                .insert(chunk);
+
+            if (insertError) {
+                console.error('[Notifications] Error inserting broadcast chunk:', insertError);
+                throw new Error('فشل إدراج الإشعارات في قاعدة البيانات: ' + insertError.message);
+            }
+        }
+        
+        console.log('[Notifications] Broadcast completed successfully');
+    } catch (error) {
+        console.error('[Notifications] Broadcast failed:', error);
+        throw error;
     }
 }
 

@@ -56,7 +56,6 @@ async function loadUserData() {
 
 function updateAvatarUI(name, url) {
     const preview = document.getElementById('avatarPreview');
-    const initials = document.getElementById('initialsDisplay');
     
     if (url) {
         preview.innerHTML = `<img src="${url}" alt="Profile">`;
@@ -180,34 +179,47 @@ function setupEventListeners() {
     });
 
     // Broadcast Form
-    document.getElementById('broadcastForm')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const title = document.getElementById('broadcastTitle').value.trim();
-        const message = document.getElementById('broadcastMessage').value.trim();
-        const btn = document.getElementById('sendBroadcastBtn');
-
-        if (!title || !message) return showAlert('يرجى ملء جميع الحقول', 'error');
-
-        if (!confirm('هل أنت متأكد من إرسال هذا الإشعار لجميع المستخدمين؟')) return;
-
-        btn.disabled = true;
-        const originalText = btn.innerHTML;
-        btn.textContent = 'جاري الإرسال...';
-
-        try {
-            const { broadcastNotification } = await import('/notifications-service.js');
-            await broadcastNotification({ title, message, type: 'info' });
+    const broadcastForm = document.getElementById('broadcastForm');
+    if (broadcastForm) {
+        broadcastForm.onsubmit = async (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // منع أي انتشار للحدث قد يسبب تحديث الصفحة
             
-            showAlert('تم إرسال الإشعار الجماعي بنجاح لجميع المستخدمين', 'success');
-            e.target.reset();
-        } catch (error) {
-            console.error('Broadcast error:', error);
-            showAlert('فشل إرسال الإشعار الجماعي: ' + error.message, 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
-    });
+            const titleInput = document.getElementById('broadcastTitle');
+            const messageInput = document.getElementById('broadcastMessage');
+            const btn = document.getElementById('sendBroadcastBtn');
+            
+            const title = titleInput.value.trim();
+            const message = messageInput.value.trim();
+
+            if (!title || !message) {
+                showAlert('يرجى ملء جميع الحقول', 'error');
+                return false;
+            }
+
+            if (!confirm('هل أنت متأكد من إرسال هذا الإشعار لجميع المستخدمين؟')) return false;
+
+            btn.disabled = true;
+            const originalHTML = btn.innerHTML;
+            btn.textContent = 'جاري الإرسال...';
+
+            try {
+                // استيراد الخدمة مباشرة للتأكد من توفرها
+                const { broadcastNotification } = await import('/notifications-service.js');
+                await broadcastNotification({ title, message, type: 'info' });
+                
+                showAlert('تم إرسال الإشعار الجماعي بنجاح لجميع المستخدمين', 'success');
+                broadcastForm.reset();
+            } catch (error) {
+                console.error('Broadcast error:', error);
+                showAlert('فشل إرسال الإشعار الجماعي: ' + (error.message || 'خطأ غير معروف'), 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+            return false;
+        };
+    }
 
     // Avatar Upload
     document.getElementById('avatarInput').addEventListener('change', async (e) => {
@@ -222,7 +234,7 @@ function setupEventListeners() {
         try {
             const fileExt = file.name.split('.').pop();
             const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-            const filePath = fileName; // الرفع مباشرة في الـ bucket بدون مجلدات فرعية لتجنب مشاكل الصلاحيات
+            const filePath = fileName;
 
             // Upload image to Supabase Storage
             const { data: uploadData, error: uploadError } = await supabase.storage
@@ -304,6 +316,10 @@ async function startChatIdPolling() {
 
 function showAlert(message, type) {
     const alert = document.getElementById('settingsAlert');
+    if (!alert) {
+        alert(message);
+        return;
+    }
     alert.textContent = message;
     alert.className = `alert alert-${type}`;
     alert.style.display = 'block';
