@@ -33,8 +33,12 @@ export function updateAdminUI(user) {
             adminInitial.textContent = nameForInitial.charAt(0).toUpperCase();
         }
 
-        if (profile.role === 'admin' && adminBadgeContainer) {
+        if ((profile.role === 'admin' || profile.role === 'support') && adminBadgeContainer) {
             adminBadgeContainer.style.display = 'block';
+            
+            // Also ensure error tracker link is visible if it exists
+            const errorLink = document.getElementById('errorTrackerLink');
+            if (errorLink) errorLink.style.display = 'flex';
         }
 
         if (adminAvatarBtn) {

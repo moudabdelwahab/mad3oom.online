@@ -164,10 +164,31 @@ function setupSidebarLogic() {
 }
 
 async function checkAdminForErrorTracker() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user && (user.role === 'admin' || user.user_metadata?.is_admin)) {
-        const errorLink = document.getElementById('errorTrackerLink');
-        if (errorLink) errorLink.style.display = 'flex';
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Check profile role as well for better reliability
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        const isAdmin = user.role === 'admin' || 
+                        user.user_metadata?.is_admin || 
+                        profile?.role === 'admin' || 
+                        profile?.role === 'support';
+
+        if (isAdmin) {
+            const errorLink = document.getElementById('errorTrackerLink');
+            if (errorLink) {
+                errorLink.style.display = 'flex';
+                console.log('[Sidebar] Error tracker link enabled for admin');
+            }
+        }
+    } catch (err) {
+        console.error('[Sidebar] Error checking admin status:', err);
     }
 }
 
