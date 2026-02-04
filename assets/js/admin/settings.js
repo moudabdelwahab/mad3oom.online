@@ -204,16 +204,19 @@ function setupEventListeners() {
             btn.textContent = 'جاري الإرسال...';
 
             try {
-                // استيراد الخدمة مباشرة للتأكد من توفرها
-                console.log('Importing notifications service...');
-                const { broadcastNotification } = await import('/notifications-service.js');
+                // إضافة timestamp لإجبار المتصفح على تحميل أحدث نسخة وتجنب الـ Cache
+                const serviceUrl = `/notifications-service.js?v=${Date.now()}`;
+                console.log('Importing notifications service from:', serviceUrl);
+                
+                const module = await import(serviceUrl);
+                const broadcastNotification = module.broadcastNotification;
                 
                 // التحقق من وجود الدالة قبل استدعائها
                 if (typeof broadcastNotification === 'function') {
                     await broadcastNotification({ title, message, type: 'info' });
                 } else {
-                    console.error('Imported object:', await import('/notifications-service.js'));
-                    throw new Error('تعذر العثور على وظيفة الإرسال في ملف الخدمة كـ Named Export');
+                    console.error('Imported Module Content:', module);
+                    throw new Error('تعذر العثور على وظيفة الإرسال في ملف الخدمة. يرجى تحديث الصفحة (Refresh) والمحاولة مرة أخرى.');
                 }
                 
                 showAlert('تم إرسال الإشعار الجماعي بنجاح لجميع المستخدمين', 'success');

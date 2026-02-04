@@ -155,3 +155,5 @@ export function subscribeToNotifications(userId, callback) {
     
     return channel;
 }
+
+// v1.0.1 - Fixed export for dynamic import
