@@ -119,6 +119,7 @@ function setupSidebarLogic() {
     // Initial load for badge and setup realtime
     loadNotifications();
     setupNotificationRealtime();
+    checkAdminForErrorTracker();
 
     const toggleSidebar = () => {
         sidebar.classList.toggle('active');
@@ -160,6 +161,14 @@ function setupSidebarLogic() {
 
     if (adminSignOut) adminSignOut.addEventListener('click', onLogout);
     if (sidebarSignOut) sidebarSignOut.addEventListener('click', onLogout);
+}
+
+async function checkAdminForErrorTracker() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && (user.role === 'admin' || user.user_metadata?.is_admin)) {
+        const errorLink = document.getElementById('errorTrackerLink');
+        if (errorLink) errorLink.style.display = 'flex';
+    }
 }
 
 function highlightActiveLink() {

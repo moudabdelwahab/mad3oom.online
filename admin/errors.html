@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة أخطاء الموقع - مدعوم</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/robot.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .errors-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .filters-bar { 
+            background: var(--color-surface); 
+            padding: 1.5rem; 
+            border-radius: 1rem; 
+            margin-bottom: 2rem; 
+            display: flex; 
+            gap: 1rem; 
+            flex-wrap: wrap;
+            box-shadow: var(--shadow);
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .filter-group label { font-size: 0.85rem; font-weight: 700; color: var(--color-text-secondary); }
+        .filter-group select, .filter-group input {
+            padding: 0.6rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            background: var(--color-bg);
+            color: var(--color-text);
+            min-width: 150px;
+        }
+        .error-card {
+            background: var(--color-surface);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-right: 5px solid var(--color-danger);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+        .error-card:hover { transform: scale(1.01); }
+        .error-card.resolved { border-right-color: var(--color-success); opacity: 0.8; }
+        .error-card.archived { border-right-color: var(--color-text-secondary); opacity: 0.6; }
+        .error-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+        .error-type { 
+            padding: 0.25rem 0.75rem; 
+            border-radius: 2rem; 
+            font-size: 0.75rem; 
+            font-weight: 800; 
+            text-transform: uppercase;
+        }
+        .type-js { background: #fef3c7; color: #92400e; }
+        .type-promise { background: #e0e7ff; color: #3730a3; }
+        .type-network { background: #fee2e2; color: #991b1b; }
+        .error-meta { font-size: 0.85rem; color: var(--color-text-secondary); display: flex; gap: 1.5rem; flex-wrap: wrap; }
+        .error-message { font-weight: 700; font-size: 1.1rem; margin: 0.5rem 0; color: var(--color-text); word-break: break-all; }
+        .stack-trace {
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            direction: ltr;
+            display: none;
+        }
+        .actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 0.4rem; cursor: pointer; border: none; font-weight: 600; }
+        .btn-resolve { background: var(--color-success); color: white; }
+        .btn-archive { background: var(--color-text-secondary); color: white; }
+        .btn-toggle-stack { background: var(--color-accent); color: white; }
+        .realtime-badge {
+            background: var(--color-success);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+
+    <main class="admin-main">
+        <div class="errors-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <div>
+                    <h1 style="font-size: 2rem; font-weight: 800;">تتبع أخطاء الموقع</h1>
+                    <p style="color: var(--color-text-secondary);">مراقبة وتحليل الأخطاء البرمجية في الوقت الفعلي</p>
+                </div>
+                <div id="realtimeStatus" class="realtime-badge">متصل بالبث المباشر</div>
+            </div>
+
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label>النوع</label>
+                    <select id="filterType">
+                        <option value="all">الكل</option>
+                        <option value="js">JavaScript</option>
+                        <option value="promise">Promises</option>
+                        <option value="network">Network</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>الحالة</label>
+                    <select id="filterStatus">
+                        <option value="new">جديد</option>
+                        <option value="resolved">تم الحل</option>
+                        <option value="archived">مؤرشف</option>
+                        <option value="all">الكل</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>بحث</label>
+                    <input type="text" id="searchInput" placeholder="بحث في الرسالة أو Stack...">
+                </div>
+            </div>
+
+            <div id="errorsList">
+                <!-- Errors will be loaded here -->
+                <div style="text-align: center; padding: 3rem;">جاري تحميل الأخطاء...</div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initSidebar } from '/assets/js/admin/sidebar.js';
+        import { errorService } from '/error-service.js';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSidebar();
+            loadErrors();
+            setupRealtime();
+            
+            // Event Listeners
+            document.getElementById('filterType').addEventListener('change', loadErrors);
+            document.getElementById('filterStatus').addEventListener('change', loadErrors);
+            document.getElementById('searchInput').addEventListener('input', debounce(loadErrors, 500));
+        });
+
+        async function loadErrors() {
+            const filters = {
+                type: document.getElementById('filterType').value,
+                status: document.getElementById('filterStatus').value,
+                search: document.getElementById('searchInput').value
+            };
+
+            try {
+                const { data, count } = await errorService.fetchErrors(filters);
+                renderErrors(data);
+            } catch (err) {
+                console.error('Failed to load errors:', err);
+                document.getElementById('errorsList').innerHTML = `<div style="color: var(--color-danger); text-align: center;">فشل تحميل البيانات</div>`;
+            }
+        }
+
+        function renderErrors(errors) {
+            const container = document.getElementById('errorsList');
+            if (!errors || errors.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--color-text-secondary);">لا توجد أخطاء حالياً</div>';
+                return;
+            }
+
+            container.innerHTML = errors.map(err => `
+                <div class="error-card ${err.status}" id="error-${err.id}">
+                    <div class="error-header">
+                        <span class="error-type type-${err.type}">${err.type}</span>
+                        <span style="font-size: 0.8rem; color: var(--color-text-secondary);">${new Date(err.created_at).toLocaleString('ar-EG')}</span>
+                    </div>
+                    <div class="error-message">${err.message}</div>
+                    <div class="error-meta">
+                        <span>📍 <b>الصفحة:</b> ${err.page_url}</span>
+                        ${err.file_name ? `<span>📄 <b>الملف:</b> ${err.file_name}:${err.line_number}:${err.column_number}</span>` : ''}
+                        ${err.user_id ? `<span>👤 <b>المستخدم:</b> ${err.user_id}</span>` : '<span>👤 <b>زائر</b></span>'}
+                    </div>
+                    <div class="stack-trace" id="stack-${err.id}">${err.stack_trace || 'No stack trace available'}</div>
+                    <div class="actions">
+                        <button class="btn-sm btn-toggle-stack" onclick="toggleStack('${err.id}')">عرض الـ Stack</button>
+                        ${err.status === 'new' ? `
+                            <button class="btn-sm btn-resolve" onclick="updateStatus('${err.id}', 'resolved')">تم الحل</button>
+                            <button class="btn-sm btn-archive" onclick="updateStatus('${err.id}', 'archived')">أرشفة</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setupRealtime() {
+            errorService.subscribeToErrors((newError) => {
+                // Show notification or refresh list
+                const statusBadge = document.getElementById('realtimeStatus');
+                statusBadge.textContent = 'خطأ جديد!';
+                statusBadge.style.background = 'var(--color-danger)';
+                
+                setTimeout(() => {
+                    statusBadge.textContent = 'متصل بالبث المباشر';
+                    statusBadge.style.background = 'var(--color-success)';
+                }, 3000);
+
+                loadErrors();
+            });
+        }
+
+        // Global functions for inline onclick
+        window.toggleStack = (id) => {
+            const el = document.getElementById(`stack-${id}`);
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        };
+
+        window.updateStatus = async (id, status) => {
+            try {
+                await errorService.updateStatus(id, status);
+                loadErrors();
+            } catch (err) {
+                alert('فشل تحديث الحالة');
+            }
+        };
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>
