@@ -205,8 +205,16 @@ function setupEventListeners() {
 
             try {
                 // استيراد الخدمة مباشرة للتأكد من توفرها
-                const { broadcastNotification } = await import('/notifications-service.js');
-                await broadcastNotification({ title, message, type: 'info' });
+                const notificationModule = await import('/notifications-service.js');
+                
+                // التحقق من وجود الدالة قبل استدعائها
+                if (notificationModule && typeof notificationModule.broadcastNotification === 'function') {
+                    await notificationModule.broadcastNotification({ title, message, type: 'info' });
+                } else if (notificationModule && notificationModule.default && typeof notificationModule.default.broadcastNotification === 'function') {
+                    await notificationModule.default.broadcastNotification({ title, message, type: 'info' });
+                } else {
+                    throw new Error('تعذر العثور على وظيفة الإرسال في ملف الخدمة');
+                }
                 
                 showAlert('تم إرسال الإشعار الجماعي بنجاح لجميع المستخدمين', 'success');
                 broadcastForm.reset();
