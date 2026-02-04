@@ -155,13 +155,3 @@ export function subscribeToNotifications(userId, callback) {
     
     return channel;
 }
-
-// إضافة تصدير افتراضي لضمان التوافق عند الاستيراد الديناميكي
-export default {
-    fetchNotifications,
-    markAsRead,
-    markAllAsRead,
-    createNotification,
-    broadcastNotification,
-    subscribeToNotifications
-};
