@@ -506,27 +506,41 @@
         const setupTwoFaBtn = document.getElementById('setupTwoFaBtn');
         
         if (setupTwoFaBtn) {
-            setupTwoFaBtn.onclick = () => {
-                console.log('Setup 2FA button clicked');
-                if (!currentUser) {
-                    showAlert('يرجى تسجيل الدخول أولاً', 'error');
-                    return;
-                }
-                
-                currentSecret = generateSecret();
-                document.getElementById('secretKeyDisplay').textContent = currentSecret;
-                
-                const qrUrl = getQRCodeUrl(currentUser.email, currentSecret);
-                const qrContainer = document.getElementById('qrCodeContainer');
-                qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}" alt="QR Code">`;
-                
-                // Reset steps
-                document.getElementById('setupStep1').style.display = 'block';
-                document.getElementById('setupStep2').style.display = 'none';
-                
-                setupModal.classList.add('active');
-            };
+    setupTwoFaBtn.onclick = async () => {
+        console.log('Setup 2FA button clicked');
+
+        if (!currentUser) {
+            showAlert('يرجى تسجيل الدخول أولاً', 'error');
+            return;
         }
+
+        // 🔐 توليد السر من السيرفر
+        const { base32, otpauth_url } = await generate2FASecret();
+
+        // خزّن السر مؤقتًا (لـ verify)
+        currentSecret = base32;
+        sessionStorage.setItem('temp_2fa_secret', base32);
+
+        // عرض السر
+        document.getElementById('secretKeyDisplay').textContent = base32;
+
+        // عرض QR Code
+        const qrContainer = document.getElementById('qrCodeContainer');
+        qrContainer.innerHTML = `
+            <img
+                src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauth_url)}"
+                alt="QR Code"
+            >
+        `;
+
+        // Reset steps
+        document.getElementById('setupStep1').style.display = 'block';
+        document.getElementById('setupStep2').style.display = 'none';
+
+        setupModal.classList.add('active');
+    };
+}
+
 
         document.getElementById('goToStep2').onclick = () => {
             document.getElementById('setupStep1').style.display = 'none';
