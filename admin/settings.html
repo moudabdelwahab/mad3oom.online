@@ -190,6 +190,47 @@
                 <a href="/chat-admin.html" class="btn-save" style="display: inline-block; text-decoration: none; text-align: center;">إدارة المحادثات والبوت</a>
             </section>
 
+            <!-- Telegram OTP Section -->
+            <section class="settings-section">
+                <h2>إعدادات Telegram OTP</h2>
+                <p style="margin-bottom: 1.5rem; color: #666;">قم بربط حسابك بالتليجرام لتلقي رموز التحقق (OTP) عند تسجيل الدخول.</p>
+                
+                <form id="telegramForm">
+                    <div class="form-group">
+                        <label for="telegramUsername">اسم مستخدم التليجرام (Telegram Username)</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <span style="align-self: center; background: #f0f0f0; padding: 0.75rem; border-radius: 8px 0 0 8px; border: 1px solid #ddd; border-right: none;">@</span>
+                            <input type="text" id="telegramUsername" class="form-control" style="border-radius: 0 8px 8px 0;" placeholder="username">
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="chatIdContainer" style="display: none;">
+                        <label for="telegramChatId">معرف الدردشة (Chat ID)</label>
+                        <input type="text" id="telegramChatId" class="form-control" readonly style="background: #f8f9fa;">
+                        <small style="color: #666;">يتم استخراج المعرف تلقائياً عند إرسال /start للبوت.</small>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
+                        <label style="margin-bottom: 0; cursor: pointer;">
+                            <input type="checkbox" id="telegramOtpEnabled" style="width: 20px; height: 20px; vertical-align: middle;">
+                            <span style="margin-right: 0.5rem; vertical-align: middle;">تفعيل التحقق عبر تليجرام (Telegram OTP)</span>
+                        </label>
+                    </div>
+
+                    <div id="botInstructions" style="display: none; background: #f0f7ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-right: 4px solid #0088cc;">
+                        <p style="margin-bottom: 0.5rem; font-weight: 600; color: #0088cc;">خطوات الربط:</p>
+                        <ol style="margin-right: 1.5rem; font-size: 0.9rem;">
+                            <li>تأكد من كتابة الـ Username الخاص بك بشكل صحيح.</li>
+                            <li>اضغط على "حفظ إعدادات التليجرام".</li>
+                            <li>افتح البوت <a href="https://t.me/mad3oom_bot" target="_blank" id="botLink">@mad3oom_bot</a> وأرسل رسالة <code>/start</code>.</li>
+                            <li>سيتم تحديث الـ Chat ID تلقائياً هنا.</li>
+                        </ol>
+                    </div>
+
+                    <button type="submit" class="btn-save" id="saveTelegramBtn">حفظ إعدادات التليجرام</button>
+                </form>
+            </section>
+
             <!-- Security & 2FA Section -->
             <section class="settings-section">
                 <h2>الأمان والتحقق بخطوتين (2FA)</h2>

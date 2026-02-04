@@ -29,8 +29,25 @@ async function loadUserData() {
         document.getElementById('fullName').value = profile.full_name || '';
         document.getElementById('email').value = user.email || '';
 
+        // Fill Telegram fields
+        document.getElementById('telegramUsername').value = profile.telegram_username || '';
+        document.getElementById('telegramOtpEnabled').checked = profile.telegram_otp_enabled || false;
+        
+        if (profile.telegram_chat_id) {
+            document.getElementById('telegramChatId').value = profile.telegram_chat_id;
+            document.getElementById('chatIdContainer').style.display = 'block';
+            document.getElementById('botInstructions').style.display = 'none';
+        } else {
+            document.getElementById('botInstructions').style.display = 'block';
+        }
+
         // Update avatar preview
         updateAvatarUI(profile.full_name, profile.avatar_url);
+
+        // Start polling for chat_id if not present
+        if (!profile.telegram_chat_id) {
+            startChatIdPolling();
+        }
     } catch (error) {
         console.error('Error loading user data:', error);
         showAlert('حدث خطأ أثناء تحميل البيانات', 'error');
@@ -129,6 +146,40 @@ function setupEventListeners() {
         }
     });
 
+    // Telegram Form
+    document.getElementById('telegramForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('telegramUsername').value.trim().replace('@', '');
+        const enabled = document.getElementById('telegramOtpEnabled').checked;
+        const btn = document.getElementById('saveTelegramBtn');
+
+        btn.disabled = true;
+        btn.textContent = 'جاري الحفظ...';
+
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ 
+                    telegram_username: username, 
+                    telegram_otp_enabled: enabled,
+                    updated_at: new Date() 
+                })
+                .eq('id', user.id);
+
+            if (error) throw error;
+            showAlert('تم تحديث إعدادات التليجرام بنجاح', 'success');
+            
+            if (!document.getElementById('telegramChatId').value) {
+                document.getElementById('botInstructions').style.display = 'block';
+            }
+        } catch (error) {
+            showAlert(error.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'حفظ إعدادات التليجرام';
+        }
+    });
+
     // Avatar Upload
     document.getElementById('avatarInput').addEventListener('change', async (e) => {
         const file = e.target.files[0];
@@ -193,6 +244,34 @@ function setupEventListeners() {
             btn.disabled = false;
         }
     });
+}
+
+let pollingInterval = null;
+async function startChatIdPolling() {
+    if (pollingInterval) return;
+
+    pollingInterval = setInterval(async () => {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('telegram_chat_id')
+                .eq('id', user.id)
+                .single();
+
+            if (error) throw error;
+
+            if (data && data.telegram_chat_id) {
+                document.getElementById('telegramChatId').value = data.telegram_chat_id;
+                document.getElementById('chatIdContainer').style.display = 'block';
+                document.getElementById('botInstructions').style.display = 'none';
+                showAlert('تم ربط حساب التليجرام بنجاح واستخراج Chat ID', 'success');
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        } catch (err) {
+            console.error('Polling error:', err);
+        }
+    }, 5000); // كل 5 ثواني
 }
 
 function showAlert(message, type) {
