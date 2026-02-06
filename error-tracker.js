@@ -1,5 +1,5 @@
 /**
- * Centralized Error Logging System - Frontend Tracker (Enhanced)
+ * Centralized Error Logging System - Frontend Tracker (Final Fix)
  * Project: mad3oom.online
  * Author: Senior Full-Stack Engineer (Manus)
  */
@@ -9,16 +9,15 @@
     const CONFIG = {
         API_URL: 'https://srnelrdpqkcntbgudyto.supabase.co/rest/v1/site_errors',
         API_KEY: 'sb_publishable_0pvB8_xD0txjdJBkYqXMyg__jKMw71W',
-        DEBOUNCE_MS: 500, // Reduced for better capture
-        MAX_ERRORS_PER_SESSION: 100,
+        DEBOUNCE_MS: 300,
+        MAX_ERRORS_PER_SESSION: 200,
         IGNORE_PATTERNS: [
             /extensions\//i,
             /chrome-extension:/i,
             /moz-extension:/i,
             /safari-extension:/i,
             /top\.GLOBALS/i,
-            /originalPrompt/i,
-            /Clarity/i // Ignore Microsoft Clarity noise if any
+            /originalPrompt/i
         ]
     };
 
@@ -29,12 +28,10 @@
      * Send error to Supabase
      */
     async function reportError(errorData) {
-        // Rate limiting & Spam prevention
         const now = Date.now();
         if (now - lastErrorTime < CONFIG.DEBOUNCE_MS) return;
         if (errorCount >= CONFIG.MAX_ERRORS_PER_SESSION) return;
 
-        // Ignore browser extensions and common noise
         const searchString = `${errorData.message} ${errorData.file_name} ${errorData.stack_trace}`;
         if (CONFIG.IGNORE_PATTERNS.some(pattern => pattern.test(searchString))) return;
 
@@ -42,7 +39,6 @@
         lastErrorTime = now;
 
         try {
-            // Get current user ID if available
             let userId = null;
             try {
                 const supabaseAuth = localStorage.getItem('sb-srnelrdpqkcntbgudyto-auth-token');
@@ -60,8 +56,9 @@
                 created_at: new Date().toISOString()
             };
 
-            // Use fetch with keepalive for reliability
-            await fetch(CONFIG.API_URL, {
+            console.log('📡 Reporting error to Supabase...', payload.message);
+
+            const response = await fetch(CONFIG.API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -72,23 +69,42 @@
                 body: JSON.stringify(payload),
                 keepalive: true
             });
+
+            if (!response.ok) {
+                console.error('❌ Failed to report error:', response.status, response.statusText);
+            } else {
+                console.log('✅ Error reported successfully');
+            }
         } catch (err) {
-            // Silently fail
+            console.error('❌ Error Tracker Network Error:', err);
         }
     }
 
     // 1. Capture JS Runtime Errors
-    window.onerror = function(message, source, lineno, colno, error) {
-        reportError({
-            type: 'js',
-            message: message,
-            file_name: source,
-            line_number: lineno,
-            column_number: colno,
-            stack_trace: error ? error.stack : null
-        });
-        return false;
-    };
+    window.addEventListener('error', function(event) {
+        if (event.error) {
+            reportError({
+                type: 'js',
+                message: event.message,
+                file_name: event.filename,
+                line_number: event.lineno,
+                column_number: event.colno,
+                stack_trace: event.error.stack
+            });
+        } else {
+            // Resource errors (img, script, etc)
+            const target = event.target || event.srcElement;
+            if (target instanceof HTMLElement) {
+                const url = target.src || target.href;
+                reportError({
+                    type: 'network',
+                    message: `Failed to load resource: ${target.tagName} (${url})`,
+                    file_name: url,
+                    stack_trace: `Element: ${target.outerHTML.substring(0, 200)}`
+                });
+            }
+        }
+    }, true);
 
     // 2. Capture Unhandled Promise Rejections
     window.addEventListener('unhandledrejection', function(event) {
@@ -101,32 +117,18 @@
         });
     });
 
-    // 3. Capture Resource Loading Errors (img, script, link)
-    window.addEventListener('error', function(event) {
-        const target = event.target || event.srcElement;
-        const isElement = target instanceof HTMLElement;
-        
-        if (isElement) {
-            const url = target.src || target.href;
-            reportError({
-                type: 'network',
-                message: `Failed to load resource: ${target.tagName} (${url})`,
-                file_name: url,
-                stack_trace: `Element: ${target.outerHTML.substring(0, 200)}`
-            });
-        }
-    }, true); // Use capture phase to catch resource errors
-
-    // 4. Capture Fetch/XHR Errors (including 4xx and 5xx)
+    // 3. Capture Fetch Errors (including 4xx and 5xx)
     const originalFetch = window.fetch;
     window.fetch = async function(...args) {
         try {
             const response = await originalFetch.apply(this, args);
-            if (!response.ok) {
+            // Don't report errors for our own logging API to avoid infinite loops
+            const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+            if (!response.ok && !url.includes('site_errors')) {
                 reportError({
                     type: 'network',
                     message: `HTTP Error ${response.status}: ${response.statusText}`,
-                    file_name: typeof args[0] === 'string' ? args[0] : args[0].url,
+                    file_name: url,
                     stack_trace: `Method: ${args[1]?.method || 'GET'}`
                 });
             }
@@ -142,5 +144,5 @@
         }
     };
 
-    console.log('🚀 Enhanced Error Tracker initialized');
+    console.log('🚀 Final Error Tracker initialized and ready');
 })();
