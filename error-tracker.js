@@ -1,5 +1,5 @@
 /**
- * Centralized Error Logging System - Frontend Tracker
+ * Centralized Error Logging System - Frontend Tracker (Enhanced)
  * Project: mad3oom.online
  * Author: Senior Full-Stack Engineer (Manus)
  */
@@ -9,15 +9,16 @@
     const CONFIG = {
         API_URL: 'https://srnelrdpqkcntbgudyto.supabase.co/rest/v1/site_errors',
         API_KEY: 'sb_publishable_0pvB8_xD0txjdJBkYqXMyg__jKMw71W',
-        DEBOUNCE_MS: 1000,
-        MAX_ERRORS_PER_SESSION: 50,
+        DEBOUNCE_MS: 500, // Reduced for better capture
+        MAX_ERRORS_PER_SESSION: 100,
         IGNORE_PATTERNS: [
             /extensions\//i,
             /chrome-extension:/i,
             /moz-extension:/i,
             /safari-extension:/i,
             /top\.GLOBALS/i,
-            /originalPrompt/i
+            /originalPrompt/i,
+            /Clarity/i // Ignore Microsoft Clarity noise if any
         ]
     };
 
@@ -34,17 +35,14 @@
         if (errorCount >= CONFIG.MAX_ERRORS_PER_SESSION) return;
 
         // Ignore browser extensions and common noise
-        if (CONFIG.IGNORE_PATTERNS.some(pattern => 
-            pattern.test(errorData.message) || 
-            pattern.test(errorData.file_name) || 
-            pattern.test(errorData.stack_trace)
-        )) return;
+        const searchString = `${errorData.message} ${errorData.file_name} ${errorData.stack_trace}`;
+        if (CONFIG.IGNORE_PATTERNS.some(pattern => pattern.test(searchString))) return;
 
         errorCount++;
         lastErrorTime = now;
 
         try {
-            // Get current user ID if available (from localStorage or global state)
+            // Get current user ID if available
             let userId = null;
             try {
                 const supabaseAuth = localStorage.getItem('sb-srnelrdpqkcntbgudyto-auth-token');
@@ -62,14 +60,7 @@
                 created_at: new Date().toISOString()
             };
 
-            // Use Beacon API if available for better performance on page unload
-            if (navigator.sendBeacon) {
-                const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-                const success = navigator.sendBeacon(CONFIG.API_URL, blob);
-                if (success) return;
-            }
-
-            // Fallback to fetch
+            // Use fetch with keepalive for reliability
             await fetch(CONFIG.API_URL, {
                 method: 'POST',
                 headers: {
@@ -78,11 +69,11 @@
                     'Authorization': `Bearer ${CONFIG.API_KEY}`,
                     'Prefer': 'return=minimal'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                keepalive: true
             });
         } catch (err) {
-            // Silently fail to avoid infinite loops
-            console.warn('Error Tracker failed to report:', err);
+            // Silently fail
         }
     }
 
@@ -96,7 +87,7 @@
             column_number: colno,
             stack_trace: error ? error.stack : null
         });
-        return false; // Let the error propagate to console
+        return false;
     };
 
     // 2. Capture Unhandled Promise Rejections
@@ -110,19 +101,46 @@
         });
     });
 
-    // 3. Capture Network Errors (Optional/Enhanced)
+    // 3. Capture Resource Loading Errors (img, script, link)
+    window.addEventListener('error', function(event) {
+        const target = event.target || event.srcElement;
+        const isElement = target instanceof HTMLElement;
+        
+        if (isElement) {
+            const url = target.src || target.href;
+            reportError({
+                type: 'network',
+                message: `Failed to load resource: ${target.tagName} (${url})`,
+                file_name: url,
+                stack_trace: `Element: ${target.outerHTML.substring(0, 200)}`
+            });
+        }
+    }, true); // Use capture phase to catch resource errors
+
+    // 4. Capture Fetch/XHR Errors (including 4xx and 5xx)
     const originalFetch = window.fetch;
-    window.fetch = function() {
-        return originalFetch.apply(this, arguments).catch(err => {
+    window.fetch = async function(...args) {
+        try {
+            const response = await originalFetch.apply(this, args);
+            if (!response.ok) {
+                reportError({
+                    type: 'network',
+                    message: `HTTP Error ${response.status}: ${response.statusText}`,
+                    file_name: typeof args[0] === 'string' ? args[0] : args[0].url,
+                    stack_trace: `Method: ${args[1]?.method || 'GET'}`
+                });
+            }
+            return response;
+        } catch (err) {
             reportError({
                 type: 'network',
                 message: `Fetch failed: ${err.message}`,
-                file_name: arguments[0],
+                file_name: typeof args[0] === 'string' ? args[0] : args[0].url,
                 stack_trace: err.stack
             });
             throw err;
-        });
+        }
     };
 
-    console.log('🚀 Error Tracker initialized');
+    console.log('🚀 Enhanced Error Tracker initialized');
 })();
