@@ -248,66 +248,82 @@
     <script type="module">
         import { requireAuth } from './auth-client.js';
         import { initCustomerSidebar } from './assets/js/customer-sidebar.js';
-        import { initAdminSidebar } from './assets/js/admin-sidebar.js';
+        import { initSidebar as initAdminSidebar } from './assets/js/admin/sidebar.js';
         import { submitSuggestion } from './suggestions-service.js';
 
         async function init() {
-            const user = await requireAuth();
-            if (!user) return;
+            try {
+                const user = await requireAuth();
+                if (!user) return;
 
-            // التحقق من نوع المستخدم لتحميل القائمة الجانبية المناسبة
-            if (user.role === 'admin') {
-                initAdminSidebar();
-            } else {
-                initCustomerSidebar();
-            }
-
-            // منطق النافذة المنبثقة
-            const modal = document.getElementById('suggestionModal');
-            const openBtn = document.getElementById('openSuggestionModal');
-            const closeBtns = document.querySelectorAll('.close-modal');
-            const form = document.getElementById('suggestionForm');
-
-            openBtn.onclick = () => modal.classList.add('active');
-            
-            closeBtns.forEach(btn => {
-                btn.onclick = () => modal.classList.remove('active');
-            });
-
-            window.onclick = (e) => {
-                if (e.target === modal) modal.classList.remove('active');
-            };
-
-            // إرسال النموذج
-            form.onsubmit = async (e) => {
-                e.preventDefault();
-                const submitBtn = form.querySelector('button[type="submit"]');
-                const originalText = submitBtn.textContent;
-                
-                try {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'جاري الإرسال...';
-
-                    await submitSuggestion({
-                        title: document.getElementById('suggestionTitle').value,
-                        category: document.getElementById('suggestionCategory').value,
-                        description: document.getElementById('suggestionDescription').value
-                    });
-
-                    alert('شكراً لك! تم استلام اقتراحك بنجاح وسيقوم فريقنا بمراجعته.');
-                    modal.classList.remove('active');
-                    form.reset();
-                } catch (err) {
-                    console.error('Error submitting suggestion:', err);
-                    alert('عذراً، حدث خطأ أثناء إرسال الاقتراح. يرجى المحاولة مرة أخرى.');
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
+                // التحقق من نوع المستخدم لتحميل القائمة الجانبية المناسبة
+                if (user.role === 'admin') {
+                    initAdminSidebar();
+                } else {
+                    initCustomerSidebar();
                 }
-            };
+
+                // منطق النافذة المنبثقة
+                const modal = document.getElementById('suggestionModal');
+                const openBtn = document.getElementById('openSuggestionModal');
+                const closeBtns = document.querySelectorAll('.close-modal');
+                const form = document.getElementById('suggestionForm');
+
+                if (openBtn) {
+                    openBtn.onclick = () => {
+                        console.log('Opening modal...');
+                        modal.classList.add('active');
+                    };
+                }
+                
+                closeBtns.forEach(btn => {
+                    btn.onclick = () => modal.classList.remove('active');
+                });
+
+                window.onclick = (e) => {
+                    if (e.target === modal) modal.classList.remove('active');
+                };
+
+                // إرسال النموذج
+                if (form) {
+                    form.onsubmit = async (e) => {
+                        e.preventDefault();
+                        const submitBtn = form.querySelector('button[type="submit"]');
+                        const originalText = submitBtn.textContent;
+                        
+                        try {
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'جاري الإرسال...';
+
+                            await submitSuggestion({
+                                title: document.getElementById('suggestionTitle').value,
+                                category: document.getElementById('suggestionCategory').value,
+                                description: document.getElementById('suggestionDescription').value
+                            });
+
+                            alert('شكراً لك! تم استلام اقتراحك بنجاح وسيقوم فريقنا بمراجعته.');
+                            modal.classList.remove('active');
+                            form.reset();
+                        } catch (err) {
+                            console.error('Error submitting suggestion:', err);
+                            alert('عذراً، حدث خطأ أثناء إرسال الاقتراح. يرجى المحاولة مرة أخرى.');
+                        } finally {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = originalText;
+                        }
+                    };
+                }
+            } catch (err) {
+                console.error('Initialization error:', err);
+            }
         }
 
-        init();
+        // التأكد من تحميل DOM قبل البدء
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 </html>
