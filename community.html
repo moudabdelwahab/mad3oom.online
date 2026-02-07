@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مجتمع مدعوم - منصة مدعوم</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme-preference') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch(e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <style>
+        .community-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .community-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 3rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            border-radius: 1.5rem;
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+        .community-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .community-card {
+            background: var(--color-surface);
+            padding: 2rem;
+            border-radius: 1.25rem;
+            border: 1px solid var(--color-border);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .community-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--color-accent);
+        }
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+        .btn-community {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.75rem 2rem;
+            background: var(--color-primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+        .btn-community:hover {
+            background: var(--color-accent);
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+
+    <main class="admin-main">
+        <div class="community-container">
+            <div class="community-header">
+                <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;">مجتمع مدعوم</h1>
+                <p style="font-size: 1.2rem; opacity: 0.9;">تواصل، تعلم، وتطور مع نخبة من الخبراء والمستخدمين في منصة مدعوم</p>
+            </div>
+
+            <div class="community-grid">
+                <div class="community-card">
+                    <span class="card-icon">💬</span>
+                    <h3>منتدى النقاش</h3>
+                    <p style="color: var(--color-text-secondary); margin-top: 1rem;">شارك تجاربك واطرح أسئلتك في منتدى النقاش العام للمنصة.</p>
+                    <a href="#" class="btn-community">دخول المنتدى</a>
+                </div>
+
+                <div class="community-card">
+                    <span class="card-icon">📚</span>
+                    <h3>قاعدة المعرفة</h3>
+                    <p style="color: var(--color-text-secondary); margin-top: 1rem;">دروس تعليمية ومقالات تقنية لمساعدتك في استخدام المنصة باحترافية.</p>
+                    <a href="#" class="btn-community">تصفح المقالات</a>
+                </div>
+
+                <div class="community-card">
+                    <span class="card-icon">🚀</span>
+                    <h3>التحديثات القادمة</h3>
+                    <p style="color: var(--color-text-secondary); margin-top: 1rem;">كن أول من يعرف عن الميزات الجديدة والتحديثات المستقبلية للمنصة.</p>
+                    <a href="#" class="btn-community">مشاهدة الخارطة</a>
+                </div>
+            </div>
+
+            <div style="margin-top: 4rem; background: var(--color-muted); padding: 3rem; border-radius: 1.5rem; text-align: center;">
+                <h2>هل لديك اقتراح؟</h2>
+                <p style="color: var(--color-text-secondary); margin: 1rem 0 2rem;">نحن نقدر آراء مجتمعنا، ساهم في تطوير المنصة باقتراحاتك.</p>
+                <a href="/customer-dashboard.html" class="btn btn-primary">تقديم اقتراح جديد</a>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { requireAuth } from './auth-client.js';
+        import { initCustomerSidebar } from './assets/js/customer-sidebar.js';
+        import { initAdminSidebar } from './assets/js/admin-sidebar.js';
+
+        async function init() {
+            const user = await requireAuth();
+            if (!user) return;
+
+            // التحقق من نوع المستخدم لتحميل القائمة الجانبية المناسبة
+            if (user.role === 'admin') {
+                initAdminSidebar();
+            } else {
+                initCustomerSidebar();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
