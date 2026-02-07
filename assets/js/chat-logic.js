@@ -396,6 +396,33 @@ document.addEventListener('DOMContentLoaded', async () => {
                         link: 'chat-customer.html'
                     });
                 }
+
+                // --- آلية الذاكرة الذكية ---
+                // إذا كان الرد يدوي والذاكرة الذكية مفعلة، نقوم بحفظ الرسالة والرد في جدول الذاكرة
+                if (isManualMode && botSettings?.smart_memory_enabled) {
+                    try {
+                        // جلب آخر رسالة من العميل في هذه الجلسة
+                        const { data: lastUserMsg } = await supabase
+                            .from('chat_messages')
+                            .select('message_text')
+                            .eq('session_id', currentSessionId)
+                            .eq('is_admin_reply', false)
+                            .eq('is_bot_reply', false)
+                            .order('created_at', { ascending: false })
+                            .limit(1)
+                            .maybeSingle();
+
+                        if (lastUserMsg) {
+                            await supabase.from('chatbot_memory').insert({
+                                conversation_id: currentSessionId,
+                                user_message: lastUserMsg.message_text,
+                                admin_reply: text
+                            });
+                        }
+                    } catch (memErr) {
+                        console.error("Error saving to smart memory:", memErr);
+                    }
+                }
             }
 
             if (!isAdmin && !isManualMode) handleBotLogic(text);
@@ -435,7 +462,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(async () => {
             typingIndicator.style.display = 'none';
             let reply = "عذراً، لم أفهم طلبك جيداً. هل يمكنك التوضيح؟";
-            if (botSettings?.custom_replies) {
+            
+            // 1. البحث في الذاكرة الذكية أولاً (Long-term memory)
+            if (botSettings?.smart_memory_enabled) {
+                try {
+                    // البحث عن رسائل مشابهة في الذاكرة
+                    const { data: memoryMatches } = await supabase
+                        .from('chatbot_memory')
+                        .select('admin_reply')
+                        .ilike('user_message', `%${text}%`)
+                        .limit(1)
+                        .maybeSingle();
+                    
+                    if (memoryMatches) {
+                        reply = memoryMatches.admin_reply;
+                    } else if (botSettings?.custom_replies) {
+                        // 2. إذا لم يوجد في الذاكرة، نستخدم الردود المخصصة التقليدية
+                        const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
+                        if (matched) reply = matched.reply;
+                    }
+                } catch (err) {
+                    console.error("Error searching smart memory:", err);
+                }
+            } else if (botSettings?.custom_replies) {
+                // إذا كانت الذاكرة معطلة، نستخدم الردود المخصصة فقط
                 const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
                 if (matched) reply = matched.reply;
             }
@@ -467,8 +517,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!botSettings) await loadBotSettings();
         const enabledCheck = document.getElementById('botEnabled');
         const welcomeInput = document.getElementById('welcomeMessage');
+        const smartMemoryCheck = document.getElementById('smartMemoryEnabled');
         if (enabledCheck && botSettings) enabledCheck.checked = botSettings.bot_enabled;
         if (welcomeInput && botSettings) welcomeInput.value = botSettings.welcome_message;
+        if (smartMemoryCheck && botSettings) smartMemoryCheck.checked = botSettings.smart_memory_enabled;
     }
 
     function setupTestChat() {

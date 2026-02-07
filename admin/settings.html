@@ -231,6 +231,41 @@
                 </form>
             </section>
 
+            <!-- Smart Memory Section -->
+            <section class="settings-section">
+                <h2>الذاكرة الذكية للبوت</h2>
+                <p style="margin-bottom: 1.5rem; color: #666;">تفعيل الذاكرة الذكية يجعل البوت يتعلم من ردود الأدمن الفعلية ويحسن جودة الردود تلقائياً.</p>
+                
+                <div class="form-group" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                    <label style="margin-bottom: 0; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+                        <input type="checkbox" id="smartMemoryEnabled" style="width: 22px; height: 22px;">
+                        تفعيل الذاكرة الذكية (Smart Memory)
+                    </label>
+                </div>
+
+                <div id="memoryHistoryContainer" style="display: none;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--color-primary);">محفوظات الذاكرة</h3>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 600px;">
+                            <thead>
+                                <tr style="background: #f1f5f9; text-align: right;">
+                                    <th style="padding: 12px; border: 1px solid #e2e8f0;">رسالة العميل</th>
+                                    <th style="padding: 12px; border: 1px solid #e2e8f0;">رد الأدمن (الذاكرة)</th>
+                                    <th style="padding: 12px; border: 1px solid #e2e8f0; width: 100px;">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="memoryTableBody">
+                                <!-- سيتم تحميل البيانات هنا -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1.5rem;">
+                    <button type="button" class="btn-save" id="saveSmartMemoryBtn">حفظ إعدادات الذاكرة</button>
+                </div>
+            </section>
+
             <!-- Broadcast Notifications Section -->
             <section class="settings-section">
                 <h2>إرسال إشعار جماعي</h2>

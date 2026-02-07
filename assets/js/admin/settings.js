@@ -232,6 +232,134 @@ function setupEventListeners() {
         };
     }
 
+    // Smart Memory Logic
+    const smartMemoryEnabled = document.getElementById('smartMemoryEnabled');
+    const memoryHistoryContainer = document.getElementById('memoryHistoryContainer');
+    const memoryTableBody = document.getElementById('memoryTableBody');
+    const saveSmartMemoryBtn = document.getElementById('saveSmartMemoryBtn');
+
+    async function loadSmartMemorySettings() {
+        try {
+            const { data: botSettings } = await supabase.from('bot_settings').select('smart_memory_enabled').limit(1).maybeSingle();
+            if (botSettings) {
+                smartMemoryEnabled.checked = botSettings.smart_memory_enabled;
+                if (smartMemoryEnabled.checked) {
+                    memoryHistoryContainer.style.display = 'block';
+                    loadMemoryHistory();
+                    subscribeToMemoryChanges();
+                }
+            }
+        } catch (error) {
+            console.error('Error loading smart memory settings:', error);
+        }
+    }
+
+    async function loadMemoryHistory() {
+        try {
+            const { data: memory, error } = await supabase
+                .from('chatbot_memory')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (error) throw error;
+            
+            renderMemoryTable(memory);
+        } catch (error) {
+            console.error('Error loading memory history:', error);
+        }
+    }
+
+    function renderMemoryTable(memory) {
+        if (!memoryTableBody) return;
+        memoryTableBody.innerHTML = '';
+        
+        if (!memory || memory.length === 0) {
+            memoryTableBody.innerHTML = '<tr><td colspan="3" style="padding: 20px; text-align: center; color: #888;">لا توجد بيانات في الذاكرة حالياً.</td></tr>';
+            return;
+        }
+
+        memory.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.id = `memory-row-${item.id}`;
+            tr.innerHTML = `
+                <td style="padding: 12px; border: 1px solid #e2e8f0;">${item.user_message}</td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0;">
+                    <textarea class="form-control memory-edit-input" data-id="${item.id}" style="min-height: 60px; font-size: 0.85rem;">${item.admin_reply}</textarea>
+                </td>
+                <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                    <button class="btn-delete-memory" data-id="${item.id}" style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">حذف</button>
+                </td>
+            `;
+            memoryTableBody.appendChild(tr);
+        });
+
+        // إضافة أحداث الحذف والتعديل
+        document.querySelectorAll('.btn-delete-memory').forEach(btn => {
+            btn.onclick = async () => {
+                if (confirm('هل أنت متأكد من حذف هذا السجل من الذاكرة؟')) {
+                    const id = btn.dataset.id;
+                    const { error } = await supabase.from('chatbot_memory').delete().eq('id', id);
+                    if (!error) {
+                        document.getElementById(`memory-row-${id}`).remove();
+                        showAlert('تم حذف السجل بنجاح', 'success');
+                    }
+                }
+            };
+        });
+
+        document.querySelectorAll('.memory-edit-input').forEach(input => {
+            input.onchange = async () => {
+                const id = input.dataset.id;
+                const newReply = input.value.trim();
+                const { error } = await supabase.from('chatbot_memory').update({ admin_reply: newReply }).eq('id', id);
+                if (!error) {
+                    showAlert('تم تحديث الذاكرة بنجاح', 'success');
+                }
+            };
+        });
+    }
+
+    function subscribeToMemoryChanges() {
+        supabase.channel('chatbot_memory_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'chatbot_memory' }, (payload) => {
+                loadMemoryHistory(); // إعادة تحميل الجدول عند حدوث أي تغيير
+            })
+            .subscribe();
+    }
+
+    if (smartMemoryEnabled) {
+        smartMemoryEnabled.onchange = () => {
+            memoryHistoryContainer.style.display = smartMemoryEnabled.checked ? 'block' : 'none';
+            if (smartMemoryEnabled.checked) loadMemoryHistory();
+        };
+    }
+
+    if (saveSmartMemoryBtn) {
+        saveSmartMemoryBtn.onclick = async () => {
+            saveSmartMemoryBtn.disabled = true;
+            const originalText = saveSmartMemoryBtn.textContent;
+            saveSmartMemoryBtn.textContent = 'جاري الحفظ...';
+            
+            try {
+                const { error } = await supabase
+                    .from('bot_settings')
+                    .update({ smart_memory_enabled: smartMemoryEnabled.checked })
+                    .not('id', 'is', null); // تحديث السجل الموجود
+                
+                if (error) throw error;
+                showAlert('تم حفظ إعدادات الذاكرة الذكية بنجاح', 'success');
+            } catch (error) {
+                console.error('Error saving memory settings:', error);
+                showAlert('فشل حفظ الإعدادات: ' + error.message, 'error');
+            } finally {
+                saveSmartMemoryBtn.disabled = false;
+                saveSmartMemoryBtn.textContent = originalText;
+            }
+        };
+    }
+
+    loadSmartMemorySettings();
+
     // Avatar Upload
     document.getElementById('avatarInput').addEventListener('change', async (e) => {
         const file = e.target.files[0];
