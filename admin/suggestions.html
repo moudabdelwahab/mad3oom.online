@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الاقتراحات - لوحة الإدارة</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .suggestion-card {
+            background: var(--color-surface);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+        .suggestion-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--color-accent);
+        }
+        .category-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: var(--color-muted);
+            color: var(--color-text-secondary);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-reviewed { background: #d1ecf1; color: #0c5460; }
+        .status-implemented { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+
+    <main class="admin-main">
+        <header class="page-header">
+            <h1>إدارة الاقتراحات</h1>
+            <p>عرض ومتابعة اقتراحات المجتمع لتطوير المنصة</p>
+        </header>
+
+        <div id="suggestionsList" style="margin-top: 2rem;">
+            <div style="text-align: center; padding: 3rem; color: var(--color-text-secondary);">
+                جاري تحميل الاقتراحات...
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { requireAuth } from '../auth-client.js';
+        import { initAdminSidebar } from '../assets/js/admin-sidebar.js';
+        import { fetchSuggestions } from '../suggestions-service.js';
+
+        async function init() {
+            const user = await requireAuth('admin');
+            if (!user) return;
+
+            initAdminSidebar();
+            await loadSuggestions();
+        }
+
+        async function loadSuggestions() {
+            const list = document.getElementById('suggestionsList');
+            try {
+                const suggestions = await fetchSuggestions();
+                
+                if (suggestions.length === 0) {
+                    list.innerHTML = `
+                        <div style="text-align: center; padding: 4rem 2rem; color: var(--color-text-secondary);">
+                            <div style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;">💡</div>
+                            <p>لا توجد اقتراحات مقدمة حتى الآن</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const categoryMap = {
+                    feature: 'ميزة جديدة',
+                    improvement: 'تحسين حالي',
+                    design: 'تصميم وواجهة',
+                    other: 'أخرى'
+                };
+
+                list.innerHTML = suggestions.map(s => `
+                    <div class="suggestion-card">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                            <div>
+                                <span class="category-badge">${categoryMap[s.category] || s.category}</span>
+                                <h3 style="margin: 0.5rem 0 0.25rem 0;">${s.title}</h3>
+                                <div style="font-size: 0.85rem; color: var(--color-text-secondary);">
+                                    بواسطة: <strong>${s.profiles?.full_name || 'مستخدم'}</strong> | ${new Date(s.created_at).toLocaleDateString('ar-EG')}
+                                </div>
+                            </div>
+                            <span class="status-badge status-${s.status}">${s.status === 'pending' ? 'قيد المراجعة' : s.status}</span>
+                        </div>
+                        <p style="line-height: 1.6; color: var(--color-text); white-space: pre-wrap;">${s.description}</p>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading suggestions:', err);
+                list.innerHTML = '<div style="color: var(--color-danger); text-align: center; padding: 2rem;">فشل تحميل الاقتراحات. يرجى التأكد من وجود جدول suggestions في قاعدة البيانات.</div>';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
