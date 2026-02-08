@@ -29,10 +29,27 @@
             width: 20px;
             height: 20px;
         }
-        input[type="password"], input[type="text"] {
+        input[type="password"], input[type="text"], input[type="email"] {
             width: 100%;
             padding-left: 40px;
         }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        .username-status {
+            font-size: 0.85rem;
+            margin-top: 4px;
+            display: none;
+        }
+        .username-available { color: #10b981; }
+        .username-taken { color: #ef4444; }
     </style>
     <script>
         (function() {
@@ -93,6 +110,21 @@
             </div>
 
             <form id="signUpForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">الاسم الأول</label>
+                        <input type="text" id="firstName" placeholder="الاسم الأول" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">الاسم الأخير</label>
+                        <input type="text" id="lastName" placeholder="الاسم الأخير" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="username">اسم المستخدم</label>
+                    <input type="text" id="username" placeholder="اختر اسم مستخدم فريد" required pattern="^[a-zA-Z0-9_]{3,20}$" title="يجب أن يتكون من 3-20 حرفاً أو رقماً أو شرطة سفلية">
+                    <div id="usernameStatus" class="username-status"></div>
+                </div>
                 <div class="form-group">
                     <label for="email">البريد الإلكتروني</label>
                     <input type="email" id="email" placeholder="أدخل بريدك الإلكتروني" required>
@@ -128,7 +160,7 @@
     </main>
 
     <script type="module">
-        import { signUp, getCurrentUser } from './auth-client.js';
+        import { signUp, checkUsernameAvailability } from './auth-client.js';
 
         const form = document.getElementById('signUpForm');
         const submitBtn = document.getElementById('signUpBtn');
@@ -137,6 +169,47 @@
         const errorMessage = document.getElementById('errorMessage');
         const errorText = document.getElementById('errorText');
         const successMessage = document.getElementById('successMessage');
+        const usernameInput = document.getElementById('username');
+        const usernameStatus = document.getElementById('usernameStatus');
+
+        let isUsernameAvailable = false;
+        let debounceTimer;
+
+        // التحقق من توفر اسم المستخدم
+        usernameInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            const username = usernameInput.value.trim();
+            
+            if (username.length < 3) {
+                usernameStatus.style.display = 'none';
+                isUsernameAvailable = false;
+                return;
+            }
+
+            usernameStatus.style.display = 'block';
+            usernameStatus.className = 'username-status';
+            usernameStatus.textContent = 'جاري التحقق...';
+
+            debounceTimer = setTimeout(async () => {
+                const { available, error } = await checkUsernameAvailability(username);
+                
+                if (error) {
+                    usernameStatus.textContent = 'خطأ في التحقق';
+                    isUsernameAvailable = false;
+                    return;
+                }
+
+                if (available) {
+                    usernameStatus.textContent = 'اسم المستخدم متاح';
+                    usernameStatus.classList.add('username-available');
+                    isUsernameAvailable = true;
+                } else {
+                    usernameStatus.textContent = 'اسم المستخدم محجوز مسبقاً';
+                    usernameStatus.classList.add('username-taken');
+                    isUsernameAvailable = false;
+                }
+            }, 500);
+        });
 
         // ميزة إظهار كلمة المرور
         document.querySelectorAll('.password-toggle').forEach(button => {
@@ -163,9 +236,19 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const username = document.getElementById('username').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const passwordConfirm = document.getElementById('passwordConfirm').value;
+
+            if (!isUsernameAvailable) {
+                errorMessage.style.display = 'block';
+                errorText.textContent = 'يرجى اختيار اسم مستخدم متاح';
+                usernameInput.focus();
+                return;
+            }
 
             if (password !== passwordConfirm) {
                 errorMessage.style.display = 'block';
@@ -177,7 +260,12 @@
             errorMessage.style.display = 'none';
 
             try {
-                const { data, error } = await signUp(email, password);
+                const { data, error } = await signUp(email, password, {
+                    first_name: firstName,
+                    last_name: lastName,
+                    username: username
+                });
+                
                 if (error) throw error;
 
                 successMessage.style.display = 'block';

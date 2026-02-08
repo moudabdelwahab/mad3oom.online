@@ -27,7 +27,27 @@ export function isUserBanned(profile) {
 /**
  * تسجيل الدخول
  */
-export async function signIn(email, password) {
+export async function signIn(identifier, password) {
+    let email = identifier;
+
+    // إذا لم يكن المعرف بريداً إلكترونياً، نفترض أنه اسم مستخدم ونبحث عن البريد المرتبط به
+    if (!identifier.includes('@')) {
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('username', identifier)
+            .maybeSingle();
+        
+        if (profile?.email) {
+            email = profile.email;
+        } else {
+            return {
+                data: null,
+                error: { message: 'اسم المستخدم غير موجود.' }
+            };
+        }
+    }
+
     const result = await supabase.auth.signInWithPassword({ email, password });
 
     if (result.error) return result;
@@ -126,8 +146,53 @@ export async function signIn(email, password) {
 /**
  * إنشاء حساب
  */
-export async function signUp(email, password) {
-    return await supabase.auth.signUp({ email, password });
+export async function signUp(email, password, metadata = {}) {
+    const result = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+            data: metadata
+        }
+    });
+
+    // إذا تم إنشاء الحساب بنجاح، نقوم بتحديث البروفايل بالبيانات الإضافية
+    // ملاحظة: عادة ما يتم هذا عبر Trigger في قاعدة البيانات، ولكن سنقوم به هنا للتأكيد
+    if (result.data?.user && !result.error) {
+        try {
+            await supabase
+                .from('profiles')
+                .update({
+                    first_name: metadata.first_name,
+                    last_name: metadata.last_name,
+                    username: metadata.username,
+                    email: email // لضمان وجود الإيميل في جدول البروفايل للبحث
+                })
+                .eq('id', result.data.user.id);
+        } catch (e) {
+            console.error('Error updating profile metadata:', e);
+        }
+    }
+
+    return result;
+}
+
+/**
+ * التحقق من توفر اسم المستخدم
+ */
+export async function checkUsernameAvailability(username) {
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('username', username)
+            .maybeSingle();
+        
+        if (error && error.code !== 'PGRST116') throw error;
+        
+        return { available: !data, error: null };
+    } catch (error) {
+        return { available: false, error };
+    }
 }
 
 /**

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول - منصة مدعوم</title>
-    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="icon" type="image/svg+xml" href="/assets/images/logo.png">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="auth.css">
 
@@ -53,52 +53,6 @@
     
     <script src="theme-manager.js" defer></script>
 </head>
-<!-- Maintenance Popup -->
-<!-- <div id="maintenancePopup">
-  <div class="popup-box">
-    <h2>🚧 صيانة مؤقتة</h2>
-    <p>
-      نود إعلامكم أن الموقع قيد الصيانة حاليًا لإجراء بعض التحسينات والتحديثات الهامة.<br>
-      سيتم إعادة تشغيل الموقع في أقرب وقت ممكن.<br><br>
-      شكرًا لتفهمكم.
-    </p>
-  </div>
-</div>
-
-<style>
-  #maintenancePopup {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999999;
-  }
-
-  .popup-box {
-    background: #ffffff;
-    padding: 30px;
-    max-width: 420px;
-    width: 90%;
-    border-radius: 12px;
-    text-align: center;
-    font-family: Arial, sans-serif;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-  }
-
-  .popup-box h2 {
-    margin-bottom: 15px;
-    color: #d97706;
-  }
-
-  .popup-box p {
-    color: #333;
-    line-height: 1.7;
-    font-size: 15px;
-  }
-</style>
--->
 <body class="auth-wrapper">
 
 <nav class="navbar">
@@ -154,8 +108,8 @@
 
         <form id="signInForm">
             <div class="form-group">
-                <label for="email">البريد الإلكتروني</label>
-                <input type="email" id="email" placeholder="أدخل بريدك الإلكتروني" required>
+                <label for="identifier">البريد الإلكتروني أو اسم المستخدم</label>
+                <input type="text" id="identifier" placeholder="أدخل بريدك الإلكتروني أو اسم المستخدم" required>
             </div>
 
             <div class="form-group">
@@ -241,12 +195,12 @@ form.addEventListener('submit', async (e) => {
     errorMessage.style.display = 'none';
     resendBtn.style.display = 'none';
 
-    const email = document.getElementById('email').value;
+    const identifier = document.getElementById('identifier').value;
     const password = passwordInput.value;
 
     try {
-        console.log('[AuthDebug] Attempting sign in for:', email);
-        const result = await signIn(email, password);
+        console.log('[AuthDebug] Attempting sign in for:', identifier);
+        const result = await signIn(identifier, password);
         if (result.error) throw result.error;
 
         if (result.requires2FA) {
@@ -288,12 +242,18 @@ form.addEventListener('submit', async (e) => {
             resendBtn.onclick = async () => {
                 resendBtn.disabled = true;
                 resendBtn.textContent = 'جاري إرسال رسالة التأكيد...';
-                await supabase.auth.resend({ type: 'signup', email });
+                // في حالة تسجيل الدخول باسم المستخدم، نحتاج للبريد الإلكتروني لإعادة الإرسال
+                let emailToSend = identifier;
+                if (!identifier.includes('@')) {
+                    const { data: profile } = await supabase.from('profiles').select('email').eq('username', identifier).maybeSingle();
+                    if (profile?.email) emailToSend = profile.email;
+                }
+                await supabase.auth.resend({ type: 'signup', email: emailToSend });
                 resendBtn.textContent = 'تم إرسال رسالة التأكيد 📩';
             };
 
         } else if (err.message === 'Invalid login credentials') {
-            errorText.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+            errorText.textContent = 'البريد الإلكتروني/اسم المستخدم أو كلمة المرور غير صحيحة.';
         } else {
             // عرض الرسالة القادمة من auth-client.js (مثل رسائل الحظر المفصلة)
             errorText.style.whiteSpace = 'pre-line';
