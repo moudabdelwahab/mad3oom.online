@@ -268,11 +268,21 @@
                 
                 if (error) throw error;
 
+                // إخفاء النموذج وإظهار رسالة النجاح
+                form.style.display = 'none';
                 successMessage.style.display = 'block';
-                
-                setTimeout(() => {
-                    window.location.replace('customer-dashboard.html');
-                }, 2000);
+                successMessage.innerHTML = `
+                    <div style="text-align: center; padding: 1rem;">
+                        <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #10b981; margin-bottom: 1rem;">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <h3 style="margin-bottom: 0.5rem;">تم إنشاء الحساب بنجاح!</h3>
+                        <p>لقد أرسلنا رابط تأكيد إلى بريدك الإلكتروني: <strong>${email}</strong></p>
+                        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">يرجى التحقق من بريدك وتفعيل الحساب لتتمكن من تسجيل الدخول.</p>
+                        <a href="sign-in.html" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block; text-decoration: none;">الانتقال لتسجيل الدخول</a>
+                    </div>
+                `;
 
             } catch (err) {
                 errorMessage.style.display = 'block';

@@ -151,28 +151,15 @@ export async function signUp(email, password, metadata = {}) {
         email, 
         password,
         options: {
-            data: metadata
+            data: metadata,
+            emailRedirectTo: `${window.location.origin}/sign-in.html`
         }
     });
 
-    // إذا تم إنشاء الحساب بنجاح، نقوم بتحديث البروفايل بالبيانات الإضافية
-    // ملاحظة: عادة ما يتم هذا عبر Trigger في قاعدة البيانات، ولكن سنقوم به هنا للتأكيد
-    if (result.data?.user && !result.error) {
-        try {
-            await supabase
-                .from('profiles')
-                .update({
-                    first_name: metadata.first_name,
-                    last_name: metadata.last_name,
-                    username: metadata.username,
-                    email: email // لضمان وجود الإيميل في جدول البروفايل للبحث
-                })
-                .eq('id', result.data.user.id);
-        } catch (e) {
-            console.error('Error updating profile metadata:', e);
-        }
-    }
-
+    // ملاحظة: في Supabase، عند تفعيل تأكيد البريد، قد لا يتم إنشاء سجل في جدول profiles فوراً 
+    // إلا إذا كان هناك Trigger في قاعدة البيانات. البيانات الواردة في metadata سيتم تخزينها 
+    // في raw_user_meta_data داخل جدول auth.users تلقائياً.
+    
     return result;
 }
 

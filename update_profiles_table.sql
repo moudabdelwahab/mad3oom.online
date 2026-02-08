@@ -23,3 +23,28 @@ ALTER TABLE profiles REPLICA IDENTITY FULL;
 
 -- إضافة تعليق للتوضيح
 COMMENT ON COLUMN profiles.username IS 'اسم مستخدم فريد لكل عميل';
+
+-- دالة لإنشاء بروفايل تلقائياً عند تسجيل مستخدم جديد
+-- تقوم بجلب البيانات من metadata التي أرسلناها أثناء signUp
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, first_name, last_name, username, role)
+  VALUES (
+    new.id,
+    new.email,
+    new.raw_user_meta_data->>'first_name',
+    new.raw_user_meta_data->>'last_name',
+    new.raw_user_meta_data->>'username',
+    'customer'
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- إنشاء Trigger لتنفيذ الدالة عند إنشاء مستخدم في auth.users
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
