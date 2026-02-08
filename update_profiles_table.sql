@@ -21,6 +21,9 @@ END $$;
 -- تعيين هوية النسخة المتماثلة إلى FULL لضمان وصول جميع البيانات في Realtime
 ALTER TABLE profiles REPLICA IDENTITY FULL;
 
+-- التأكد من تفعيل Realtime لجدول profiles بشكل صريح
+ALTER TABLE profiles SET (realtime = true);
+
 -- إضافة تعليق للتوضيح
 COMMENT ON COLUMN profiles.username IS 'اسم مستخدم فريد لكل عميل';
 

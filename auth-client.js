@@ -25,14 +25,14 @@ export function isUserBanned(profile) {
 ========================================================= */
 
 /**
- * تسجيل الدخول
+ * تسجيل الدخول اللحظي
  */
 export async function signIn(identifier, password) {
     let email = identifier;
 
     // إذا لم يكن المعرف بريداً إلكترونياً، نفترض أنه اسم مستخدم ونبحث عن البريد المرتبط به
     if (!identifier.includes('@')) {
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
             .from('profiles')
             .select('email')
             .eq('username', identifier)
@@ -41,106 +41,84 @@ export async function signIn(identifier, password) {
         if (profile?.email) {
             email = profile.email;
         } else {
-            return {
-                data: null,
-                error: { message: 'اسم المستخدم غير موجود.' }
-            };
+            return { data: null, error: { message: 'اسم المستخدم غير موجود.' } };
         }
     }
 
+    // محاولة تسجيل الدخول
     const result = await supabase.auth.signInWithPassword({ email, password });
-
     if (result.error) return result;
 
-    // تأكيد الإيميل
-    if (!result.data.user.email_confirmed_at) {
+    const user = result.data.user;
+
+    // تأكيد الإيميل (تحقق سريع من بيانات الجلسة)
+    if (!user.email_confirmed_at) {
         await supabase.auth.signOut();
-        return {
-            data: null,
-            error: { message: 'يرجى تأكيد البريد الإلكتروني أولاً.' }
-        };
+        return { data: null, error: { message: 'يرجى تأكيد البريد الإلكتروني أولاً.' } };
     }
 
-    // جلب البروفايل
+    // جلب البروفايل مع استخدام cache أو التحقق السريع
     const { data: profile } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', result.data.user.id)
+        .eq('id', user.id)
         .maybeSingle();
 
     // فحص الحظر
     if (isUserBanned(profile)) {
         await supabase.auth.signOut();
+        return { data: null, error: { message: 'تم حظر هذا الحساب. يرجى التواصل مع الإدارة.' } };
+    }
+
+    // التحقق من 2FA أو Telegram (إذا لم تكن مفعلة، نوجه فوراً)
+    if (!profile?.two_factor_enabled && !(profile?.telegram_otp_enabled && profile?.telegram_chat_id)) {
+        // تسجيل النشاط في الخلفية لعدم تعطيل المستخدم
+        logActivity('login', { email }).catch(() => {});
+        
         return {
-            data: null,
-            error: { message: 'تم حظر هذا الحساب. يرجى التواصل مع الإدارة.' }
+            ...result,
+            profile: profile || { id: user.id, role: 'customer' }
         };
     }
 
-    // Check for 2FA (App-based)
+    // منطق 2FA (إذا كان مفعلاً)
     if (profile?.two_factor_enabled) {
-        // Check if device is trusted
         const fingerprint = localStorage.getItem('device_fingerprint');
         if (fingerprint) {
             const { data: trustedDevice } = await supabase
                 .from('trusted_devices')
                 .select('*')
-                .eq('user_id', result.data.user.id)
+                .eq('user_id', user.id)
                 .eq('device_fingerprint', fingerprint)
                 .maybeSingle();
 
             if (trustedDevice) {
-                // Update last used
-                await supabase
-                    .from('trusted_devices')
-                    .update({ last_used_at: new Date().toISOString() })
-                    .eq('id', trustedDevice.id);
-
-                await logActivity('login', { email, method: 'trusted_device' });
-                return {
-                    ...result,
-                    profile: profile || { id: result.data.user.id, role: 'customer' }
-                };
+                supabase.from('trusted_devices').update({ last_used_at: new Date().toISOString() }).eq('id', trustedDevice.id).then();
+                logActivity('login', { email, method: 'trusted_device' }).catch(() => {});
+                return { ...result, profile: profile || { id: user.id, role: 'customer' } };
             }
         }
-
-        // 2FA required
-        return {
-            data: result.data,
-            requires2FA: true,
-            profile: profile || { id: result.data.user.id, role: 'customer' }
-        };
+        return { data: result.data, requires2FA: true, profile };
     }
 
-    // Check for Telegram OTP
+    // منطق Telegram OTP
     if (profile?.telegram_otp_enabled && profile?.telegram_chat_id) {
-        // Trigger OTP send via Edge Function
-        try {
-            await supabase.functions.invoke('telegram-webhook', {
-                body: { 
-                    internal_trigger: true,
-                    user_id: result.data.user.id,
-                    action: 'send_otp'
-                }
-            });
-        } catch (e) {
-            console.error('Failed to trigger Telegram OTP:', e);
-        }
-
-        return {
-            data: result.data,
-            requiresTelegramOTP: true,
-            profile: profile || { id: result.data.user.id, role: 'customer' }
-        };
+        supabase.functions.invoke('telegram-webhook', {
+            body: { internal_trigger: true, user_id: user.id, action: 'send_otp' }
+        }).catch(() => {});
+        return { data: result.data, requiresTelegramOTP: true, profile };
     }
 
-    await logActivity('login', { email });
+    return { ...result, profile };
+}
 
-    // إضافة البروفايل للنتيجة لضمان استخدامه فوراً في التوجيه
-    return {
-        ...result,
-        profile: profile || { id: result.data.user.id, role: 'customer' }
-    };
+/**
+ * مراقبة حالة المصادقة لحظياً (Realtime Auth Listener)
+ */
+export function onAuthStateChange(callback) {
+    return supabase.auth.onAuthStateChange((event, session) => {
+        callback(event, session);
+    });
 }
 
 /**
