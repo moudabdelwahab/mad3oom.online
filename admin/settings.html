@@ -3,133 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إعدادات الحساب - لوحة الإدارة</title>
+    <title>الإعدادات المتقدمة - لوحة الإدارة</title>
     <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="/robot.css">
     <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .settings-container {
-            max-width: 800px;
-            margin: 0 auto;
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            align-items: start;
         }
-        .settings-section {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        
+        .settings-nav {
+            background: var(--color-surface);
+            border-radius: 1.25rem;
+            border: 1px solid var(--color-border);
+            padding: 1rem;
+            position: sticky;
+            top: 100px;
+            box-shadow: var(--shadow-sm);
         }
-        .settings-section h2 {
-            font-size: 1.25rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid #eee;
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+        }
+        
+        .nav-link:hover {
+            background: var(--hover-bg);
             color: var(--color-primary);
         }
+        
+        .nav-link.active {
+            background: var(--color-primary);
+            color: white;
+        }
+        
+        .nav-link svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .settings-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .settings-card {
+            background: var(--color-surface);
+            border-radius: 1.25rem;
+            border: 1px solid var(--color-border);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .card-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--color-primary);
+        }
+        
+        .card-body {
+            padding: 2rem;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
         .form-group {
             margin-bottom: 1.5rem;
         }
+        
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+        
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--color-text-primary);
+            margin-bottom: 0.6rem;
+            font-weight: 700;
+            color: var(--color-text);
+            font-size: 0.95rem;
         }
+        
         .form-control {
             width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            padding: 0.85rem 1.2rem;
+            border: 2px solid var(--color-border);
+            border-radius: 0.75rem;
             font-family: inherit;
             font-size: 1rem;
-            transition: border-color 0.2s;
+            background: var(--color-background);
+            color: var(--color-text);
+            transition: all 0.2s;
         }
+        
         .form-control:focus {
             outline: none;
-            border-color: var(--color-primary);
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 4px rgba(0, 119, 204, 0.1);
         }
-        .avatar-upload {
+        
+        .avatar-section {
             display: flex;
             align-items: center;
             gap: 2rem;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
+            padding: 1.5rem;
+            background: var(--color-muted);
+            border-radius: 1rem;
         }
+        
         .avatar-preview {
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background: #f0f0f0;
+            background: var(--color-accent);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2.5rem;
             font-weight: 800;
-            color: var(--color-primary);
+            color: white;
             overflow: hidden;
-            border: 3px solid var(--color-primary);
+            border: 4px solid white;
+            box-shadow: var(--shadow-sm);
         }
+        
         .avatar-preview img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .upload-btn-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
+        
+        .switch-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem;
+            background: var(--color-muted);
+            border-radius: 1rem;
+            margin-bottom: 1rem;
         }
-        .btn-upload {
-            border: 2px solid #ddd;
-            color: #666;
-            background-color: white;
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .upload-btn-wrapper input[type=file] {
-            font-size: 100px;
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-        .btn-save {
-            background: var(--color-primary);
-            color: white;
-            border: none;
-            padding: 0.75rem 2rem;
-            border-radius: 8px;
+        
+        .switch-info h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
             font-weight: 700;
+        }
+        
+        .switch-info p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
             cursor: pointer;
-            transition: opacity 0.2s;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
         }
-        .btn-save:hover {
-            opacity: 0.9;
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
         }
-        .btn-save:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+        
+        input:checked + .slider {
+            background-color: var(--color-accent);
         }
+        
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        
         .alert {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
             display: none;
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
         }
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        
+        .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        @media (max-width: 1024px) {
+            .settings-grid { grid-template-columns: 1fr; }
+            .settings-nav { position: static; display: flex; overflow-x: auto; gap: 1rem; padding: 0.5rem; }
+            .nav-link { white-space: nowrap; margin-bottom: 0; }
+        }
+        
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -138,185 +261,263 @@
 
     <main class="admin-main">
         <header class="page-header">
-            <h1>إعدادات الحساب</h1>
-            <p>إدارة بياناتك الشخصية وتأمين حسابك</p>
+            <h1>الإعدادات المتقدمة</h1>
+            <p>تحكم كامل في حسابك الشخصي وإعدادات المنصة والمستخدمين</p>
         </header>
 
-        <div class="settings-container">
-            <div id="settingsAlert" class="alert"></div>
+        <div id="settingsAlert" class="alert"></div>
 
-            <!-- Profile Section -->
-            <section class="settings-section">
-                <h2>المعلومات الشخصية</h2>
-                <div class="avatar-upload">
-                    <div class="avatar-preview" id="avatarPreview">
-                        <span id="initialsDisplay">A</span>
-                    </div>
-                    <div class="upload-btn-wrapper">
-                        <button class="btn-upload">تغيير الصورة</button>
-                        <input type="file" id="avatarInput" accept="image/*" />
-                    </div>
-                </div>
+        <div class="settings-grid">
+            <!-- Sidebar Navigation -->
+            <nav class="settings-nav">
+                <a href="#profile" class="nav-link active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    الملف الشخصي
+                </a>
+                <a href="#security" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    الأمان والحماية
+                </a>
+                <a href="#system" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    إعدادات النظام
+                </a>
+                <a href="#users-control" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    التحكم بالمستخدمين
+                </a>
+                <a href="#bot" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    ذكاء البوت
+                </a>
+            </nav>
 
-                <form id="profileForm">
-                    <div class="form-group">
-                        <label for="fullName">الاسم الكامل</label>
-                        <input type="text" id="fullName" class="form-control" placeholder="أدخل اسمك الكامل">
-                    </div>
-                    <button type="submit" class="btn-save" id="saveProfileBtn">حفظ التغييرات</button>
-                </form>
-            </section>
-
-            <!-- Email Section -->
-            <section class="settings-section">
-                <h2>البريد الإلكتروني</h2>
-                <form id="emailForm">
-                    <div class="form-group">
-                        <label for="email">البريد الإلكتروني الحالي</label>
-                        <input type="email" id="email" class="form-control" readonly style="background: #f8f9fa;">
-                    </div>
-                    <div class="form-group">
-                        <label for="newEmail">البريد الإلكتروني الجديد</label>
-                        <input type="email" id="newEmail" class="form-control" placeholder="أدخل البريد الجديد">
-                    </div>
-                    <button type="submit" class="btn-save" id="saveEmailBtn">تحديث البريد</button>
-                </form>
-            </section>
-
-            <!-- Bot Settings Section -->
-            <section class="settings-section">
-                <h2>إعدادات البوت الذكي</h2>
-                <p style="margin-bottom: 1.5rem; color: #666;">يمكنك التحكم في سلوك البوت، ومراقبة محادثات العملاء والرد عليهم مباشرة من صفحة المحادثات.</p>
-                <a href="/chat-admin.html" class="btn-save" style="display: inline-block; text-decoration: none; text-align: center;">إدارة المحادثات والبوت</a>
-            </section>
-
-            <!-- Telegram OTP Section -->
-            <section class="settings-section">
-                <h2>إعدادات Telegram OTP</h2>
-                <p style="margin-bottom: 1.5rem; color: #666;">قم بربط حسابك بالتليجرام لتلقي رموز التحقق (OTP) عند تسجيل الدخول.</p>
+            <!-- Main Content Area -->
+            <div class="settings-content">
                 
-                <form id="telegramForm">
-                    <div class="form-group">
-                        <label for="telegramUsername">اسم مستخدم التليجرام (Telegram Username)</label>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <span style="align-self: center; background: #f0f0f0; padding: 0.75rem; border-radius: 8px 0 0 8px; border: 1px solid #ddd; border-right: none;">@</span>
-                            <input type="text" id="telegramUsername" class="form-control" style="border-radius: 0 8px 8px 0;" placeholder="username">
+                <!-- Profile Section -->
+                <section id="profile" class="settings-card">
+                    <div class="card-header">
+                        <h2>الملف الشخصي</h2>
+                        <button type="submit" form="profileForm" class="btn btn-primary btn-sm" id="saveProfileBtn">حفظ التغييرات</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="avatar-section">
+                            <div class="avatar-preview" id="avatarPreview">A</div>
+                            <div>
+                                <h3 style="margin: 0 0 0.5rem 0;">صورة الحساب</h3>
+                                <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: var(--color-text-secondary);">يفضل استخدام صورة مربعة بحجم 400x400 بكسل</p>
+                                <div style="position: relative; overflow: hidden; display: inline-block;">
+                                    <button class="btn btn-secondary btn-sm">رفع صورة جديدة</button>
+                                    <input type="file" id="avatarInput" accept="image/*" style="position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <form id="profileForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fullName">الاسم الكامل</label>
+                                    <input type="text" id="fullName" class="form-control" placeholder="أدخل اسمك الكامل">
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">البريد الإلكتروني</label>
+                                    <input type="email" id="email" class="form-control" readonly style="background: var(--color-muted); cursor: not-allowed;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="bio">نبذة تعريفية (تظهر في المحادثات)</label>
+                                <textarea id="bio" class="form-control" rows="3" placeholder="اكتب نبذة قصيرة عنك..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Security Section -->
+                <section id="security" class="settings-card">
+                    <div class="card-header">
+                        <h2>الأمان والحماية</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="passwordForm">
+                            <h3 style="font-size: 1.1rem; margin-bottom: 1.5rem;">تغيير كلمة المرور</h3>
+                            <div class="form-group">
+                                <label for="currentPassword">كلمة المرور الحالية</label>
+                                <input type="password" id="currentPassword" class="form-control" placeholder="••••••••">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="newPassword">كلمة المرور الجديدة</label>
+                                    <input type="password" id="newPassword" class="form-control" placeholder="••••••••">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirmPassword">تأكيد كلمة المرور</label>
+                                    <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="savePasswordBtn">تحديث كلمة المرور</button>
+                        </form>
+
+                        <hr style="margin: 2.5rem 0; border: none; border-top: 1px solid var(--color-border);">
+
+                        <h3 style="font-size: 1.1rem; margin-bottom: 1.5rem;">التحقق بخطوتين (2FA)</h3>
+                        <div class="switch-group">
+                            <div class="switch-info">
+                                <h4>التحقق عبر Telegram</h4>
+                                <p>استلام رمز الدخول عبر بوت التليجرام لزيادة الأمان</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="telegramOtpEnabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div id="telegramSetup" style="display: none; background: var(--color-muted); padding: 1.5rem; border-radius: 1rem; margin-top: 1rem;">
+                            <div class="form-group">
+                                <label for="telegramUsername">اسم مستخدم التليجرام</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <span style="padding: 0.85rem; background: var(--color-border); border-radius: 0.75rem 0 0 0.75rem;">@</span>
+                                    <input type="text" id="telegramUsername" class="form-control" style="border-radius: 0 0.75rem 0.75rem 0;" placeholder="username">
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm" id="saveTelegramBtn">ربط الحساب</button>
                         </div>
                     </div>
+                </section>
 
-                    <div class="form-group" id="chatIdContainer" style="display: none;">
-                        <label for="telegramChatId">معرف الدردشة (Chat ID)</label>
-                        <input type="text" id="telegramChatId" class="form-control" readonly style="background: #f8f9fa;">
-                        <small style="color: #666;">يتم استخراج المعرف تلقائياً عند إرسال /start للبوت.</small>
+                <!-- System Settings Section -->
+                <section id="system" class="settings-card">
+                    <div class="card-header">
+                        <h2>إعدادات النظام</h2>
+                        <button type="button" class="btn btn-primary btn-sm" id="saveSystemBtn">حفظ إعدادات النظام</button>
                     </div>
+                    <div class="card-body">
+                        <div class="switch-group">
+                            <div class="switch-info">
+                                <h4>وضع الصيانة</h4>
+                                <p>إغلاق المنصة مؤقتاً لإجراء أعمال الصيانة</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="maintenanceMode">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
 
-                    <div class="form-group" style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
-                        <label style="margin-bottom: 0; cursor: pointer;">
-                            <input type="checkbox" id="telegramOtpEnabled" style="width: 20px; height: 20px; vertical-align: middle;">
-                            <span style="margin-right: 0.5rem; vertical-align: middle;">تفعيل التحقق عبر تليجرام (Telegram OTP)</span>
-                        </label>
-                    </div>
+                        <div class="switch-group">
+                            <div class="switch-info">
+                                <h4>فتح التسجيل الجديد</h4>
+                                <p>السماح للمستخدمين الجدد بإنشاء حسابات</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="registrationEnabled" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
 
-                    <div id="botInstructions" style="display: none; background: #f0f7ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-right: 4px solid #0088cc;">
-                        <p style="margin-bottom: 0.5rem; font-weight: 600; color: #0088cc;">خطوات الربط:</p>
-                        <ol style="margin-right: 1.5rem; font-size: 0.9rem;">
-                            <li>تأكد من كتابة الـ Username الخاص بك بشكل صحيح.</li>
-                            <li>اضغط على "حفظ إعدادات التليجرام".</li>
-                            <li>افتح البوت <a href="https://t.me/mad3oom_bot" target="_blank" id="botLink">@mad3oom_bot</a> وأرسل رسالة <code>/start</code>.</li>
-                            <li>سيتم تحديث الـ Chat ID تلقائياً هنا.</li>
-                        </ol>
+                        <div class="form-group" style="margin-top: 1.5rem;">
+                            <label for="siteNotice">تنبيه عام للموقع (Header Notice)</label>
+                            <input type="text" id="siteNotice" class="form-control" placeholder="رسالة تظهر في أعلى جميع الصفحات...">
+                        </div>
                     </div>
+                </section>
 
-                    <button type="submit" class="btn-save" id="saveTelegramBtn">حفظ إعدادات التليجرام</button>
-                </form>
-            </section>
+                <!-- Users Control Section -->
+                <section id="users-control" class="settings-card">
+                    <div class="card-header">
+                        <h2>التحكم بالمستخدمين</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="switch-group">
+                            <div class="switch-info">
+                                <h4>طلب تفعيل البريد</h4>
+                                <p>إلزام المستخدمين بتفعيل بريدهم قبل استخدام المنصة</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="emailVerificationRequired">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
 
-            <!-- Smart Memory Section -->
-            <section class="settings-section">
-                <h2>الذاكرة الذكية للبوت</h2>
-                <p style="margin-bottom: 1.5rem; color: #666;">تفعيل الذاكرة الذكية يجعل البوت يتعلم من ردود الأدمن الفعلية ويحسن جودة الردود تلقائياً.</p>
-                
-                <div class="form-group" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; background: #f8f9fa; padding: 1rem; border-radius: 8px;">
-                    <label style="margin-bottom: 0; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
-                        <input type="checkbox" id="smartMemoryEnabled" style="width: 22px; height: 22px;">
-                        تفعيل الذاكرة الذكية (Smart Memory)
-                    </label>
-                </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="defaultUserPoints">النقاط الافتراضية للمستخدم الجديد</label>
+                                <input type="number" id="defaultUserPoints" class="form-control" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="maxActiveTickets">أقصى عدد تذاكر مفتوحة للمستخدم</label>
+                                <input type="number" id="maxActiveTickets" class="form-control" value="3">
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-                <div id="memoryHistoryContainer" style="display: none;">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--color-primary);">محفوظات الذاكرة</h3>
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 600px;">
-                            <thead>
-                                <tr style="background: #f1f5f9; text-align: right;">
-                                    <th style="padding: 12px; border: 1px solid #e2e8f0;">رسالة العميل</th>
-                                    <th style="padding: 12px; border: 1px solid #e2e8f0;">رد الأدمن (الذاكرة)</th>
-                                    <th style="padding: 12px; border: 1px solid #e2e8f0; width: 100px;">إجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="memoryTableBody">
-                                <!-- سيتم تحميل البيانات هنا -->
-                            </tbody>
-                        </table>
+                <!-- Bot Intelligence Section -->
+                <section id="bot" class="settings-card">
+                    <div class="card-header">
+                        <h2>ذكاء البوت (Smart Bot)</h2>
                     </div>
-                </div>
-                
-                <div style="margin-top: 1.5rem;">
-                    <button type="button" class="btn-save" id="saveSmartMemoryBtn">حفظ إعدادات الذاكرة</button>
-                </div>
-            </section>
+                    <div class="card-body">
+                        <div class="switch-group">
+                            <div class="switch-info">
+                                <h4>الذاكرة الذكية (Smart Memory)</h4>
+                                <p>تفعيل تعلم البوت التلقائي من ردود الأدمن</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="smartMemoryEnabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
 
-            <!-- Broadcast Notifications Section -->
-            <section class="settings-section">
-                <h2>إرسال إشعار جماعي</h2>
-                <p style="margin-bottom: 1.5rem; color: #666;">يمكنك إرسال إشعار فوري لجميع مستخدمي المنصة. سيظهر الإشعار في لوحة التحكم الخاصة بهم بشكل لحظي.</p>
-                <form id="broadcastForm">
-                    <div class="form-group">
-                        <label for="broadcastTitle">عنوان الإشعار</label>
-                        <input type="text" id="broadcastTitle" class="form-control" placeholder="مثال: تحديث جديد في المنصة" required>
+                        <div class="form-group">
+                            <label for="botSystemPrompt">تعليمات البوت الأساسية (System Prompt)</label>
+                            <textarea id="botSystemPrompt" class="form-control" rows="5" placeholder="اكتب التعليمات التي يجب أن يتبعها البوت في الرد على العملاء..."></textarea>
+                        </div>
+                        
+                        <button type="button" class="btn btn-primary" id="saveBotBtn">تحديث ذكاء البوت</button>
                     </div>
-                    <div class="form-group">
-                        <label for="broadcastMessage">نص الإشعار</label>
-                        <textarea id="broadcastMessage" class="form-control" rows="4" placeholder="اكتب نص الإشعار هنا..." required style="resize: vertical;"></textarea>
-                    </div>
-                    <button type="submit" class="btn-save" id="sendBroadcastBtn" style="background: var(--color-accent);">
-                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" style="vertical-align: middle; margin-left: 8px;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                        إرسال للجميع الآن
-                    </button>
-                </form>
-            </section>
+                </section>
 
-            <!-- Security & 2FA Section -->
-            <section class="settings-section">
-                <h2>الأمان والتحقق بخطوتين (2FA)</h2>
-                <p style="margin-bottom: 1.5rem; color: #666;">قم بتعزيز أمان حسابك من خلال تفعيل التحقق بخطوتين وإدارة الأجهزة الموثوقة التي يمكنها الوصول إلى حسابك.</p>
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <a href="/admin-security-settings.html" class="btn-save" style="display: inline-block; text-decoration: none; text-align: center; background: #667eea;">إعدادات الأمان المتقدمة</a>
-                </div>
-            </section>
-
-            <!-- Password Section -->
-            <section class="settings-section">
-                <h2>تغيير كلمة المرور</h2>
-                <form id="passwordForm">
-                    <div class="form-group">
-                        <label for="currentPassword">كلمة المرور الحالية</label>
-                        <input type="password" id="currentPassword" class="form-control" placeholder="********">
-                    </div>
-                    <div class="form-group">
-                        <label for="newPassword">كلمة المرور الجديدة</label>
-                        <input type="password" id="newPassword" class="form-control" placeholder="********">
-                    </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">تأكيد كلمة المرور الجديدة</label>
-                        <input type="password" id="confirmPassword" class="form-control" placeholder="********">
-                    </div>
-                    <button type="submit" class="btn-save" id="savePasswordBtn">تحديث كلمة المرور</button>
-                </form>
-            </section>
+            </div>
         </div>
     </main>
 
     <script type="module" src="/assets/js/admin/settings.js"></script>
+    <script>
+        // Smooth scroll for nav links
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                
+                window.scrollTo({
+                    top: targetElement.offsetTop - 100,
+                    behavior: 'smooth'
+                });
+                
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Update active nav link on scroll
+        window.addEventListener('scroll', () => {
+            let current = '';
+            const sections = document.querySelectorAll('section');
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 150) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').substring(1) === current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
