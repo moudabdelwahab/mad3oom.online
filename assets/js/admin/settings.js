@@ -57,6 +57,21 @@ async function loadAllSettings() {
             document.getElementById('botSystemPrompt').value = botSettings.system_prompt || '';
         }
 
+        // 4. Load Ads Settings
+        const { data: adsSettings } = await supabase.from('ads_settings').select('*').limit(1).maybeSingle();
+        if (adsSettings) {
+            document.getElementById('topAdsEnabled').checked = adsSettings.enabled || false;
+            document.getElementById('adsContent').value = adsSettings.content || '';
+            document.getElementById('adsLink').value = adsSettings.link || '';
+        }
+
+        // 5. Load API Keys
+        const { data: apiKeys } = await supabase.from('api_keys').select('*').limit(1).maybeSingle();
+        if (apiKeys) {
+            document.getElementById('openaiKey').value = apiKeys.openai_key || '';
+            document.getElementById('telegramBotToken').value = apiKeys.telegram_token || '';
+        }
+
     } catch (error) {
         console.error('Error loading settings:', error);
         showAlert('حدث خطأ أثناء تحميل بعض الإعدادات', 'error');
@@ -198,6 +213,59 @@ function setupEventListeners() {
             }
             if (error) throw error;
             showAlert('تم تحديث إعدادات ذكاء البوت', 'success');
+        } catch (error) {
+            showAlert(error.message, 'error');
+        } finally {
+            setLoading(btn, false);
+        }
+    });
+
+    // Save Ads Settings
+    document.getElementById('saveAdsBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('saveAdsBtn');
+        const settings = {
+            enabled: document.getElementById('topAdsEnabled').checked,
+            content: document.getElementById('adsContent').value,
+            link: document.getElementById('adsLink').value
+        };
+
+        setLoading(btn, true);
+        try {
+            const { data } = await supabase.from('ads_settings').select('id').limit(1).maybeSingle();
+            let error;
+            if (data) {
+                ({ error } = await supabase.from('ads_settings').update(settings).eq('id', data.id));
+            } else {
+                ({ error } = await supabase.from('ads_settings').insert(settings));
+            }
+            if (error) throw error;
+            showAlert('تم تحديث إعدادات الإعلانات بنجاح', 'success');
+        } catch (error) {
+            showAlert(error.message, 'error');
+        } finally {
+            setLoading(btn, false);
+        }
+    });
+
+    // Save API Keys
+    document.getElementById('saveApiBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('saveApiBtn');
+        const settings = {
+            openai_key: document.getElementById('openaiKey').value,
+            telegram_token: document.getElementById('telegramBotToken').value
+        };
+
+        setLoading(btn, true);
+        try {
+            const { data } = await supabase.from('api_keys').select('id').limit(1).maybeSingle();
+            let error;
+            if (data) {
+                ({ error } = await supabase.from('api_keys').update(settings).eq('id', data.id));
+            } else {
+                ({ error } = await supabase.from('api_keys').insert(settings));
+            }
+            if (error) throw error;
+            showAlert('تم حفظ مفاتيح التكامل بنجاح', 'success');
         } catch (error) {
             showAlert(error.message, 'error');
         } finally {

@@ -23,8 +23,11 @@
             border: 1px solid var(--color-border);
             padding: 1rem;
             position: sticky;
-            top: 100px;
+            top: 20px; /* جعل المسافة من الأعلى أقل لضمان الثبات بشكل أفضل */
             box-shadow: var(--shadow-sm);
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            z-index: 100;
         }
         
         .nav-link {
@@ -290,6 +293,14 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                     ذكاء البوت
                 </a>
+                <a href="#ads" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    إدارة الإعلانات
+                </a>
+                <a href="#api" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                    مفاتيح API
+                </a>
             </nav>
 
             <!-- Main Content Area -->
@@ -477,12 +488,73 @@
                     </div>
                 </section>
 
+                <!-- Ads Management Section -->
+                <section id="ads" class="settings-card">
+                    <div class="card-header">
+                        <h2>إدارة الإعلانات والبنرات</h2>
+                        <button type="button" class="btn btn-primary btn-sm" id="saveAdsBtn">حفظ إعدادات الإعلانات</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="switch-group">
+                            <div class="switch-info">
+                                <h4>إظهار البنر العلوي</h4>
+                                <p>تفعيل أو إخفاء بنر الإعلانات في أعلى الموقع</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="topAdsEnabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="adsContent">محتوى الإعلان (HTML مدعوم)</label>
+                            <textarea id="adsContent" class="form-control" rows="3" placeholder="أدخل نص الإعلان أو كود HTML..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="adsLink">رابط الإعلان</label>
+                            <input type="url" id="adsLink" class="form-control" placeholder="https://example.com">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- API Keys Section -->
+                <section id="api" class="settings-card">
+                    <div class="card-header">
+                        <h2>مفاتيح API والتكامل</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="openaiKey">OpenAI API Key (للبوت الذكي)</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="password" id="openaiKey" class="form-control" placeholder="sk-...">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="togglePassword('openaiKey')">عرض</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="telegramBotToken">Telegram Bot Token</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="password" id="telegramBotToken" class="form-control" placeholder="123456:ABC...">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="togglePassword('telegramBotToken')">عرض</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="saveApiBtn">حفظ مفاتيح التكامل</button>
+                    </div>
+                </section>
+
             </div>
         </div>
     </main>
 
     <script type="module" src="/assets/js/admin/settings.js"></script>
     <script>
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            if (input.type === "password") {
+                input.type = "text";
+            } else {
+                input.type = "password";
+            }
+        }
+
         // Smooth scroll for nav links
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', function(e) {
