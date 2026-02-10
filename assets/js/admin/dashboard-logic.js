@@ -25,7 +25,8 @@ async function loadAllStats() {
         loadChatStats(),
         loadUsersStats(),
         loadBannedStats(),
-        loadActivityStats()
+        loadActivityStats(),
+        loadStatsStats()
     ]);
 }
 
@@ -217,6 +218,40 @@ async function loadActivityStats() {
     }
 }
 
+// إحصائيات الزيارات والاستجابة
+async function loadStatsStats() {
+    try {
+        // 1. جلب إجمالي الزيارات من سجل النشاطات (أو جدول مخصص إذا وجد)
+        // هنا سنعتبر كل سجل نشاط فريد لجلسة أو مستخدم كزيارة، أو ببساطة عدد السجلات
+        const { count: visitsCount, error: visitsError } = await supabase
+            .from('activity_logs')
+            .select('*', { count: 'exact', head: true });
+        
+        if (!visitsError) {
+            updateElement('statsVisits', visitsCount || 0);
+        }
+
+        // 2. حساب معدل الاستجابة (بناءً على التذاكر)
+        // المعدل = (التذاكر التي تم الرد عليها / إجمالي التذاكر) * 100
+        const { data: tickets, error: ticketsError } = await supabase
+            .from('tickets')
+            .select('id, status');
+        
+        if (!ticketsError && tickets && tickets.length > 0) {
+            const totalTickets = tickets.length;
+            const respondedTickets = tickets.filter(t => t.status !== 'open').length;
+            const responseRate = Math.round((respondedTickets / totalTickets) * 100);
+            updateElement('statsResponse', `${responseRate}%`);
+        } else {
+            updateElement('statsResponse', '0%');
+        }
+    } catch (err) {
+        console.error('Error loading stats stats:', err);
+        updateElement('statsVisits', '0');
+        updateElement('statsResponse', '0%');
+    }
+}
+
 // إعداد التحديثات الفورية (Realtime)
 function setupRealtimeSubscriptions() {
     // الاشتراك في تحديثات التذاكر
@@ -227,6 +262,7 @@ function setupRealtimeSubscriptions() {
             () => {
                 console.log('Tickets updated - reloading stats');
                 loadTicketsStats();
+                loadStatsStats();
             }
         )
         .subscribe();
@@ -270,6 +306,7 @@ function setupRealtimeSubscriptions() {
             () => {
                 console.log('Activity log updated - reloading stats');
                 loadActivityStats();
+                loadStatsStats();
             }
         )
         .subscribe();
