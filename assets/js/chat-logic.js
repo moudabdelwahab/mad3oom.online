@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const typingIndicator = document.getElementById('typingIndicator');
     
     // Sidebar & View Elements
-    const mainSidebar = document.getElementById('mainSidebar');
+    const mainSidebar = document.querySelector('.control-sidebar');
     const menuItems = document.querySelectorAll('.menu-item');
     const views = {
         'customer-chats': document.getElementById('customer-chats-view'),
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             Object.values(views).forEach(v => { if (v) v.classList.remove('active'); });
             
-            if (target === 'customer-chats') {
+            if (target === 'customer-chats' || item.querySelector('span')?.innerText === 'محادثات العملاء') {
                 if (views['customer-chats']) views['customer-chats'].classList.add('active');
                 isTestMode = false;
                 loadAllSessions();
@@ -143,30 +143,48 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const card = document.createElement('div');
                     card.className = 'session-card';
                     card.id = `session-${session.id}`;
-                    card.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
-                            <span class="card-tag" style="background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'}; font-size: 0.6rem;">
-                                ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
-                            </span>
-                            <button class="end-chat-btn-small" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">إغلاق المحادثة</button>
-                        </div>
-                        
-                        <div style="display:flex; align-items:center; gap:0.75rem;">
-                            <div style="width:36px; height:36px; background:#eef2ff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366; font-size:1rem; flex-shrink:0;">${firstChar}</div>
-                            <div style="overflow:hidden; flex-grow:1;">
-                                <div style="font-weight:700; color:#1a1a1a; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeName}</div>
-                                <div style="font-size:0.65rem; color:#999;">${date} | ${time}</div>
+	                    card.innerHTML = `
+	                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
+	                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" class="user-select-checkbox" data-user-id="${session.user_id || session.guest_id}" data-user-name="${safeName}" style="width: 16px; height: 16px; cursor: pointer;">
+                                    <span class="card-tag" style="background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'}; font-size: 0.6rem;">
+                                        ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
+                                    </span>
+                                </div>
+	                            <button class="end-chat-btn-small" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">إغلاق المحادثة</button>
+	                        </div>
+	                        
+	                        <div style="display:flex; align-items:center; gap:0.75rem;">
+	                            <div style="width:36px; height:36px; background:#eef2ff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366; font-size:1rem; flex-shrink:0;">${firstChar}</div>
+	                            <div style="overflow:hidden; flex-grow:1;">
+	                                <div style="font-weight:700; color:#1a1a1a; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeName}</div>
+	                                <div style="font-size:0.65rem; color:#999;">${date} | ${time}</div>
+	                            </div>
+	                        </div>
+
+	                        <div class="last-message-preview" style="background:#f8f9fa; padding:0.6rem; border-radius:8px; font-size:0.8rem; color:#666; line-height:1.3; height:40px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; border:1px solid #f1f5f9;">
+	                            ${lastMsg}
+	                        </div>
+
+	                        <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+                                <button class="view-chat-btn" style="flex: 1; background:var(--primary-blue); color:white; border:none; padding:8px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600;">
+                                    عرض المحادثة
+                                </button>
+                                <button class="quick-msg-btn" data-user-id="${session.user_id || session.guest_id}" data-user-name="${safeName}" title="إرسال رسالة مباشرة" style="background: #eef2ff; color: var(--primary-blue); border: 1px solid #d0d7ff; padding: 8px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                </button>
                             </div>
-                        </div>
+	                    `;
 
-                        <div class="last-message-preview" style="background:#f8f9fa; padding:0.6rem; border-radius:8px; font-size:0.8rem; color:#666; line-height:1.3; height:40px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; border:1px solid #f1f5f9;">
-                            ${lastMsg}
-                        </div>
+                        const checkbox = card.querySelector('.user-select-checkbox');
+                        checkbox.onclick = (e) => e.stopPropagation();
+                        checkbox.onchange = (e) => updateSelectedUsers();
 
-                        <button class="view-chat-btn" style="width:100%; background:var(--primary-blue); color:white; border:none; padding:8px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600; margin-top: auto;">
-                            عرض المحادثة
-                        </button>
-                    `;
+                        const quickMsgBtn = card.querySelector('.quick-msg-btn');
+                        quickMsgBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            openQuickMessage(quickMsgBtn.dataset.userId, quickMsgBtn.dataset.userName);
+                        };
 
                     const viewBtn = card.querySelector('.view-chat-btn');
                     const endBtn = card.querySelector('.end-chat-btn-small');
@@ -547,3 +565,179 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadBotSettings();
     await initAuth();
 });
+
+// --- ميزات الإرسال الجماعي والفردي الجديدة ---
+
+const bulkModal = document.getElementById('bulkMessageModal');
+const bulkBtn = document.getElementById('bulkMessageBtn');
+const closeBulk = document.getElementById('closeBulkModal');
+const cancelBulk = document.getElementById('cancelBulkBtn');
+const sendBulk = document.getElementById('sendBulkBtn');
+const recipientType = document.getElementById('recipientType');
+const selectedUsersArea = document.getElementById('selectedUsersArea');
+const selectedUsersList = document.getElementById('selectedUsersList');
+
+let selectedUsers = [];
+
+// فتح نافذة الإرسال الجماعي
+if (bulkBtn) {
+    bulkBtn.onclick = () => {
+        bulkModal.style.display = 'flex';
+        updateSelectedUsersUI();
+    };
+}
+
+// إغلاق النافذة
+[closeBulk, cancelBulk].forEach(btn => {
+    if (btn) {
+        btn.onclick = () => {
+            bulkModal.style.display = 'none';
+        };
+    }
+});
+
+// تغيير نوع المستلمين
+if (recipientType) {
+    recipientType.onchange = () => {
+        selectedUsersArea.style.display = recipientType.value === 'selected' ? 'block' : 'none';
+    };
+}
+
+// تحديث قائمة المستخدمين المحددين
+function updateSelectedUsers() {
+    const checkboxes = document.querySelectorAll('.user-select-checkbox:checked');
+    selectedUsers = Array.from(checkboxes).map(cb => ({
+        id: cb.dataset.userId,
+        name: cb.dataset.userName
+    }));
+    updateSelectedUsersUI();
+}
+
+function updateSelectedUsersUI() {
+    if (!selectedUsersList) return;
+    selectedUsersList.innerHTML = '';
+    
+    if (selectedUsers.length === 0) {
+        selectedUsersList.innerHTML = '<span style="color:#999; font-size:0.8rem;">لا يوجد مستخدمين محددين</span>';
+        return;
+    }
+
+    selectedUsers.forEach(user => {
+        const tag = document.createElement('div');
+        tag.style.cssText = 'background:#eef2ff; color:#003366; padding:2px 8px; border-radius:4px; font-size:0.8rem; display:flex; align-items:center; gap:5px; border:1px solid #d0d7ff;';
+        tag.innerHTML = `<span>${user.name}</span><span style="cursor:pointer; font-weight:bold;" onclick="removeSelectedUser('${user.id}')">&times;</span>`;
+        selectedUsersList.appendChild(tag);
+    });
+}
+
+window.removeSelectedUser = (userId) => {
+    const cb = document.querySelector(`.user-select-checkbox[data-user-id="${userId}"]`);
+    if (cb) cb.checked = false;
+    selectedUsers = selectedUsers.filter(u => u.id !== userId);
+    updateSelectedUsersUI();
+};
+
+// فتح رسالة سريعة لمستخدم واحد
+function openQuickMessage(userId, userName) {
+    recipientType.value = 'selected';
+    selectedUsersArea.style.display = 'block';
+    
+    // إزالة أي تحديد سابق وإضافة هذا المستخدم فقط
+    document.querySelectorAll('.user-select-checkbox').forEach(cb => cb.checked = false);
+    const cb = document.querySelector(`.user-select-checkbox[data-user-id="${userId}"]`);
+    if (cb) cb.checked = true;
+    
+    selectedUsers = [{ id: userId, name: userName }];
+    bulkModal.style.display = 'flex';
+    updateSelectedUsersUI();
+}
+
+// إرسال الرسائل
+if (sendBulk) {
+    sendBulk.onclick = async () => {
+        const title = document.getElementById('bulkMessageTitle').value;
+        const text = document.getElementById('bulkMessageText').value;
+        const type = recipientType.value;
+
+        if (!text) {
+            alert('يرجى كتابة نص الرسالة');
+            return;
+        }
+
+        sendBulk.disabled = true;
+        sendBulk.innerText = 'جاري الإرسال...';
+
+        try {
+            let targetUserIds = [];
+
+            if (type === 'all') {
+                const { data: profiles } = await supabase.from('profiles').select('id');
+                targetUserIds = profiles.map(p => p.id);
+            } else if (type === 'active') {
+                const { data: sessions } = await supabase.from('chat_sessions').select('user_id').eq('status', 'active');
+                targetUserIds = [...new Set(sessions.map(s => s.user_id).filter(id => id && !id.startsWith('guest-')))];
+            } else {
+                targetUserIds = selectedUsers.map(u => u.id);
+            }
+
+            if (targetUserIds.length === 0) {
+                alert('لم يتم العثور على مستخدمين للإرسال إليهم');
+                sendBulk.disabled = false;
+                sendBulk.innerText = 'إرسال الآن';
+                return;
+            }
+
+            // إرسال الرسائل والإشعارات
+            for (const userId of targetUserIds) {
+                // 1. إيجاد أو إنشاء جلسة محادثة
+                let sessionId;
+                const { data: session } = await supabase
+                    .from('chat_sessions')
+                    .select('id')
+                    .eq('user_id', userId)
+                    .eq('status', 'active')
+                    .single();
+
+                if (session) {
+                    sessionId = session.id;
+                } else {
+                    const { data: newSession } = await supabase
+                        .from('chat_sessions')
+                        .insert({ user_id: userId, status: 'active', is_manual_mode: true })
+                        .select()
+                        .single();
+                    sessionId = newSession.id;
+                }
+
+                // 2. إرسال الرسالة
+                await supabase.from('chat_messages').insert({
+                    session_id: sessionId,
+                    message_text: text,
+                    is_admin_reply: true,
+                    sender_id: currentUser.id
+                });
+
+                // 3. إنشاء إشعار
+                await supabase.from('notifications').insert({
+                    user_id: userId,
+                    title: title || 'رسالة جديدة من الإدارة',
+                    message: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
+                    type: 'message',
+                    link: '/chat-customer.html'
+                });
+            }
+
+            alert(`تم إرسال الرسالة بنجاح لـ ${targetUserIds.length} مستخدم`);
+            bulkModal.style.display = 'none';
+            document.getElementById('bulkMessageTitle').value = '';
+            document.getElementById('bulkMessageText').value = '';
+            
+        } catch (error) {
+            console.error('Error sending bulk messages:', error);
+            alert('حدث خطأ أثناء إرسال الرسائل');
+        } finally {
+            sendBulk.disabled = false;
+            sendBulk.innerText = 'إرسال الآن';
+        }
+    };
+}
