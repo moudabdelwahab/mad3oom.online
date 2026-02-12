@@ -143,30 +143,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const card = document.createElement('div');
                     card.className = 'session-card';
                     card.id = `session-${session.id}`;
-	                    card.innerHTML = `
-	                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
-	                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="checkbox" class="user-select-checkbox" data-user-id="${session.user_id || session.guest_id}" data-user-name="${safeName}" style="width: 16px; height: 16px; cursor: pointer;">
-                                    <span class="card-tag" style="background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'}; font-size: 0.6rem;">
-                                        ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
-                                    </span>
-                                </div>
-	                            <button class="end-chat-btn-small" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">إغلاق المحادثة</button>
-	                        </div>
-	                        
-	                        <div style="display:flex; align-items:center; gap:0.75rem;">
-	                            <div style="width:36px; height:36px; background:#eef2ff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366; font-size:1rem; flex-shrink:0;">${firstChar}</div>
-	                            <div style="overflow:hidden; flex-grow:1;">
-	                                <div style="font-weight:700; color:#1a1a1a; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeName}</div>
-	                                <div style="font-size:0.65rem; color:#999;">${date} | ${time}</div>
-	                            </div>
-	                        </div>
+		                    card.innerHTML = `
+		                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
+		                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+	                                    <input type="checkbox" class="user-select-checkbox" data-user-id="${session.user_id || session.guest_id}" data-user-name="${safeName}" style="width: 16px; height: 16px; cursor: pointer;">
+	                                    <span class="card-tag" style="background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'}; font-size: 0.6rem;">
+	                                        ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
+	                                    </span>
+	                                </div>
+		                            <button class="end-chat-btn-small" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">إغلاق المحادثة</button>
+		                        </div>
+		                        
+		                        <div style="display:flex; align-items:center; gap:0.75rem;">
+		                            <div style="width:36px; height:36px; background:#eef2ff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366; font-size:1rem; flex-shrink:0;">${firstChar}</div>
+		                            <div style="overflow:hidden; flex-grow:1;">
+		                                <div style="font-weight:700; color:#1a1a1a; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeName}</div>
+		                                <div style="font-size:0.65rem; color:#999;">${date} | ${time}</div>
+		                            </div>
+		                        </div>
 
-	                        <div class="last-message-preview" style="background:#f8f9fa; padding:0.6rem; border-radius:8px; font-size:0.8rem; color:#666; line-height:1.3; height:40px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; border:1px solid #f1f5f9;">
-	                            ${lastMsg}
-	                        </div>
+		                        <div class="last-message-preview" style="background:#f8f9fa; padding:0.6rem; border-radius:8px; font-size:0.8rem; color:#666; line-height:1.3; height:40px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; border:1px solid #f1f5f9;">
+		                            ${lastMsg}
+		                        </div>
 
-	                        <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+		                        <div style="display: flex; gap: 0.5rem; margin-top: auto;">
                                 <button class="view-chat-btn" style="flex: 1; background:var(--primary-blue); color:white; border:none; padding:8px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600;">
                                     عرض المحادثة
                                 </button>
@@ -174,17 +174,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                                 </button>
                             </div>
-	                    `;
+		                    `;
 
-                        const checkbox = card.querySelector('.user-select-checkbox');
-                        checkbox.onclick = (e) => e.stopPropagation();
-                        checkbox.onchange = (e) => updateSelectedUsers();
+	                        const checkbox = card.querySelector('.user-select-checkbox');
+	                        checkbox.onclick = (e) => e.stopPropagation();
+	                        checkbox.onchange = (e) => updateSelectedUsers();
 
-                        const quickMsgBtn = card.querySelector('.quick-msg-btn');
-                        quickMsgBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            openQuickMessage(quickMsgBtn.dataset.userId, quickMsgBtn.dataset.userName);
-                        };
+	                        const quickMsgBtn = card.querySelector('.quick-msg-btn');
+	                        quickMsgBtn.onclick = (e) => {
+	                            e.stopPropagation();
+	                            openQuickMessage(quickMsgBtn.dataset.userId, quickMsgBtn.dataset.userName);
+	                        };
 
                     const viewBtn = card.querySelector('.view-chat-btn');
                     const endBtn = card.querySelector('.end-chat-btn-small');
@@ -223,287 +223,148 @@ document.addEventListener('DOMContentLoaded', async () => {
         adminRealtimeChannel = supabase.channel('admin-realtime-global')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, (payload) => {
                 console.log("[Chat Logic] Session change detected:", payload);
-                // إذا كانت الجلسة جديدة أو تم تحديثها، نعيد تحميل القائمة لضمان الترتيب الصحيح
                 loadAllSessions();
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
-                console.log("[Chat Logic] New message detected globally:", payload);
-                // تحديث آخر رسالة في الكارت الخاص بالجلسة بدون إعادة تحميل الكل إذا أمكن
-                const sessionId = payload.new.session_id;
-                const card = document.getElementById(`session-${sessionId}`);
-                if (card) {
-                    const preview = card.querySelector('.last-message-preview');
-                    if (preview) preview.innerText = payload.new.message_text;
-                    // نقل الكارت للأعلى لأنه تم تحديثه
-                    const grid = document.getElementById('sessionsGrid');
-                    if (grid && grid.firstChild !== card) {
-                        grid.insertBefore(card, grid.firstChild);
-                    }
-                } else {
-                    // إذا لم يكن الكارت موجوداً (محادثة جديدة تماماً)، نحمل الكل
+                console.log("[Chat Logic] New message detected:", payload);
+                if (payload.new && !payload.new.is_admin_reply && !payload.new.is_bot_reply) {
                     loadAllSessions();
                 }
             })
-            .subscribe((status) => {
-                console.log('[Chat Logic] Admin realtime subscription status:', status);
-            });
+            .subscribe();
     }
 
-    async function openAdminChat(sessionId, name, manualMode) {
-        if (messageChannel) { supabase.removeChannel(messageChannel); messageChannel = null; }
-        if (modeChannel) { supabase.removeChannel(modeChannel); modeChannel = null; }
-
+    async function openAdminChat(sessionId, userName, manualMode) {
         currentSessionId = sessionId;
         isManualMode = manualMode;
-        isTestMode = false;
         
-        if (chatHeaderName) chatHeaderName.innerText = name;
-        updateAdminChatHeader();
+        if (chatHeaderName) chatHeaderName.innerText = userName;
+        if (chatHeaderStatus) chatHeaderStatus.innerText = manualMode ? 'وضع الرد اليدوي نشط' : 'البوت يتولى الرد حالياً';
         
         Object.values(views).forEach(v => { if (v) v.classList.remove('active'); });
         if (views['chat-window']) views['chat-window'].classList.add('active');
         
-        loadMessages();
-        subscribeToMessages();
+        loadMessages(sessionId);
+        subscribeToMessages(sessionId);
+    }
+
+    async function loadMessages(sessionId) {
+        if (chatMessages) chatMessages.innerHTML = '<div style="text-align:center; padding:2rem; color:#888;">جاري تحميل الرسائل...</div>';
         
-        modeChannel = supabase.channel(`session-mode-${currentSessionId}`)
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${currentSessionId}` }, payload => {
-                isManualMode = payload.new.is_manual_mode;
-                updateAdminChatHeader();
-                const toggleBtn = document.getElementById('manualModeToggle');
-                if (toggleBtn) toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
-            }).subscribe();
-            
-        let toggleBtn = document.getElementById('manualModeToggle');
-        if (!toggleBtn) {
-            toggleBtn = document.createElement('button');
-            toggleBtn.id = 'manualModeToggle';
-            toggleBtn.style = "margin-right:10px; padding:5px 15px; border-radius:20px; border:1px solid white; background:transparent; color:white; cursor:pointer; font-size:0.8rem;";
-            const profileContainer = document.querySelector('.chat-header-blue .bot-profile');
-            if (profileContainer) profileContainer.appendChild(toggleBtn);
-        }
-        if (toggleBtn) {
-            toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
-            toggleBtn.onclick = async () => {
-                const newMode = !isManualMode;
-                const { error } = await supabase.from('chat_sessions').update({ is_manual_mode: newMode, updated_at: new Date() }).eq('id', currentSessionId);
-                if (!error) {
-                    isManualMode = newMode;
-                    toggleBtn.innerText = isManualMode ? 'إيقاف الرد اليدوي' : 'تفعيل الرد اليدوي';
-                    updateAdminChatHeader();
-                }
-            };
-        }
-    }
-
-    function updateAdminChatHeader() {
-        if (chatHeaderStatus) {
-            chatHeaderStatus.innerText = isManualMode ? 'أنت تتحدث الآن مع العميل' : 'البوت يقوم بالرد تلقائياً';
-            chatHeaderStatus.style.color = isManualMode ? '#ffcc00' : 'white';
-        }
-        if (chatHeaderImg) chatHeaderImg.src = isManualMode ? '/assets/images/technical-support.svg' : '/assets/images/mad3oom-robot.png';
-    }
-
-    async function loadMessages() {
-        if (!currentSessionId || !chatMessages) return;
         try {
-            const { data: messages, error } = await supabase.from('chat_messages').select('*').eq('session_id', currentSessionId).order('created_at', { ascending: true });
+            const { data: messages, error } = await supabase
+                .from('chat_messages')
+                .select('*')
+                .eq('session_id', sessionId)
+                .order('created_at', { ascending: true });
+
             if (error) throw error;
-            chatMessages.innerHTML = '';
-            if (messages) {
-                messages.forEach(m => {
-                    const isReceived = isAdmin ? (!m.is_admin_reply) : (m.is_bot_reply || m.is_admin_reply);
-                    appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at, m.id);
-                });
+            
+            if (chatMessages) {
+                chatMessages.innerHTML = '';
+                if (messages) {
+                    messages.forEach(msg => {
+                        const type = (msg.is_bot_reply || msg.is_admin_reply) ? 'sent' : 'received';
+                        appendMessage(msg.message_text, type, msg.created_at);
+                    });
+                }
             }
         } catch (error) {
             console.error("Error loading messages:", error);
         }
     }
 
-    function subscribeToMessages() {
-        if (!currentSessionId) return;
-        messageChannel = supabase.channel(`messages-${currentSessionId}`)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${currentSessionId}` }, payload => {
-                const m = payload.new;
-                // التحقق مما إذا كانت الرسالة موجودة بالفعل لتجنب التكرار
-                if (document.getElementById(`msg-${m.id}`)) return;
-
-                const isReceived = isAdmin ? (!m.is_admin_reply) : (m.is_bot_reply || m.is_admin_reply);
-                
-                // إذا كانت الرسالة من الطرف الآخر أو من البوت، نضيفها
-                // أما إذا كانت من نفس المستخدم الحالي، فقد تمت إضافتها بالفعل عند الإرسال (Optimistic UI)
-                if (m.sender_id !== currentUser.id || m.is_bot_reply) {
-                    appendMessage(m.message_text, isReceived ? 'received' : 'sent', m.created_at, m.id);
-                }
-            }).subscribe();
+    function subscribeToMessages(sessionId) {
+        if (messageChannel) supabase.removeChannel(messageChannel);
+        
+        messageChannel = supabase.channel(`session-${sessionId}`)
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'chat_messages',
+                filter: `session_id=eq.${sessionId}`
+            }, (payload) => {
+                const msg = payload.new;
+                const type = (msg.is_bot_reply || msg.is_admin_reply) ? 'sent' : 'received';
+                appendMessage(msg.message_text, type, msg.created_at);
+            })
+            .subscribe();
     }
 
-    async function setupUserChat() {
-        try {
-            let sessionQuery = supabase.from('chat_sessions').select('id, is_manual_mode').eq('status', 'active');
-            if (currentUser.isGuest) sessionQuery = sessionQuery.eq('guest_id', currentUser.id);
-            else sessionQuery = sessionQuery.eq('user_id', currentUser.id);
-            
-            const { data: session } = await sessionQuery.maybeSingle();
-            if (session) {
-                currentSessionId = session.id;
-                isManualMode = session.is_manual_mode;
-            } else {
-                const sessionData = { status: 'active' };
-                if (currentUser.isGuest) sessionData.guest_id = currentUser.id;
-                else sessionData.user_id = currentUser.id;
-                const { data: newSession } = await supabase.from('chat_sessions').insert([sessionData]).select().single();
-                if (newSession) currentSessionId = newSession.id;
-            }
-            loadMessages();
-            subscribeToMessages();
-        } catch (error) {
-            console.error("Error setting up user chat:", error);
-        }
+    function appendMessage(text, type, timestamp) {
+        if (!chatMessages) return;
+        
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `msg ${type}`;
+        
+        const time = new Date(timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        
+        msgDiv.innerHTML = `
+            <div class="msg-text">${text}</div>
+            <div style="font-size:0.65rem; opacity:0.7; margin-top:0.3rem; text-align:${type === 'sent' ? 'left' : 'right'}">${time}</div>
+        `;
+        
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     async function sendMessage() {
         const text = chatInput.value.trim();
-        if (!text || !currentSessionId) return;
+        if (!text) return;
+        
         chatInput.value = '';
         
-        // Optimistic UI: إضافة الرسالة فوراً للواجهة
-        const tempId = 'temp-' + Date.now();
-        appendMessage(text, 'sent', new Date(), tempId);
-        
-        if (isTestMode) { handleBotLogic(text); return; }
+        if (isTestMode) {
+            appendMessage(text, 'sent', new Date());
+            handleBotReply(text);
+            return;
+        }
 
-        const msgData = { session_id: currentSessionId, message_text: text, sender_id: currentUser.id };
-        if (isAdmin) msgData.is_admin_reply = true;
+        if (!currentSessionId) return;
 
         try {
-            const { data: savedMsg, error } = await supabase.from('chat_messages').insert([msgData]).select().single();
+            const { error } = await supabase.from('chat_messages').insert([{ 
+                session_id: currentSessionId, 
+                message_text: text, 
+                is_admin_reply: isAdmin,
+                sender_id: currentUser.id
+            }]);
+
             if (error) throw error;
             
-            // تحديث الـ ID المؤقت بالـ ID الحقيقي من قاعدة البيانات
-            const tempMsg = document.getElementById(`msg-${tempId}`);
-            if (tempMsg && savedMsg) tempMsg.id = `msg-${savedMsg.id}`;
-
-            await supabase.from('chat_sessions').update({ updated_at: new Date() }).eq('id', currentSessionId);
-
-            // إرسال إشعار عند إرسال رسالة جديدة
-            if (!isAdmin) {
-                // رسالة من عميل -> إشعار للأدمن
-                const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
-                if (admins) {
-                    for (const admin of admins) {
-                        await supabase.from('notifications').insert({
-                            user_id: admin.id,
-                            title: 'رسالة جديدة من عميل',
-                            message: `لديك رسالة جديدة في المحادثة المباشرة: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`,
-                            type: 'chat',
-                            link: 'chat-admin.html'
-                        });
-                    }
-                }
-            } else {
-                // رسالة من أدمن -> إشعار للعميل (إذا كان مسجل دخول)
-                const { data: session } = await supabase.from('chat_sessions').select('user_id').eq('id', currentSessionId).single();
-                if (session && session.user_id) {
-                    await supabase.from('notifications').insert({
-                        user_id: session.user_id,
-                        title: 'رد جديد من الدعم',
-                        message: `لديك رد جديد في المحادثة المباشرة: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`,
-                        type: 'chat',
-                        link: 'chat-customer.html'
-                    });
-                }
-
-                // --- آلية الذاكرة الذكية ---
-                // إذا كان الرد يدوي والذاكرة الذكية مفعلة، نقوم بحفظ الرسالة والرد في جدول الذاكرة
-                if (isManualMode && botSettings?.smart_memory_enabled) {
-                    try {
-                        // جلب آخر رسالة من العميل في هذه الجلسة
-                        const { data: lastUserMsg } = await supabase
-                            .from('chat_messages')
-                            .select('message_text')
-                            .eq('session_id', currentSessionId)
-                            .eq('is_admin_reply', false)
-                            .eq('is_bot_reply', false)
-                            .order('created_at', { ascending: false })
-                            .limit(1)
-                            .maybeSingle();
-
-                        if (lastUserMsg) {
-                            await supabase.from('chatbot_memory').insert({
-                                conversation_id: currentSessionId,
-                                user_message: lastUserMsg.message_text,
-                                admin_reply: text
-                            });
-                        }
-                    } catch (memErr) {
-                        console.error("Error saving to smart memory:", memErr);
-                    }
-                }
+            if (!isAdmin || !isManualMode) {
+                handleBotReply(text);
             }
-
-            if (!isAdmin && !isManualMode) handleBotLogic(text);
         } catch (error) {
             console.error("Error sending message:", error);
-            // في حالة الخطأ، يمكن إظهار علامة خطأ بجانب الرسالة
-            const tempMsg = document.getElementById(`msg-${tempId}`);
-            if (tempMsg) tempMsg.style.opacity = '0.5';
         }
     }
 
-    function appendMessage(text, type, time, id) {
-        if (!chatMessages) return;
+    async function handleBotReply(text) {
+        if (!botSettings || !botSettings.bot_enabled) return;
         
-        // منع التكرار إذا كانت الرسالة موجودة بالفعل
-        if (id && document.getElementById(`msg-${id}`)) return;
+        if (typingIndicator) typingIndicator.style.display = 'block';
+        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        const div = document.createElement('div');
-        div.className = `msg ${type}`;
-        if (id) div.id = `msg-${id}`;
-        div.innerText = text;
-        
-        const timeSpan = document.createElement('div');
-        timeSpan.style = "font-size:0.65rem; opacity:0.6; margin-top:4px; text-align:" + (type === 'sent' ? 'left' : 'right');
-        timeSpan.innerText = new Date(time).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-        
-        div.appendChild(timeSpan);
-        chatMessages.appendChild(div);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    async function handleBotLogic(text) {
-        if (!botSettings?.bot_enabled && !isTestMode) return;
-        if (!typingIndicator) return;
-        
-        typingIndicator.style.display = 'block';
         setTimeout(async () => {
-            typingIndicator.style.display = 'none';
-            let reply = "عذراً، لم أفهم طلبك جيداً. هل يمكنك التوضيح؟";
+            if (typingIndicator) typingIndicator.style.display = 'none';
             
-            // 1. البحث في الذاكرة الذكية أولاً (Long-term memory)
+            let reply = "عذراً، لم أفهم طلبك. هل يمكنك التوضيح أكثر؟";
+            
             if (botSettings?.smart_memory_enabled) {
                 try {
-                    // البحث عن رسائل مشابهة في الذاكرة
-                    const { data: memoryMatches } = await supabase
-                        .from('chatbot_memory')
-                        .select('admin_reply')
-                        .ilike('user_message', `%${text}%`)
-                        .limit(1)
-                        .maybeSingle();
-                    
-                    if (memoryMatches) {
-                        reply = memoryMatches.admin_reply;
-                    } else if (botSettings?.custom_replies) {
-                        // 2. إذا لم يوجد في الذاكرة، نستخدم الردود المخصصة التقليدية
-                        const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
-                        if (matched) reply = matched.reply;
+                    const { data: memories } = await supabase
+                        .from('smart_memory')
+                        .select('reply_text')
+                        .textSearch('keyword', text)
+                        .limit(1);
+                    if (memories && memories.length > 0) {
+                        reply = memories[0].reply_text;
                     }
                 } catch (err) {
                     console.error("Error searching smart memory:", err);
                 }
             } else if (botSettings?.custom_replies) {
-                // إذا كانت الذاكرة معطلة، نستخدم الردود المخصصة فقط
                 const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
                 if (matched) reply = matched.reply;
             }
@@ -511,7 +372,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (isTestMode) {
                 appendMessage(reply, 'received', new Date());
             } else {
-                // في الوضع الحقيقي، الـ Realtime سيتكفل بإضافة الرسالة للواجهة عند حفظها في القاعدة
                 await supabase.from('chat_messages').insert([{ 
                     session_id: currentSessionId, 
                     message_text: reply, 
@@ -566,7 +426,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initAuth();
 });
 
-// --- ميزات الإرسال الجماعي والفردي الجديدة ---
+// --- ميزات الإرسال الجماعي والفردي المطورة ---
 
 const bulkModal = document.getElementById('bulkMessageModal');
 const bulkBtn = document.getElementById('bulkMessageBtn');
@@ -576,13 +436,32 @@ const sendBulk = document.getElementById('sendBulkBtn');
 const recipientType = document.getElementById('recipientType');
 const selectedUsersArea = document.getElementById('selectedUsersArea');
 const selectedUsersList = document.getElementById('selectedUsersList');
+const userSearchInput = document.getElementById('userSearchInput');
+const userSearchResults = document.getElementById('userSearchResults');
 
 let selectedUsers = [];
+let allProfiles = [];
 
-// فتح نافذة الإرسال الجماعي
+// جلب جميع البروفايلات عند فتح النافذة لأول مرة
+async function fetchAllProfiles() {
+    if (allProfiles.length > 0) return;
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, username')
+            .order('full_name');
+        if (error) throw error;
+        allProfiles = data || [];
+    } catch (err) {
+        console.error("Error fetching profiles:", err);
+    }
+}
+
+// فتح نافذة الإرسال
 if (bulkBtn) {
-    bulkBtn.onclick = () => {
+    bulkBtn.onclick = async () => {
         bulkModal.style.display = 'flex';
+        await fetchAllProfiles();
         updateSelectedUsersUI();
     };
 }
@@ -592,6 +471,8 @@ if (bulkBtn) {
     if (btn) {
         btn.onclick = () => {
             bulkModal.style.display = 'none';
+            if (userSearchResults) userSearchResults.style.display = 'none';
+            if (userSearchInput) userSearchInput.value = '';
         };
     }
 });
@@ -603,56 +484,118 @@ if (recipientType) {
     };
 }
 
-// تحديث قائمة المستخدمين المحددين
-function updateSelectedUsers() {
-    const checkboxes = document.querySelectorAll('.user-select-checkbox:checked');
-    selectedUsers = Array.from(checkboxes).map(cb => ({
-        id: cb.dataset.userId,
-        name: cb.dataset.userName
-    }));
-    updateSelectedUsersUI();
+// منطق البحث عن المستخدمين
+if (userSearchInput) {
+    userSearchInput.oninput = () => {
+        const term = userSearchInput.value.toLowerCase().trim();
+        if (!term) {
+            userSearchResults.style.display = 'none';
+            return;
+        }
+
+        const filtered = allProfiles.filter(p => 
+            (p.full_name && p.full_name.toLowerCase().includes(term)) || 
+            (p.email && p.email.toLowerCase().includes(term)) ||
+            (p.username && p.username.toLowerCase().includes(term))
+        ).slice(0, 10);
+
+        if (filtered.length === 0) {
+            userSearchResults.innerHTML = '<div style="padding:10px; color:#999; text-align:center;">لا توجد نتائج</div>';
+        } else {
+            userSearchResults.innerHTML = filtered.map(p => `
+                <div class="search-result-item" data-id="${p.id}" data-name="${p.full_name || p.username || p.email}" style="padding:10px; cursor:pointer; border-bottom:1px solid #eee; transition:background 0.2s;">
+                    <div style="font-weight:600; font-size:0.9rem;">${p.full_name || p.username || 'بدون اسم'}</div>
+                    <div style="font-size:0.75rem; color:#666;">${p.email || ''}</div>
+                </div>
+            `).join('');
+
+            userSearchResults.querySelectorAll('.search-result-item').forEach(item => {
+                item.onclick = () => {
+                    const id = item.dataset.id;
+                    const name = item.dataset.name;
+                    if (!selectedUsers.find(u => u.id === id)) {
+                        selectedUsers.push({ id, name });
+                        updateSelectedUsersUI();
+                    }
+                    userSearchInput.value = '';
+                    userSearchResults.style.display = 'none';
+                };
+                item.onmouseover = () => { item.style.background = '#f0f4ff'; };
+                item.onmouseout = () => { item.style.background = 'white'; };
+            });
+        }
+        userSearchResults.style.display = 'block';
+    };
 }
+
+// إغلاق نتائج البحث عند الضغط خارجها
+document.addEventListener('click', (e) => {
+    if (userSearchResults && !userSearchResults.contains(e.target) && e.target !== userSearchInput) {
+        userSearchResults.style.display = 'none';
+    }
+});
 
 function updateSelectedUsersUI() {
     if (!selectedUsersList) return;
     selectedUsersList.innerHTML = '';
     
     if (selectedUsers.length === 0) {
-        selectedUsersList.innerHTML = '<span style="color:#999; font-size:0.8rem;">لا يوجد مستخدمين محددين</span>';
+        selectedUsersList.innerHTML = '<span style="color:#999; font-size:0.8rem;">لم يتم اختيار مستخدمين بعد</span>';
         return;
     }
 
     selectedUsers.forEach(user => {
         const tag = document.createElement('div');
-        tag.style.cssText = 'background:#eef2ff; color:#003366; padding:2px 8px; border-radius:4px; font-size:0.8rem; display:flex; align-items:center; gap:5px; border:1px solid #d0d7ff;';
-        tag.innerHTML = `<span>${user.name}</span><span style="cursor:pointer; font-weight:bold;" onclick="removeSelectedUser('${user.id}')">&times;</span>`;
+        tag.style.cssText = 'background:#6366f1; color:white; padding:4px 10px; border-radius:20px; font-size:0.85rem; display:flex; align-items:center; gap:8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);';
+        tag.innerHTML = `<span>${user.name}</span><span style="cursor:pointer; font-weight:bold; font-size:1.1rem; line-height:1;" onclick="removeSelectedUser('${user.id}')">&times;</span>`;
         selectedUsersList.appendChild(tag);
     });
 }
 
+// تحديث قائمة المستخدمين المحددين من الـ checkboxes
+function updateSelectedUsers() {
+    const checkboxes = document.querySelectorAll('.user-select-checkbox:checked');
+    const checkedUsers = Array.from(checkboxes).map(cb => ({
+        id: cb.dataset.userId,
+        name: cb.dataset.userName
+    }));
+    
+    // دمج المختارين من الـ checkboxes مع المختارين من البحث دون تكرار
+    checkedUsers.forEach(u => {
+        if (!selectedUsers.find(su => su.id === u.id)) {
+            selectedUsers.push(u);
+        }
+    });
+    
+    // إزالة غير المختارين من الـ checkboxes إذا كانوا قد اختيروا من هناك أصلاً
+    const checkboxIds = checkedUsers.map(u => u.id);
+    const currentlyInCheckboxes = Array.from(document.querySelectorAll('.user-select-checkbox')).map(cb => cb.dataset.userId);
+    
+    selectedUsers = selectedUsers.filter(u => {
+        if (currentlyInCheckboxes.includes(u.id)) {
+            return checkboxIds.includes(u.id);
+        }
+        return true; // إذا لم يكن في قائمة الـ checkboxes الحالية (تم اختياره من البحث) نتركه
+    });
+
+    updateSelectedUsersUI();
+}
+
 window.removeSelectedUser = (userId) => {
+    selectedUsers = selectedUsers.filter(u => u.id !== userId);
     const cb = document.querySelector(`.user-select-checkbox[data-user-id="${userId}"]`);
     if (cb) cb.checked = false;
-    selectedUsers = selectedUsers.filter(u => u.id !== userId);
     updateSelectedUsersUI();
 };
 
-// فتح رسالة سريعة لمستخدم واحد
 function openQuickMessage(userId, userName) {
     recipientType.value = 'selected';
     selectedUsersArea.style.display = 'block';
-    
-    // إزالة أي تحديد سابق وإضافة هذا المستخدم فقط
-    document.querySelectorAll('.user-select-checkbox').forEach(cb => cb.checked = false);
-    const cb = document.querySelector(`.user-select-checkbox[data-user-id="${userId}"]`);
-    if (cb) cb.checked = true;
-    
     selectedUsers = [{ id: userId, name: userName }];
     bulkModal.style.display = 'flex';
     updateSelectedUsersUI();
 }
 
-// إرسال الرسائل
 if (sendBulk) {
     sendBulk.onclick = async () => {
         const title = document.getElementById('bulkMessageTitle').value;
@@ -664,11 +607,19 @@ if (sendBulk) {
             return;
         }
 
+        if (type === 'selected' && selectedUsers.length === 0) {
+            alert('يرجى اختيار مستخدم واحد على الأقل');
+            return;
+        }
+
         sendBulk.disabled = true;
-        sendBulk.innerText = 'جاري الإرسال...';
+        sendBulk.innerHTML = '<span style="display:flex; align-items:center; gap:5px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg> جاري الإرسال...</span>';
 
         try {
             let targetUserIds = [];
+
+            const { data: { user } } = await supabase.auth.getUser();
+            const currentAdminId = user?.id;
 
             if (type === 'all') {
                 const { data: profiles } = await supabase.from('profiles').select('id');
@@ -682,62 +633,81 @@ if (sendBulk) {
 
             if (targetUserIds.length === 0) {
                 alert('لم يتم العثور على مستخدمين للإرسال إليهم');
-                sendBulk.disabled = false;
-                sendBulk.innerText = 'إرسال الآن';
+                resetSendBtn();
                 return;
             }
 
-            // إرسال الرسائل والإشعارات
+            let successCount = 0;
             for (const userId of targetUserIds) {
-                // 1. إيجاد أو إنشاء جلسة محادثة
-                let sessionId;
-                const { data: session } = await supabase
-                    .from('chat_sessions')
-                    .select('id')
-                    .eq('user_id', userId)
-                    .eq('status', 'active')
-                    .single();
-
-                if (session) {
-                    sessionId = session.id;
-                } else {
-                    const { data: newSession } = await supabase
+                try {
+                    let sessionId;
+                    const { data: session } = await supabase
                         .from('chat_sessions')
-                        .insert({ user_id: userId, status: 'active', is_manual_mode: true })
-                        .select()
-                        .single();
-                    sessionId = newSession.id;
+                        .select('id')
+                        .eq('user_id', userId)
+                        .eq('status', 'active')
+                        .maybeSingle();
+
+                    if (session) {
+                        sessionId = session.id;
+                    } else {
+                        const { data: newSession, error: sessErr } = await supabase
+                            .from('chat_sessions')
+                            .insert({ user_id: userId, status: 'active', is_manual_mode: true })
+                            .select()
+                            .single();
+                        if (sessErr) throw sessErr;
+                        sessionId = newSession.id;
+                    }
+
+                    const { error: msgErr } = await supabase.from('chat_messages').insert({
+                        session_id: sessionId,
+                        message_text: text,
+                        is_admin_reply: true,
+                        sender_id: currentAdminId
+                    });
+                    if (msgErr) throw msgErr;
+
+                    await supabase.from('notifications').insert({
+                        user_id: userId,
+                        title: title || 'رسالة جديدة من الإدارة',
+                        message: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
+                        type: 'message',
+                        link: '/chat-customer.html'
+                    });
+                    
+                    successCount++;
+                } catch (innerErr) {
+                    console.error(`Error sending to user ${userId}:`, innerErr);
                 }
-
-                // 2. إرسال الرسالة
-                await supabase.from('chat_messages').insert({
-                    session_id: sessionId,
-                    message_text: text,
-                    is_admin_reply: true,
-                    sender_id: currentUser.id
-                });
-
-                // 3. إنشاء إشعار
-                await supabase.from('notifications').insert({
-                    user_id: userId,
-                    title: title || 'رسالة جديدة من الإدارة',
-                    message: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
-                    type: 'message',
-                    link: '/chat-customer.html'
-                });
             }
 
-            alert(`تم إرسال الرسالة بنجاح لـ ${targetUserIds.length} مستخدم`);
+            alert(`تم إرسال الرسالة بنجاح لـ ${successCount} مستخدم`);
             bulkModal.style.display = 'none';
             document.getElementById('bulkMessageTitle').value = '';
             document.getElementById('bulkMessageText').value = '';
+            selectedUsers = [];
+            document.querySelectorAll('.user-select-checkbox').forEach(cb => cb.checked = false);
+            updateSelectedUsersUI();
             
         } catch (error) {
-            console.error('Error sending bulk messages:', error);
-            alert('حدث خطأ أثناء إرسال الرسائل');
+            console.error('Error in bulk message process:', error);
+            alert('حدث خطأ أثناء معالجة طلب الإرسال');
         } finally {
-            sendBulk.disabled = false;
-            sendBulk.innerText = 'إرسال الآن';
+            resetSendBtn();
         }
     };
 }
+
+function resetSendBtn() {
+    sendBulk.disabled = false;
+    sendBulk.innerHTML = 'إرسال الآن';
+}
+
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; }
+    .search-result-item:last-child { border-bottom: none; }
+`;
+document.head.appendChild(style);
