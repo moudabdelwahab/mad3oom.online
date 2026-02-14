@@ -65,7 +65,7 @@ async function getSmartMemoryReply(text) {
         return null;
     }
 
-    return memories?.length ? memories[0].admin_reply : null;
+return memories?.[0]?.admin_reply || null;
 }
 
 
