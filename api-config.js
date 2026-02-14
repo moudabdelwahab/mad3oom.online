@@ -1,8 +1,8 @@
 // api-config.js
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-const SUPABASE_URL = globalThis.SUPABASE_URL || 'https://srnelrdpqkcntbgudyto.supabase.co';
-const SUPABASE_ANON_KEY = globalThis.SUPABASE_ANON_KEY || 'sb_publishable_0pvB8_xD0txjdJBkYqXMyg__jKMw71W';
+const SUPABASE_URL = 'https://pzufmuolstyiwqeqbasi.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_pMOWXYBwAx7pZjlAoqGIbQ_-7RQ_mZ9';
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error('Supabase env not loaded');
