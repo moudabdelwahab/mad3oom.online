@@ -54,19 +54,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   
 async function getSmartMemoryReply(text) {
-    const { data: memories, error } = await supabase
-        .from('chatbot_memory')
-        .select('admin_reply')
-        .ilike('user_message', `%${text}%`)
-        .limit(1);
+  if (hasChatbotMemoryTable === false) return null;
 
-    if (error) {
-        logRlsFailure('chatbot_memory', error, 'getSmartMemoryReply');
-        return null;
-    }
+  const { data, error } = await supabase
+    .from('chatbot_memory')
+    .select('admin_reply')
+    .textSearch('user_message', text)
+    .limit(1);
 
-return memories?.[0]?.admin_reply || null;
+  if (error) {
+    logRlsFailure('chatbot_memory', error, 'getSmartMemoryReply');
+    return null;
+  }
+
+  return data?.[0]?.admin_reply || null;
 }
+
 
 
     async function testSupabaseConnection() {
