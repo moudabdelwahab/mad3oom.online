@@ -584,15 +584,19 @@ if (geminiReply && geminiReply.trim() !== "") {
                 appendMessage(reply, 'received', new Date());
             } else {
                 console.log("[Bot] Saving bot reply to database...");
-                const { error: insertError } = await supabase.from('chat_messages').insert([if (!reply || reply.trim() === "") {
+            if (!reply || reply.trim() === "") {
   reply = "حدث خطأ تقني.. حاول مرة أخرى";
 }
-{ 
-                    session_id: currentSessionId, 
-                    message_text: reply, 
-                    is_bot_reply: true,
-                    sender_id: null
-                }]);
+
+const { error: insertError } = await supabase
+  .from('chat_messages')
+  .insert([{
+    session_id: currentSessionId,
+    message_text: reply,
+    is_bot_reply: true,
+    sender_id: null
+  }]);
+
                 
                 if (insertError) {
                     console.error("[Bot] Error saving reply:", insertError);
