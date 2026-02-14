@@ -557,10 +557,10 @@ async function fetchGeminiReply(message) {
                console.log("[Bot] Attempting Gemini via Edge Function...");
 
 const geminiReply = await fetchGeminiReply(text);
-
-if (geminiReply) {
-    reply = geminiReply;
-    console.log("[Bot] Gemini reply received");
+if (geminiReply && geminiReply.trim() !== "") {
+  reply = geminiReply;
+} else {
+  console.warn("AI returned empty reply");
 }
                 }
 
@@ -584,7 +584,10 @@ if (geminiReply) {
                 appendMessage(reply, 'received', new Date());
             } else {
                 console.log("[Bot] Saving bot reply to database...");
-                const { error: insertError } = await supabase.from('chat_messages').insert([{ 
+                const { error: insertError } = await supabase.from('chat_messages').insert([if (!reply || reply.trim() === "") {
+  reply = "حدث خطأ تقني.. حاول مرة أخرى";
+}
+{ 
                     session_id: currentSessionId, 
                     message_text: reply, 
                     is_bot_reply: true,
