@@ -53,50 +53,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
   
+async function getSmartMemoryReply(text) {
+    const { data: memories, error } = await supabase
+        .from('chatbot_memory')
+        .select('admin_reply')
+        .ilike('user_message', `%${text}%`)
+        .limit(1);
 
-        const payload = {
-            message: `التعليمات: ${systemInstruction}\n\nرسالة العميل: ${message}`
-        };
-
-        const { data, error } = await supabase.functions.invoke('gemini-proxy', {
-            body: payload
-        });
-
-        if (error) {
-            throw new Error(error.message || 'gemini-proxy invocation failed');
-        }
-
-        const reply = data?.reply?.trim();
-        if (!reply) {
-            throw new Error('gemini-proxy returned an empty reply');
-        }
-
-        return reply;
+    if (error) {
+        logRlsFailure('chatbot_memory', error, 'getSmartMemoryReply');
+        return null;
     }
 
-    async function getSmartMemoryReply(text) {
-        if (hasChatbotMemoryTable === false) return null;
+    return memories?.length ? memories[0].admin_reply : null;
+}
 
-        const { data: memories, error } = await supabase
-            .from('chatbot_memory')
-            .select('admin_reply')
-.textSearch('user_message', text)
-            .limit(1);
-
-        if (error) {
-            if (error.code === 'PGRST205') {
-                hasChatbotMemoryTable = false;
-                logRlsFailure('chatbot_memory', error, 'table-check');
-                return null;
-            }
-
-            logRlsFailure('chatbot_memory', error, 'getSmartMemoryReply');
-            return null;
-        }
-
-        hasChatbotMemoryTable = true;
-        return memories && memories.length > 0 ? memories[0].reply_text : null;
-    }
 
     async function testSupabaseConnection() {
         const report = {
@@ -530,6 +501,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 async function fetchGeminiReply(message) {
     try {
+        console.log('[Bot] Calling Edge Function...');
+
         const { data, error } = await supabase.functions.invoke('gemini-proxy', {
             body: { message }
         });
@@ -539,11 +512,7 @@ async function fetchGeminiReply(message) {
             return null;
         }
 
-        // Gemini الرد بيكون جواه text هنا:
-        const text =
-            data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
-
-        return text;
+        return data?.reply || null;
 
     } catch (err) {
         console.error('[Bot] invoke failed:', err);
