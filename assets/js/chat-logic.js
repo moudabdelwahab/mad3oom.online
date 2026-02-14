@@ -417,7 +417,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function handleBotReply(text) {
-        if (!botSettings || !botSettings.bot_enabled) return;
+        console.log("[Bot] Handling reply for:", text);
+        if (!botSettings || !botSettings.bot_enabled) {
+            console.log("[Bot] Bot is disabled or settings not loaded");
+            return;
+        }
         
         if (typingIndicator) typingIndicator.style.display = 'block';
         if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -426,15 +430,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 1. جلب مفاتيح الـ API من Supabase (تخزين آمن)
             const { data: apiKeys, error: keyError } = await supabase.from('api_keys').select('gemini_key').limit(1).maybeSingle();
             
-            if (keyError) console.error("Error fetching API keys:", keyError);
+            if (keyError) console.error("[Bot] Error fetching API keys:", keyError);
             
             const geminiKey = apiKeys?.gemini_key;
             let reply = "";
 
             // 2. محاولة استخدام Gemini API أولاً (الأولوية)
             if (geminiKey) {
+                console.log("[Bot] Attempting Gemini API...");
                 try {
-                    // بناء سياق المحادثة (System Prompt + User Message)
                     const systemInstruction = botSettings?.system_prompt || "أنت مساعد ذكي لمنصة مدعوم. أجب بأسلوب مهني وودود باللغة العربية.";
                     
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
@@ -458,21 +462,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     if (!response.ok) {
                         const errorData = await response.json();
+                        console.error("[Bot] Gemini API Error Response:", errorData);
                         throw new Error(errorData.error?.message || "Gemini API request failed");
                     }
 
                     const data = await response.json();
                     if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
                         reply = data.candidates[0].content.parts[0].text;
+                        console.log("[Bot] Gemini reply received");
                     }
                 } catch (geminiErr) {
-                    console.error("Gemini API Error:", geminiErr);
-                    // سيستمر الكود للمحاولة عبر الذاكرة الذكية إذا فشل Gemini
+                    console.error("[Bot] Gemini API Error:", geminiErr);
                 }
+            } else {
+                console.log("[Bot] No Gemini API key found in Supabase");
             }
 
             // 3. إذا فشل Gemini، نستخدم الذاكرة الذكية أو الردود المخصصة
             if (!reply) {
+                console.log("[Bot] Falling back to smart memory/custom replies...");
                 if (botSettings?.smart_memory_enabled) {
                     try {
                         const { data: memories } = await supabase
@@ -484,7 +492,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             reply = memories[0].reply_text;
                         }
                     } catch (err) {
-                        console.error("Error searching smart memory:", err);
+                        console.error("[Bot] Error searching smart memory:", err);
                     }
                 }
                 
@@ -495,7 +503,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             // 4. رد افتراضي إذا لم يتوفر أي شيء
-            if (!reply) reply = "عذراً، لم أفهم طلبك. هل يمكنك التوضيح أكثر؟";
+            if (!reply) {
+                reply = "عذراً، لم أفهم طلبك. هل يمكنك التوضيح أكثر؟";
+            }
 
             // إخفاء مؤشر الكتابة وإرسال الرد
             if (typingIndicator) typingIndicator.style.display = 'none';
@@ -503,16 +513,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (isTestMode) {
                 appendMessage(reply, 'received', new Date());
             } else {
-                await supabase.from('chat_messages').insert([{ 
+                console.log("[Bot] Saving bot reply to database...");
+                const { error: insertError } = await supabase.from('chat_messages').insert([{ 
                     session_id: currentSessionId, 
                     message_text: reply, 
                     is_bot_reply: true,
                     sender_id: 'bot'
                 }]);
+                
+                if (insertError) {
+                    console.error("[Bot] Error saving reply:", insertError);
+                    // في حالة فشل الحفظ في القاعدة، نظهر الرسالة في الواجهة على الأقل
+                    appendMessage(reply, 'received', new Date());
+                }
             }
         } catch (error) {
-            console.error("Bot reply error:", error);
+            console.error("[Bot] Fatal error in handleBotReply:", error);
             if (typingIndicator) typingIndicator.style.display = 'none';
+            appendMessage("عذراً، حدث خطأ تقني. يرجى المحاولة لاحقاً.", 'received', new Date());
         }
     }
 
