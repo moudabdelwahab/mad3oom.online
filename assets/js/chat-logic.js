@@ -758,7 +758,7 @@ const { error: insertError } = await supabase
     function finishChat() {
         if (ratingModal) ratingModal.style.display = 'none';
         alert('شكراً لك! تم إنهاء المحادثة.');
-        window.location.href = '/customer-dashboard.html';
+        window.location.href = '/chat-end.html';
     }
 
     // --- منطق القائمة السياقية (Context Menu) للرد والتفاعل ---
