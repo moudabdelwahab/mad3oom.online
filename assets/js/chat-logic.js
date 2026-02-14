@@ -504,25 +504,24 @@ const { data, error } = await supabase
         return true;
     }
 async function fetchGeminiReply(message) {
-    try {
-        console.log('[Bot] Calling Edge Function...');
+  const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+    body: { message }
+  });
 
-        const { data, error } = await supabase.functions.invoke('gemini-proxy', {
-            body: { message }
-        });
+  if (error) {
+    console.error(error);
+    return null;
+  }
 
-        if (error) {
-            console.error('[Bot] Edge Function Error:', error);
-            return null;
-        }
+  if (!data?.reply || data.reply.trim() === "") {
+    console.warn("Gemini returned empty reply");
+    return null;
+  }
 
-        return data?.reply || null;
-
-    } catch (err) {
-        console.error('[Bot] invoke failed:', err);
-        return null;
-    }
+  console.log("Gemini reply:", data.reply);
+  return data.reply;
 }
+
 
     async function handleBotReply(text) {
         console.log("[Bot] Handling reply for:", text);
