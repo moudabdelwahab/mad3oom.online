@@ -57,11 +57,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function getSmartMemoryReply(text) {
   if (hasChatbotMemoryTable === false) return null;
 
-  const { data, error } = await supabase
-    .from('chatbot_memory')
-    .select('admin_reply')
-    .textSearch('user_message', text)
-    .limit(1);
+const { data, error } = await supabase
+  .from('chatbot_memory')
+  .select('admin_reply')
+  .ilike('user_message', `%${text}%`)
+  .limit(1);
 
   if (error) {
     logRlsFailure('chatbot_memory', error, 'getSmartMemoryReply');
