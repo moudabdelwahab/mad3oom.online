@@ -104,13 +104,9 @@
             background: linear-gradient(135deg, #0055AA 0%, #003366 100%);
         }
 
-        .redirect-btn:active {
-            transform: translateY(0);
-        }
-
         /* ==================== Rating Section ==================== */
         .rating-section {
-            border: 2px solid #E74C3C;
+            border: 1px solid #e0e0e0;
             border-radius: 15px;
             padding: 25px;
             margin: 25px 0;
@@ -155,58 +151,43 @@
 
         /* ==================== Security Section ==================== */
         .security-section {
-            border: 2px solid #E74C3C;
+            border: 1px solid #e0e0e0;
             border-radius: 15px;
             padding: 25px;
-            background: #FAFAFA;
+            background: #f9f9f9;
             display: flex;
-            align-items: flex-start;
-            gap: 15px;
+            align-items: center;
+            gap: 20px;
+            text-align: right;
         }
 
-        .security-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #0077CC 0%, #0055AA 100%);
-            border-radius: 50%;
+        .security-icon-container {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background: rgba(0, 119, 204, 0.1);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 28px;
-            flex-shrink: 0;
+        }
+
+        .security-icon-svg {
+            width: 28px;
+            height: 28px;
+            fill: #0077CC;
         }
 
         .security-content {
-            text-align: right;
             flex: 1;
         }
 
-        .security-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-        }
-
         .security-text {
-            font-size: 12px;
-            color: #666;
+            font-size: 13px;
+            color: #444;
             line-height: 1.6;
-            margin-bottom: 10px;
-        }
-
-        .security-link {
-            font-size: 12px;
-            color: #0077CC;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.3s ease;
-        }
-
-        .security-link:hover {
-            color: #0055AA;
-            text-decoration: underline;
+            margin: 0;
+            font-weight: 500;
         }
 
         /* ==================== Countdown Info ==================== */
@@ -221,52 +202,11 @@
             font-weight: 600;
         }
 
-        /* ==================== Responsive Design ==================== */
-        @media (max-width: 600px) {
-            .chat-end-container {
-                padding: 25px;
-                border-radius: 15px;
-            }
-
-            .chat-end-header h1 {
-                font-size: 22px;
-            }
-
-            .countdown-badge {
-                width: 50px;
-                height: 50px;
-                font-size: 18px;
-                top: 15px;
-                left: 15px;
-            }
-
-            .rating-section,
-            .security-section {
-                padding: 20px;
-            }
-
-            .star {
-                font-size: 28px;
-            }
-
-            .security-icon {
-                width: 45px;
-                height: 45px;
-                font-size: 24px;
-            }
-        }
-
         /* ==================== Animation ==================== */
         @keyframes pulse {
-            0% {
-                box-shadow: 0 4px 15px rgba(0, 119, 204, 0.3);
-            }
-            50% {
-                box-shadow: 0 4px 25px rgba(0, 119, 204, 0.5);
-            }
-            100% {
-                box-shadow: 0 4px 15px rgba(0, 119, 204, 0.3);
-            }
+            0% { box-shadow: 0 4px 15px rgba(217, 83, 79, 0.3); }
+            50% { box-shadow: 0 4px 25px rgba(217, 83, 79, 0.5); }
+            100% { box-shadow: 0 4px 15px rgba(217, 83, 79, 0.3); }
         }
 
         .countdown-badge.pulse {
@@ -274,14 +214,8 @@
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .chat-end-container {
@@ -299,7 +233,7 @@
         <!-- Header -->
         <div class="chat-end-header">
             <h1>تم إنهاء المحادثة</h1>
-            <p>لقد آنهيت الاجتماع لكل المشاركين.</p>
+            <p>لقد أنهيت المحادثة بنجاح.</p>
         </div>
 
         <!-- Redirect Button -->
@@ -311,7 +245,7 @@
 
         <!-- Rating Section -->
         <div class="rating-section">
-            <div class="rating-title">كيف كانت جودة الصوت والفيديو حتى الآن في تلك الجلسة؟</div>
+            <div class="rating-title">كيف كانت جودة الخدمة في هذه المحادثة؟</div>
             <div class="stars-container" id="starsContainer">
                 <span class="star" data-rating="1">☆</span>
                 <span class="star" data-rating="2">☆</span>
@@ -327,11 +261,13 @@
 
         <!-- Security Section -->
         <div class="security-section">
-            <div class="security-icon">🔒</div>
+            <div class="security-icon-container">
+                <svg class="security-icon-svg" viewBox="0 0 24 24">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                </svg>
+            </div>
             <div class="security-content">
-                <div class="security-title">احتفظك آمن</div>
-                <div class="security-text">لا يمكن لأي شخص الاستمرار إلى اجتماع ما تم حذفه أو قيله من قبل المسؤول.</div>
-                <a href="#" class="security-link">مزيد من المعلومات</a>
+                <p class="security-text">هذه المحادثة مؤمنه ولا يمكن لاي شخص الوصول الي محتواها غيرك وبمجرد اغلاقها لا يمكن تذكرها</p>
             </div>
         </div>
 
@@ -344,35 +280,39 @@
     <script>
         // ==================== Countdown Logic ====================
         let countdownSeconds = 60;
-        const redirectUrl = 'customer-dashboard.html'; // يمكن تغييره حسب الحاجة
+        const redirectUrl = 'customer-dashboard.html';
         const countdownBadge = document.getElementById('countdownBadge');
         const countdownNumber = document.getElementById('countdownNumber');
         const countdownText = document.getElementById('countdownText');
         const redirectBtn = document.getElementById('redirectBtn');
+        
+        let hasRedirected = false;
 
-        // بدء العداد التنازلي
         const countdownInterval = setInterval(() => {
+            if (hasRedirected) return;
+            
             countdownSeconds--;
             countdownNumber.textContent = countdownSeconds;
             countdownText.textContent = countdownSeconds + ' ثانية';
 
-            // تغيير الألوان حسب الوقت المتبقي
             if (countdownSeconds <= 10) {
                 countdownBadge.classList.add('danger', 'pulse');
                 countdownBadge.classList.remove('warning');
             } else if (countdownSeconds <= 20) {
                 countdownBadge.classList.add('warning');
-                countdownBadge.classList.remove('danger', 'pulse');
-            } else {
-                countdownBadge.classList.remove('warning', 'danger', 'pulse');
             }
 
-            // إعادة التوجيه عند انتهاء العداد
             if (countdownSeconds <= 0) {
                 clearInterval(countdownInterval);
-                window.location.href = redirectUrl;
+                performRedirect();
             }
         }, 1000);
+
+        function performRedirect() {
+            if (hasRedirected) return;
+            hasRedirected = true;
+            window.location.href = redirectUrl;
+        }
 
         // ==================== Rating Stars Logic ====================
         const stars = document.querySelectorAll('.star');
@@ -382,8 +322,6 @@
             star.addEventListener('click', () => {
                 selectedRating = star.dataset.rating;
                 updateStars(selectedRating);
-                // يمكن إرسال التقييم إلى الخادم هنا
-                console.log('تم اختيار التقييم:', selectedRating);
             });
 
             star.addEventListener('mouseover', () => {
@@ -410,19 +348,13 @@
         // ==================== Redirect Button Logic ====================
         redirectBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            clearInterval(countdownInterval);
-            window.location.href = redirectUrl;
+            performRedirect();
         });
 
         // ==================== Prevent Going Back ====================
-        // منع العودة للصفحة السابقة
-        window.addEventListener('beforeunload', () => {
-            // هذا يمنع المستخدم من الرجوع للمحادثة المغلقة
-            history.pushState(null, null, window.location.href);
-        });
-
+        history.pushState(null, null, window.location.href);
         window.addEventListener('popstate', () => {
-            window.location.href = redirectUrl;
+            performRedirect();
         });
     </script>
 </body>
