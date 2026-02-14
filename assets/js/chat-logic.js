@@ -1,4 +1,5 @@
 import { supabase, supabaseRestFetch } from '../../api-config.js';
+console.log("CHAT LOGIC VERSION 999");
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Core Elements
