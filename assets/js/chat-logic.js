@@ -1,4 +1,5 @@
 import { supabase, supabaseRestFetch } from '../../api-config.js';
+console.log("CHAT LOGIC VERSION 999");
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Core Elements
@@ -52,54 +53,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('[Supabase][RLS/Query Failure]', details);
     }
 
-    async function fetchGeminiReply(message, systemInstruction) {
-        if (!supabase) {
-            throw new Error('Supabase client not initialized');
-        }
+  
+async function getSmartMemoryReply(text) {
+  if (hasChatbotMemoryTable === false) return null;
 
-        const payload = {
-            message: `التعليمات: ${systemInstruction}\n\nرسالة العميل: ${message}`
-        };
+  const { data, error } = await supabase
+    .from('chatbot_memory')
+    .select('admin_reply')
+    .textSearch('user_message', text)
+    .limit(1);
 
-        const { data, error } = await supabase.functions.invoke('gemini-proxy', {
-            body: payload
-        });
+  if (error) {
+    logRlsFailure('chatbot_memory', error, 'getSmartMemoryReply');
+    return null;
+  }
 
-        if (error) {
-            throw new Error(error.message || 'gemini-proxy invocation failed');
-        }
+  return data?.[0]?.admin_reply || null;
+}
 
-        const reply = data?.reply?.trim();
-        if (!reply) {
-            throw new Error('gemini-proxy returned an empty reply');
-        }
 
-        return reply;
-    }
-
-    async function getSmartMemoryReply(text) {
-        if (hasChatbotMemoryTable === false) return null;
-
-        const { data: memories, error } = await supabase
-            .from('chatbot_memory')
-            .select('reply_text')
-            .textSearch('keyword', text)
-            .limit(1);
-
-        if (error) {
-            if (error.code === 'PGRST205') {
-                hasChatbotMemoryTable = false;
-                logRlsFailure('chatbot_memory', error, 'table-check');
-                return null;
-            }
-
-            logRlsFailure('chatbot_memory', error, 'getSmartMemoryReply');
-            return null;
-        }
-
-        hasChatbotMemoryTable = true;
-        return memories && memories.length > 0 ? memories[0].reply_text : null;
-    }
 
     async function testSupabaseConnection() {
         const report = {
@@ -531,6 +503,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof settings.is_enabled === 'boolean') return settings.is_enabled;
         return true;
     }
+async function fetchGeminiReply(message) {
+    try {
+        console.log('[Bot] Calling Edge Function...');
+
+        const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+            body: { message }
+        });
+
+        if (error) {
+            console.error('[Bot] Edge Function Error:', error);
+            return null;
+        }
+
+        return data?.reply || null;
+
+    } catch (err) {
+        console.error('[Bot] invoke failed:', err);
+        return null;
+    }
+}
 
     async function handleBotReply(text) {
         console.log("[Bot] Handling reply for:", text);
@@ -559,15 +551,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 2. إذا لا يوجد رد من الذاكرة نحاول Gemini عبر Edge Function
             if (!reply) {
-                console.log("[Bot] Attempting Gemini API...");
-                try {
-                    const systemInstruction = botSettings?.system_prompt || "أنت مساعد ذكي لمنصة مدعوم. أجب بأسلوب مهني وودود باللغة العربية.";
-                    reply = await fetchGeminiReply(text, systemInstruction);
-                    console.log("[Bot] Gemini reply received");
-                } catch (geminiErr) {
-                    console.error("[Bot] Gemini API Error:", geminiErr);
+               console.log("[Bot] Attempting Gemini via Edge Function...");
+
+const geminiReply = await fetchGeminiReply(text);
+
+if (geminiReply) {
+    reply = geminiReply;
+    console.log("[Bot] Gemini reply received");
+}
                 }
-            }
+
 
             // 4. إذا فشل Gemini نستخدم الردود المخصصة
             if (!reply && botSettings?.custom_replies) {
