@@ -505,8 +505,12 @@ const { data, error } = await supabase
     }
 async function fetchGeminiReply(message) {
   const { data, error } = await supabase.functions.invoke('gemini-proxy', {
-    body: { message }
-  });
+  body: {
+    message,
+    userId: currentUser.id   // 👈 السطر المهم
+  }
+});
+
 
   if (error) {
     console.error(error);
