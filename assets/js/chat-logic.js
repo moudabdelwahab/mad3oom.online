@@ -52,30 +52,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('[Supabase][RLS/Query Failure]', details);
     }
 
-    async function fetchGeminiKey() {
+    async function fetchGeminiReply(message, systemInstruction) {
         if (!supabase) {
-            console.error('[Bot] Supabase client not initialized');
-            return null;
+            throw new Error('Supabase client not initialized');
         }
 
-        const { data, error } = await supabase
-            .from('bot_api_keys')
-            .select('gemini_key')
-            .limit(1)
-            .single();
+        const payload = {
+            message: `التعليمات: ${systemInstruction}\n\nرسالة العميل: ${message}`
+        };
+
+        const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+            body: payload
+        });
 
         if (error) {
-            logRlsFailure('bot_api_keys', error, 'fetchGeminiKey');
-            return null;
+            throw new Error(error.message || 'gemini-proxy invocation failed');
         }
 
-        const geminiKey = data?.gemini_key?.trim() || null;
-        if (!geminiKey) {
-            console.warn('[Bot] Gemini key table empty', { table: 'bot_api_keys' });
-            return null;
+        const reply = data?.reply?.trim();
+        if (!reply) {
+            throw new Error('gemini-proxy returned an empty reply');
         }
 
-        return geminiKey;
+        return reply;
     }
 
     async function getSmartMemoryReply(text) {
@@ -123,12 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             report.checks.memory = { ok: false, message: error?.message || 'unknown' };
         }
 
-        try {
-            const geminiKey = await fetchGeminiKey();
-            report.checks.gemini = { ok: Boolean(geminiKey), reason: geminiKey ? 'loaded' : 'missing_or_blocked' };
-        } catch (error) {
-            report.checks.gemini = { ok: false, message: error?.message || 'unknown' };
-        }
+        report.checks.gemini = { ok: true, reason: 'proxied_via_edge_function' };
 
         try {
             const restResponse = await supabaseRestFetch('chatbot_memory?select=id&limit=1', { method: 'GET' });
@@ -563,54 +557,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
-            // 2. جلب مفاتيح Gemini من bot_api_keys
-            let geminiKey = null;
-            try {
-                geminiKey = await fetchGeminiKey();
-            } catch (keyError) {
-                console.error('[Bot] Failed to load Gemini key from bot_api_keys:', keyError);
-            }
-
-            if (!geminiKey) {
-                console.warn('[Bot] Gemini key table empty', { table: 'bot_api_keys' });
-            }
-
-            // 3. إذا لا يوجد رد من الذاكرة نحاول Gemini
-            if (!reply && geminiKey) {
+            // 2. إذا لا يوجد رد من الذاكرة نحاول Gemini عبر Edge Function
+            if (!reply) {
                 console.log("[Bot] Attempting Gemini API...");
                 try {
                     const systemInstruction = botSettings?.system_prompt || "أنت مساعد ذكي لمنصة مدعوم. أجب بأسلوب مهني وودود باللغة العربية.";
-                    
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [
-                                { 
-                                    role: "user", 
-                                    parts: [{ text: `التعليمات: ${systemInstruction}\n\nرسالة العميل: ${text}` }] 
-                                }
-                            ],
-                            generationConfig: {
-                                temperature: 0.7,
-                                topK: 40,
-                                topP: 0.95,
-                                maxOutputTokens: 1024,
-                            }
-                        })
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        console.error("[Bot] Gemini API Error Response:", errorData);
-                        throw new Error(errorData.error?.message || "Gemini API request failed");
-                    }
-
-                    const data = await response.json();
-                    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-                        reply = data.candidates[0].content.parts[0].text;
-                        console.log("[Bot] Gemini reply received");
-                    }
+                    reply = await fetchGeminiReply(text, systemInstruction);
+                    console.log("[Bot] Gemini reply received");
                 } catch (geminiErr) {
                     console.error("[Bot] Gemini API Error:", geminiErr);
                 }
