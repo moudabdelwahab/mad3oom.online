@@ -568,9 +568,10 @@ if (geminiReply) {
             }
 
             // 4. رد افتراضي إذا لم يتوفر أي شيء
-            if (!reply) {
-                reply = "عذراً، لم أفهم طلبك. هل يمكنك التوضيح أكثر؟";
-            }
+          if (!reply) {
+  reply = await fetchGeminiReply("رد على العميل بشكل عام");
+}
+
 
             // إخفاء مؤشر الكتابة وإرسال الرد
             if (typingIndicator) typingIndicator.style.display = 'none';
