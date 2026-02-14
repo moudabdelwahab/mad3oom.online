@@ -14,9 +14,11 @@ export const supabase = createClient(
 );
 
 export async function supabaseRestFetch(path, options = {}) {
+    const { data: { session } } = await supabase.auth.getSession();
     const headers = {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': session?.access_token ? `Bearer ${session.access_token}` : `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
         ...(options.headers || {})
     };
 

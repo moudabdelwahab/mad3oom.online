@@ -133,9 +133,10 @@ const { data, error } = await supabase
         const baseUrl = supabase.supabaseUrl + '/rest/v1/';
         const headers = {
             'apikey': supabase.supabaseKey,
-            'Authorization': `Bearer ${session?.access_token}`,
+            'Authorization': session?.access_token ? `Bearer ${session.access_token}` : `Bearer ${supabase.supabaseKey}`,
             'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
+            'Prefer': 'return=representation',
+            ...(options.headers || {})
         };
         return fetch(baseUrl + path, { ...options, headers });
     }
