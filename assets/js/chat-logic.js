@@ -531,6 +531,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof settings.is_enabled === 'boolean') return settings.is_enabled;
         return true;
     }
+async function fetchGeminiReply(message) {
+    try {
+        const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+            body: { message }
+        });
+
+        if (error) {
+            console.error('[Bot] Edge Function Error:', error);
+            return null;
+        }
+
+        // Gemini الرد بيكون جواه text هنا:
+        const text =
+            data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+
+        return text;
+
+    } catch (err) {
+        console.error('[Bot] invoke failed:', err);
+        return null;
+    }
+}
 
     async function handleBotReply(text) {
         console.log("[Bot] Handling reply for:", text);
@@ -559,15 +581,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 2. إذا لا يوجد رد من الذاكرة نحاول Gemini عبر Edge Function
             if (!reply) {
-                console.log("[Bot] Attempting Gemini API...");
-                try {
-                    const systemInstruction = botSettings?.system_prompt || "أنت مساعد ذكي لمنصة مدعوم. أجب بأسلوب مهني وودود باللغة العربية.";
-                    reply = await fetchGeminiReply(text, systemInstruction);
-                    console.log("[Bot] Gemini reply received");
-                } catch (geminiErr) {
-                    console.error("[Bot] Gemini API Error:", geminiErr);
-                }
-            }
+               console.log("[Bot] Attempting Gemini via Edge Function...");
+
+const geminiReply = await fetchGeminiReply(text);
+
+if (geminiReply) {
+    reply = geminiReply;
+    console.log("[Bot] Gemini reply received");
+}
+
 
             // 4. إذا فشل Gemini نستخدم الردود المخصصة
             if (!reply && botSettings?.custom_replies) {
