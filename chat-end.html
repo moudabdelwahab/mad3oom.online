@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تم إنهاء المحادثة</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ==================== Chat End Page Styles ==================== */
+        body {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+
+        .chat-end-container {
+            max-width: 600px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* ==================== Countdown Timer ==================== */
+        .countdown-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #0077CC 0%, #0055AA 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 119, 204, 0.3);
+            border: 3px solid #0055AA;
+        }
+
+        .countdown-badge.warning {
+            background: linear-gradient(135deg, #E0A800 0%, #D4941E 100%);
+            border-color: #D4941E;
+            box-shadow: 0 4px 15px rgba(224, 168, 0, 0.3);
+        }
+
+        .countdown-badge.danger {
+            background: linear-gradient(135deg, #D9534F 0%, #C9302C 100%);
+            border-color: #C9302C;
+            box-shadow: 0 4px 15px rgba(217, 83, 79, 0.3);
+        }
+
+        /* ==================== Main Content ==================== */
+        .chat-end-header {
+            margin-bottom: 30px;
+            margin-top: 20px;
+        }
+
+        .chat-end-header h1 {
+            font-size: 28px;
+            color: #003366;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .chat-end-header p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* ==================== Redirect Button ==================== */
+        .redirect-btn-container {
+            margin: 30px 0;
+        }
+
+        .redirect-btn {
+            display: inline-block;
+            padding: 14px 40px;
+            background: linear-gradient(135deg, #0077CC 0%, #0055AA 100%);
+            color: white;
+            border: 2px solid #0055AA;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 119, 204, 0.3);
+        }
+
+        .redirect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 119, 204, 0.4);
+            background: linear-gradient(135deg, #0055AA 0%, #003366 100%);
+        }
+
+        .redirect-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ==================== Rating Section ==================== */
+        .rating-section {
+            border: 2px solid #E74C3C;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            background: #FAFAFA;
+        }
+
+        .rating-title {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .stars-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .star {
+            font-size: 32px;
+            color: #CCCCCC;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .star:hover,
+        .star.active {
+            color: #FFD700;
+            transform: scale(1.2);
+        }
+
+        .rating-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+        }
+
+        /* ==================== Security Section ==================== */
+        .security-section {
+            border: 2px solid #E74C3C;
+            border-radius: 15px;
+            padding: 25px;
+            background: #FAFAFA;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .security-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #0077CC 0%, #0055AA 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .security-content {
+            text-align: right;
+            flex: 1;
+        }
+
+        .security-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .security-text {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .security-link {
+            font-size: 12px;
+            color: #0077CC;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .security-link:hover {
+            color: #0055AA;
+            text-decoration: underline;
+        }
+
+        /* ==================== Countdown Info ==================== */
+        .countdown-info {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .countdown-info strong {
+            color: #0077CC;
+            font-weight: 600;
+        }
+
+        /* ==================== Responsive Design ==================== */
+        @media (max-width: 600px) {
+            .chat-end-container {
+                padding: 25px;
+                border-radius: 15px;
+            }
+
+            .chat-end-header h1 {
+                font-size: 22px;
+            }
+
+            .countdown-badge {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+                top: 15px;
+                left: 15px;
+            }
+
+            .rating-section,
+            .security-section {
+                padding: 20px;
+            }
+
+            .star {
+                font-size: 28px;
+            }
+
+            .security-icon {
+                width: 45px;
+                height: 45px;
+                font-size: 24px;
+            }
+        }
+
+        /* ==================== Animation ==================== */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 4px 15px rgba(0, 119, 204, 0.3);
+            }
+            50% {
+                box-shadow: 0 4px 25px rgba(0, 119, 204, 0.5);
+            }
+            100% {
+                box-shadow: 0 4px 15px rgba(0, 119, 204, 0.3);
+            }
+        }
+
+        .countdown-badge.pulse {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-end-container {
+            animation: slideIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-end-container">
+        <!-- Countdown Badge -->
+        <div class="countdown-badge" id="countdownBadge">
+            <span id="countdownNumber">60</span>
+        </div>
+
+        <!-- Header -->
+        <div class="chat-end-header">
+            <h1>تم إنهاء المحادثة</h1>
+            <p>لقد آنهيت الاجتماع لكل المشاركين.</p>
+        </div>
+
+        <!-- Redirect Button -->
+        <div class="redirect-btn-container">
+            <a href="/customer-dashboard" class="redirect-btn" id="redirectBtn">
+                الرجوع إلى لوحة العميل
+            </a>
+        </div>
+
+        <!-- Rating Section -->
+        <div class="rating-section">
+            <div class="rating-title">كيف كانت جودة الصوت والفيديو حتى الآن في تلك الجلسة؟</div>
+            <div class="stars-container" id="starsContainer">
+                <span class="star" data-rating="1">☆</span>
+                <span class="star" data-rating="2">☆</span>
+                <span class="star" data-rating="3">☆</span>
+                <span class="star" data-rating="4">☆</span>
+                <span class="star" data-rating="5">☆</span>
+            </div>
+            <div class="rating-labels">
+                <span>سيء جداً</span>
+                <span>ممتاز</span>
+            </div>
+        </div>
+
+        <!-- Security Section -->
+        <div class="security-section">
+            <div class="security-icon">🔒</div>
+            <div class="security-content">
+                <div class="security-title">احتفظك آمن</div>
+                <div class="security-text">لا يمكن لأي شخص الاستمرار إلى اجتماع ما تم حذفه أو قيله من قبل المسؤول.</div>
+                <a href="#" class="security-link">مزيد من المعلومات</a>
+            </div>
+        </div>
+
+        <!-- Countdown Info -->
+        <div class="countdown-info">
+            سيتم تحويلك إلى لوحة العميل بعد <strong id="countdownText">60 ثانية</strong>
+        </div>
+    </div>
+
+    <script>
+        // ==================== Countdown Logic ====================
+        let countdownSeconds = 60;
+        const redirectUrl = '/customer-dashboard'; // يمكن تغييره حسب الحاجة
+        const countdownBadge = document.getElementById('countdownBadge');
+        const countdownNumber = document.getElementById('countdownNumber');
+        const countdownText = document.getElementById('countdownText');
+        const redirectBtn = document.getElementById('redirectBtn');
+
+        // بدء العداد التنازلي
+        const countdownInterval = setInterval(() => {
+            countdownSeconds--;
+            countdownNumber.textContent = countdownSeconds;
+            countdownText.textContent = countdownSeconds + ' ثانية';
+
+            // تغيير الألوان حسب الوقت المتبقي
+            if (countdownSeconds <= 10) {
+                countdownBadge.classList.add('danger', 'pulse');
+                countdownBadge.classList.remove('warning');
+            } else if (countdownSeconds <= 20) {
+                countdownBadge.classList.add('warning');
+                countdownBadge.classList.remove('danger', 'pulse');
+            } else {
+                countdownBadge.classList.remove('warning', 'danger', 'pulse');
+            }
+
+            // إعادة التوجيه عند انتهاء العداد
+            if (countdownSeconds <= 0) {
+                clearInterval(countdownInterval);
+                window.location.href = redirectUrl;
+            }
+        }, 1000);
+
+        // ==================== Rating Stars Logic ====================
+        const stars = document.querySelectorAll('.star');
+        let selectedRating = 0;
+
+        stars.forEach(star => {
+            star.addEventListener('click', () => {
+                selectedRating = star.dataset.rating;
+                updateStars(selectedRating);
+                // يمكن إرسال التقييم إلى الخادم هنا
+                console.log('تم اختيار التقييم:', selectedRating);
+            });
+
+            star.addEventListener('mouseover', () => {
+                updateStars(star.dataset.rating);
+            });
+        });
+
+        document.getElementById('starsContainer').addEventListener('mouseleave', () => {
+            updateStars(selectedRating);
+        });
+
+        function updateStars(rating) {
+            stars.forEach(star => {
+                if (star.dataset.rating <= rating) {
+                    star.classList.add('active');
+                    star.textContent = '★';
+                } else {
+                    star.classList.remove('active');
+                    star.textContent = '☆';
+                }
+            });
+        }
+
+        // ==================== Redirect Button Logic ====================
+        redirectBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            clearInterval(countdownInterval);
+            window.location.href = redirectUrl;
+        });
+
+        // ==================== Prevent Going Back ====================
+        // منع العودة للصفحة السابقة
+        window.addEventListener('beforeunload', () => {
+            // هذا يمنع المستخدم من الرجوع للمحادثة المغلقة
+            history.pushState(null, null, window.location.href);
+        });
+
+        window.addEventListener('popstate', () => {
+            window.location.href = redirectUrl;
+        });
+    </script>
+</body>
+</html>
