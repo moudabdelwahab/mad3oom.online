@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قاعدة المعرفة - منصة مدعوم</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme-preference') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch(e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <style>
+        .kb-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        .kb-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            border-radius: 1.5rem;
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+        .search-container {
+            max-width: 600px;
+            margin: -2rem auto 3rem;
+            position: relative;
+            z-index: 10;
+        }
+        .search-input {
+            width: 100%;
+            padding: 1.2rem 3.5rem 1.2rem 1.5rem;
+            border-radius: 1rem;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            font-size: 1.1rem;
+            font-family: 'Cairo', sans-serif;
+        }
+        .search-icon {
+            position: absolute;
+            right: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--color-text-secondary);
+        }
+        .kb-section {
+            margin-bottom: 3rem;
+        }
+        .kb-section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--color-primary);
+        }
+        .article-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+        .article-card:hover {
+            border-color: var(--color-accent);
+            transform: translateX(-5px);
+            box-shadow: var(--shadow-sm);
+        }
+        .article-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--color-text);
+        }
+        .article-excerpt {
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: var(--color-accent);
+        }
+
+        /* Article Content Modal */
+        .article-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .article-modal.active {
+            display: flex;
+        }
+        .modal-body {
+            background: var(--color-surface);
+            width: 100%;
+            max-width: 800px;
+            max-height: 85vh;
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: var(--shadow-xl);
+        }
+        .close-kb-modal {
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            background: var(--color-muted);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.2s;
+        }
+        .close-kb-modal:hover {
+            background: var(--color-danger);
+            color: white;
+        }
+        .kb-content h2 { color: var(--color-primary); margin-bottom: 1.5rem; }
+        .kb-content p { margin-bottom: 1rem; line-height: 1.8; color: var(--color-text); }
+        .kb-content ul { margin-bottom: 1.5rem; padding-right: 1.5rem; }
+        .kb-content li { margin-bottom: 0.75rem; color: var(--color-text); }
+        .kb-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(0, 119, 204, 0.1);
+            color: var(--color-accent);
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+
+    <main class="admin-main">
+        <div class="kb-container">
+            <a href="community.html" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 19 12 12 5"></polyline></svg>
+                العودة للمجتمع
+            </a>
+
+            <div class="kb-header">
+                <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem;">قاعدة المعرفة</h1>
+                <p style="opacity: 0.9; font-size: 1.1rem;">ابحث عن إجابات لمشاكلك التقنية وتعلم كيفية استخدام المنصة</p>
+            </div>
+
+            <div class="search-container">
+                <span class="search-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </span>
+                <input type="text" class="search-input" placeholder="ابحث عن مقال (مثال: كلمة المرور، تسجيل الدخول...)">
+            </div>
+
+            <!-- Security & Account -->
+            <div class="kb-section">
+                <h2 class="kb-section-title">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    الأمان والحساب
+                </h2>
+                
+                <div class="article-card" onclick="openArticle('password-check')">
+                    <span class="kb-tag">الأمان</span>
+                    <h3 class="article-title">كيف تتأكد من قوة كلمة المرور وحالة الأحرف؟</h3>
+                    <p class="article-excerpt">تعرف على كيفية اختيار كلمة مرور قوية ولماذا يجب عليك الانتباه لحالة الأحرف (كبيرة/صغيرة) عند تسجيل الدخول.</p>
+                </div>
+
+                <div class="article-card" onclick="openArticle('email-verify')">
+                    <span class="kb-tag">الحساب</span>
+                    <h3 class="article-title">التحقق من صحة البريد الإلكتروني</h3>
+                    <p class="article-excerpt">خطوات بسيطة للتأكد من أن بريدك الإلكتروني صحيح ومفعل لاستلام إشعارات المنصة واستعادة الحساب.</p>
+                </div>
+            </div>
+
+            <!-- General Help -->
+            <div class="kb-section">
+                <h2 class="kb-section-title">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    مساعدة عامة
+                </h2>
+                
+                <div class="article-card" onclick="openArticle('first-steps')">
+                    <span class="kb-tag">البداية</span>
+                    <h3 class="article-title">خطواتك الأولى في منصة مدعوم</h3>
+                    <p class="article-excerpt">دليل شامل للمستخدمين الجدد للتعرف على واجهة المنصة وأهم الأدوات المتاحة.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Article Modal -->
+    <div id="articleModal" class="article-modal">
+        <div class="modal-body">
+            <button class="close-kb-modal" onclick="closeArticle()">&times;</button>
+            <div id="articleContent" class="kb-content">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initCustomerSidebar } from './assets/js/customer-sidebar.js';
+        import { initSidebar as initAdminSidebar } from './assets/js/admin/sidebar.js';
+        import { supabase } from './supabase-client.js';
+
+        // Initialize Sidebar
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const isAdmin = user.email.includes('admin') || user.user_metadata?.role === 'admin';
+            if (isAdmin) initAdminSidebar();
+            else initCustomerSidebar();
+        }
+
+        const articles = {
+            'password-check': {
+                title: 'كيف تتأكد من قوة كلمة المرور وحالة الأحرف؟',
+                content: `
+                    <span class="kb-tag">الأمان</span>
+                    <h2>تأمين حسابك بكلمة مرور قوية</h2>
+                    <p>كلمة المرور هي خط الدفاع الأول لحماية بياناتك. إليك بعض النصائح للتأكد من أنك تستخدمها بشكل صحيح:</p>
+                    <ul>
+                        <li><strong>حالة الأحرف (Case Sensitivity):</strong> تذكر أن المنصة تميز بين الأحرف الكبيرة (A) والصغيرة (a). تأكد من إيقاف مفتاح "Caps Lock" قبل الكتابة.</li>
+                        <li><strong>التنوع:</strong> استخدم مزيجاً من الأحرف، الأرقام، والرموز الخاصة (مثل @, #, $).</li>
+                        <li><strong>الطول:</strong> يفضل ألا تقل كلمة المرور عن 8 خانات.</li>
+                    </ul>
+                    <p>إذا كنت تواجه مشكلة في تذكر كلمة المرور، يمكنك دائماً استخدام خيار "نسيت كلمة المرور" في صفحة تسجيل الدخول.</p>
+                `
+            },
+            'email-verify': {
+                title: 'التحقق من صحة البريد الإلكتروني',
+                content: `
+                    <span class="kb-tag">الحساب</span>
+                    <h2>لماذا يجب أن يكون بريدك الإلكتروني صحيحاً؟</h2>
+                    <p>نستخدم بريدك الإلكتروني لإرسال التنبيهات الهامة، تقارير العمل، وروابط استعادة كلمة المرور.</p>
+                    <ul>
+                        <li><strong>التأكد من الكتابة:</strong> تأكد من عدم وجود مسافات زائدة قبل أو بعد البريد الإلكتروني.</li>
+                        <li><strong>النطاق (Domain):</strong> تأكد من كتابة النطاق بشكل صحيح (مثل gmail.com وليس gmal.com).</li>
+                        <li><strong>التفعيل:</strong> بعد التسجيل، ستصلك رسالة تفعيل. إذا لم تجدها، تحقق من مجلد الرسائل غير المرغوب فيها (Spam).</li>
+                    </ul>
+                `
+            },
+            'first-steps': {
+                title: 'خطواتك الأولى في منصة مدعوم',
+                content: `
+                    <span class="kb-tag">البداية</span>
+                    <h2>أهلاً بك في مدعوم!</h2>
+                    <p>لقد صممنا هذه المنصة لتكون سهلة الاستخدام. إليك كيف تبدأ:</p>
+                    <ul>
+                        <li><strong>لوحة التحكم:</strong> من هنا يمكنك متابعة كافة أنشطتك وطلباتك الحالية.</li>
+                        <li><strong>المحادثات:</strong> يمكنك التواصل مع فريق الدعم أو البوت الذكي عبر أيقونة الدردشة.</li>
+                        <li><strong>المجتمع:</strong> انضم للنقاشات مع مستخدمين آخرين لتبادل الخبرات.</li>
+                    </ul>
+                `
+            }
+        };
+
+        window.openArticle = function(id) {
+            const article = articles[id];
+            if (article) {
+                document.getElementById('articleContent').innerHTML = article.content;
+                document.getElementById('articleModal').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        };
+
+        window.closeArticle = function() {
+            document.getElementById('articleModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        };
+
+        // Close modal on click outside
+        document.getElementById('articleModal').onclick = function(e) {
+            if (e.target === this) closeArticle();
+        };
+
+        // Simple search logic
+        document.querySelector('.search-input').oninput = function(e) {
+            const term = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.article-card');
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                card.style.display = text.includes(term) ? 'block' : 'none';
+            });
+        };
+    </script>
+</body>
+</html>
