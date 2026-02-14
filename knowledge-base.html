@@ -18,420 +18,122 @@
             }
         })();
     </script>
+    <script src="theme-manager.js" defer></script>
     <style>
-        .kb-wrapper {
-            display: flex;
-            gap: 2rem;
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
-            min-height: calc(100vh - 200px);
+        .kb-container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
         }
-
-        /* ==================== Sidebar ==================== */
-        .kb-sidebar {
-            width: 280px;
-            flex-shrink: 0;
-        }
-
         .kb-header {
             text-align: center;
-            margin-bottom: 2rem;
-            padding: 2.5rem 2rem;
+            margin-bottom: 3rem;
+            padding: 3rem;
             background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
             border-radius: 1.5rem;
             color: white;
             box-shadow: var(--shadow-lg);
-            grid-column: 1 / -1;
         }
-
-        .kb-header h1 {
-            font-size: 2.2rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
+        .search-box {
+            max-width: 600px;
+            margin: -2rem auto 2rem;
+            position: relative;
+            z-index: 10;
         }
-
-        .kb-header p {
-            opacity: 0.9;
-            font-size: 1rem;
-        }
-
-        .search-container {
-            margin-bottom: 2rem;
-            grid-column: 1 / -1;
-        }
-
         .search-input {
             width: 100%;
-            padding: 1rem 1.5rem;
+            padding: 1.25rem 1.5rem;
             border-radius: 1rem;
             border: 1px solid var(--color-border);
             background: var(--color-surface);
             color: var(--color-text);
-            font-size: 1rem;
-            font-family: 'Cairo', sans-serif;
+            font-size: 1.1rem;
+            box-shadow: var(--shadow-md);
             transition: all 0.3s ease;
         }
-
         .search-input:focus {
             outline: none;
             border-color: var(--color-accent);
-            box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1);
+            box-shadow: 0 0 0 4px rgba(0, 119, 204, 0.15);
         }
-
-        .kb-categories {
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            box-shadow: var(--shadow-sm);
-            position: sticky;
-            top: 20px;
-        }
-
-        .kb-categories-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            color: var(--color-primary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .category-item {
-            padding: 0.75rem 1rem;
-            margin-bottom: 0.5rem;
-            border-radius: 0.75rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            color: var(--color-text);
-            border-left: 3px solid transparent;
-        }
-
-        .category-item:hover {
-            background: var(--color-muted);
-            border-left-color: var(--color-accent);
-        }
-
-        .category-item.active {
-            background: rgba(0, 119, 204, 0.1);
-            color: var(--color-accent);
-            border-left-color: var(--color-accent);
-            font-weight: 600;
-        }
-
-        .category-icon {
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* ==================== Main Content ==================== */
-        .kb-main {
-            flex: 1;
-            min-width: 0;
-        }
-
         .articles-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1.5rem;
+            margin-top: 2rem;
         }
-
         .article-card {
             background: var(--color-surface);
             border: 1px solid var(--color-border);
-            border-radius: 1.2rem;
-            padding: 1.8rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 1rem;
+            padding: 1.5rem;
             cursor: pointer;
+            transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            position: relative;
-            overflow: hidden;
         }
-
-        .article-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--color-accent), var(--color-primary));
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.3s ease;
-        }
-
         .article-card:hover {
-            transform: translateY(-8px);
+            transform: translateY(-5px);
             border-color: var(--color-accent);
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-md);
         }
-
-        .article-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .article-icon {
-            width: 50px;
-            height: 50px;
-            background: rgba(0, 119, 204, 0.1);
-            border-radius: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-accent);
-            font-size: 1.5rem;
-        }
-
-        .article-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--color-text);
-            line-height: 1.4;
-        }
-
-        .article-excerpt {
-            color: var(--color-text-secondary);
-            font-size: 0.9rem;
-            line-height: 1.6;
-            flex-grow: 1;
-        }
-
-        .article-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.85rem;
-            color: var(--color-text-secondary);
-            padding-top: 1rem;
-            border-top: 1px solid var(--color-border);
-        }
-
-        .article-category-tag {
-            display: inline-block;
-            padding: 0.3rem 0.75rem;
-            background: rgba(0, 119, 204, 0.1);
-            color: var(--color-accent);
-            border-radius: 2rem;
-            font-weight: 600;
+        .article-category {
             font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--color-accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-
-        /* ==================== Modal ==================== */
-        .kb-modal {
+        .article-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .article-excerpt {
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+        .modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            z-index: 1000;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
             align-items: center;
             justify-content: center;
-            padding: 1.5rem;
-            animation: fadeIn 0.3s ease;
+            padding: 1rem;
         }
-
-        .kb-modal.active {
-            display: flex;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
+        .modal.active { display: flex; }
         .modal-content {
             background: var(--color-surface);
+            padding: 2.5rem;
+            border-radius: 1.25rem;
             width: 100%;
-            max-width: 850px;
+            max-width: 800px;
             max-height: 90vh;
-            border-radius: 1.5rem;
             overflow-y: auto;
-            box-shadow: var(--shadow-xl);
-            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--color-border);
         }
-
-        @keyframes slideUp {
-            from { transform: translateY(50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-header {
-            position: sticky;
-            top: 0;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-            color: white;
-            padding: 2.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1rem;
-            z-index: 10;
-        }
-
-        .modal-header-content h2 {
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
-
-        .modal-header-content .category-badge {
-            display: inline-block;
-            padding: 0.4rem 1rem;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
         .close-modal {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            color: white;
-            font-size: 1.5rem;
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            font-size: 2rem;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .close-modal:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: rotate(90deg);
-        }
-
-        .modal-body {
-            padding: 2.5rem;
-        }
-
-        .kb-content h3 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin: 2rem 0 1rem;
-            color: var(--color-primary);
-        }
-
-        .kb-content h3:first-child {
-            margin-top: 0;
-        }
-
-        .kb-content p {
-            margin-bottom: 1rem;
-            line-height: 1.8;
-            color: var(--color-text);
-        }
-
-        .kb-content ul, .kb-content ol {
-            margin-bottom: 1.5rem;
-            padding-right: 1.5rem;
-        }
-
-        .kb-content li {
-            margin-bottom: 0.75rem;
-            color: var(--color-text);
-            line-height: 1.6;
-        }
-
-        .kb-content strong {
-            color: var(--color-primary);
-            font-weight: 700;
-        }
-
-        .tip-box {
-            background: rgba(0, 119, 204, 0.05);
-            border-left: 4px solid var(--color-accent);
-            padding: 1.2rem;
-            border-radius: 0.75rem;
-            margin: 1.5rem 0;
-        }
-
-        .tip-box strong {
-            color: var(--color-accent);
-        }
-
-        .warning-box {
-            background: rgba(224, 168, 0, 0.05);
-            border-left: 4px solid var(--color-warning);
-            padding: 1.2rem;
-            border-radius: 0.75rem;
-            margin: 1.5rem 0;
-        }
-
-        .warning-box strong {
-            color: var(--color-warning);
-        }
-
-        /* ==================== Empty State ==================== */
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
             color: var(--color-text-secondary);
         }
-
-        .empty-state svg {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        /* ==================== Responsive ==================== */
-        @media (max-width: 1024px) {
-            .kb-wrapper {
-                flex-direction: column;
-                gap: 1.5rem;
-            }
-
-            .kb-sidebar {
-                width: 100%;
-            }
-
-            .kb-categories {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-                padding: 1rem;
-            }
-
-            .category-item {
-                justify-content: center;
-                text-align: center;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .articles-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .modal-header {
-                padding: 1.5rem;
-            }
-
-            .modal-body {
-                padding: 1.5rem;
-            }
-
-            .kb-header h1 {
-                font-size: 1.8rem;
-            }
+        .article-full-content {
+            line-height: 1.8;
+            font-size: 1.05rem;
+            white-space: pre-wrap;
         }
     </style>
 </head>
@@ -439,592 +141,122 @@
     <div id="sidebar-container"></div>
 
     <main class="admin-main">
-        <div class="kb-header">
-            <h1>قاعدة المعرفة</h1>
-            <p>مجموعة شاملة من الدروس والمقالات التعليمية لمساعدتك في الاستفادة القصوى من منصة مدعوم</p>
-        </div>
+        <div class="kb-container">
+            <header class="kb-header">
+                <h1>قاعدة المعرفة</h1>
+                <p>ابحث عن إجابات لأسئلتك التقنية بكل سهولة</p>
+            </header>
 
-        <div class="search-container" style="max-width: 1400px; margin: -1.5rem auto 2rem; padding: 0 1.5rem; position: relative; z-index: 5;">
-            <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن مقال (مثال: كلمة المرور، تسجيل الدخول، الأمان...)">
-        </div>
+            <div class="search-box">
+                <input type="text" id="kbSearch" class="search-input" placeholder="ابحث عن مقال أو سؤال تقني...">
+            </div>
 
-        <div class="kb-wrapper">
-            <!-- Sidebar -->
-            <aside class="kb-sidebar">
-                <div class="kb-categories">
-                    <div class="kb-categories-title">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                        التصنيفات
-                    </div>
-                    <div class="category-item active" onclick="filterByCategory('all')">
-                        <span class="category-icon">📋</span>
-                        جميع المقالات
-                    </div>
-                    <div class="category-item" onclick="filterByCategory('security')">
-                        <span class="category-icon">🔒</span>
-                        الأمان والحساب
-                    </div>
-                    <div class="category-item" onclick="filterByCategory('general')">
-                        <span class="category-icon">❓</span>
-                        مساعدة عامة
-                    </div>
-                    <div class="category-item" onclick="filterByCategory('features')">
-                        <span class="category-icon">⚙️</span>
-                        الميزات والأدوات
-                    </div>
-                    <div class="category-item" onclick="filterByCategory('troubleshooting')">
-                        <span class="category-icon">🔧</span>
-                        استكشاف الأخطاء
-                    </div>
-                    <div class="category-item" onclick="filterByCategory('chat')">
-                        <span class="category-icon">💬</span>
-                        الدردشة والدعم
-                    </div>
-                </div>
-            </aside>
-
-            <!-- Main Content -->
-            <div class="kb-main">
-                <div class="articles-grid" id="articlesContainer">
-                    <!-- Articles will be inserted here -->
-                </div>
-                <div id="emptyState" class="empty-state" style="display: none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-                    <p>لم نجد أي مقالات تطابق بحثك</p>
+            <div id="articlesList" class="articles-grid">
+                <!-- Articles will be loaded here -->
+                <div style="grid-column: 1/-1; text-align: center; padding: 3rem;">
+                    جاري تحميل المقالات...
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Article Modal -->
-    <div id="articleModal" class="kb-modal">
+    <div id="articleModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-header-content">
-                    <h2 id="modalTitle"></h2>
-                    <div class="category-badge" id="modalCategory"></div>
-                </div>
-                <button class="close-modal" onclick="closeArticle()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="modalContent" class="kb-content"></div>
+            <span class="close-modal" id="closeModal">&times;</span>
+            <div id="modalBody">
+                <!-- Full article content will be loaded here -->
             </div>
         </div>
     </div>
 
     <script type="module">
-        import { initCustomerSidebar } from './assets/js/customer-sidebar.js';
-        import { initSidebar as initAdminSidebar } from './assets/js/admin/sidebar.js';
-        import { supabase } from './supabase-client.js';
+        import { initCustomerSidebar } from '/assets/js/customer-sidebar.js';
+        import { supabase } from '/api-config.js';
 
         // Initialize Sidebar
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const isAdmin = user.email.includes('admin') || user.user_metadata?.role === 'admin';
-            if (isAdmin) initAdminSidebar();
-            else initCustomerSidebar();
+        initCustomerSidebar((tab) => {
+            if (tab !== 'kb') {
+                window.location.href = '/customer-dashboard.html';
+            }
+        });
+
+        const articlesList = document.getElementById('articlesList');
+        const kbSearch = document.getElementById('kbSearch');
+        const articleModal = document.getElementById('articleModal');
+        const modalBody = document.getElementById('modalBody');
+        const closeModal = document.getElementById('closeModal');
+
+        let allArticles = [];
+
+        async function fetchArticles() {
+            const { data, error } = await supabase
+                .from('knowledge_base')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching articles:', error);
+                articlesList.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--color-danger);">فشل تحميل المقالات.</div>';
+                return;
+            }
+
+            allArticles = data;
+            renderArticles(allArticles);
         }
 
-        // Articles Database
-        const articles = [
-            // ==================== Security & Account ====================
-            {
-                id: 'password-check',
-                title: 'كيف تتأكد من قوة كلمة المرور وحالة الأحرف؟',
-                category: 'security',
-                icon: '🔐',
-                excerpt: 'تعرف على كيفية اختيار كلمة مرور قوية وآمنة وأهمية حالة الأحرف في تسجيل الدخول.',
-                content: `
-                    <h3>تأمين حسابك بكلمة مرور قوية</h3>
-                    <p>كلمة المرور هي خط الدفاع الأول لحماية بياناتك الشخصية والمهمة. إليك دليل شامل لاختيار وإدارة كلمة مرور آمنة:</p>
-                    
-                    <h3>حالة الأحرف (Case Sensitivity)</h3>
-                    <p>منصة مدعوم تميز بين الأحرف الكبيرة (A) والصغيرة (a). هذا يعني:</p>
-                    <ul>
-                        <li><strong>MyPassword123</strong> مختلفة عن <strong>mypassword123</strong></li>
-                        <li>تأكد من إيقاف مفتاح "Caps Lock" قبل الكتابة</li>
-                        <li>إذا واجهت مشكلة في تسجيل الدخول، تحقق من حالة الأحرف أولاً</li>
-                    </ul>
-
-                    <h3>معايير كلمة مرور قوية</h3>
-                    <ul>
-                        <li><strong>الطول:</strong> لا تقل عن 8 أحرف (يفضل 12 أو أكثر)</li>
-                        <li><strong>التنوع:</strong> استخدم مزيجاً من:
-                            <ul>
-                                <li>أحرف كبيرة (A, B, C)</li>
-                                <li>أحرف صغيرة (a, b, c)</li>
-                                <li>أرقام (0-9)</li>
-                                <li>رموز خاصة (@, #, $, %, &)</li>
-                            </ul>
-                        </li>
-                        <li><strong>تجنب:</strong> تاريخ ميلادك، اسمك، أو كلمات قاموسية شهيرة</li>
-                    </ul>
-
-                    <div class="tip-box">
-                        <strong>💡 نصيحة:</strong> استخدم عبارة سهلة التذكر ثم أضف أرقاماً ورموزاً. مثال: "مدعوم2024@آمن" تجمع بين سهولة التذكر والأمان.
-                    </div>
-
-                    <h3>إذا نسيت كلمة المرور</h3>
-                    <p>لا تقلق! يمكنك استعادة حسابك بسهولة:</p>
-                    <ol>
-                        <li>اذهب إلى صفحة تسجيل الدخول</li>
-                        <li>انقر على "نسيت كلمة المرور"</li>
-                        <li>أدخل بريدك الإلكتروني المسجل</li>
-                        <li>ستصلك رسالة تفعيل على بريدك</li>
-                        <li>اتبع الرابط وأنشئ كلمة مرور جديدة</li>
-                    </ol>
-                `
-            },
-            {
-                id: 'email-verify',
-                title: 'التحقق من صحة البريد الإلكتروني',
-                category: 'security',
-                icon: '📧',
-                excerpt: 'خطوات للتأكد من أن بريدك الإلكتروني صحيح ومفعل لاستلام الإشعارات.',
-                content: `
-                    <h3>لماذا يجب أن يكون بريدك الإلكتروني صحيحاً؟</h3>
-                    <p>نستخدم بريدك الإلكتروني لعدة أغراض مهمة:</p>
-                    <ul>
-                        <li>إرسال إشعارات المحادثات الجديدة</li>
-                        <li>تقارير الأداء والإحصائيات</li>
-                        <li>روابط استعادة كلمة المرور</li>
-                        <li>تحديثات الحساب والأمان</li>
-                    </ul>
-
-                    <h3>كيفية التحقق من صحة البريد</h3>
-                    <ol>
-                        <li>اذهب إلى إعدادات حسابك</li>
-                        <li>ابحث عن قسم "البريد الإلكتروني"</li>
-                        <li>تأكد من عدم وجود مسافات قبل أو بعد البريد</li>
-                        <li>تحقق من النطاق (Domain) - مثلاً: gmail.com وليس gmal.com</li>
-                        <li>انقر على "إرسال رسالة تحقق" إذا لم تكن قد تحققت بعد</li>
-                    </ol>
-
-                    <h3>الأخطاء الشائعة</h3>
-                    <ul>
-                        <li><strong>مسافات زائدة:</strong> " example@gmail.com " مختلفة عن "example@gmail.com"</li>
-                        <li><strong>نقاط في الاسم:</strong> "john.doe@gmail.com" مختلفة عن "johndoe@gmail.com"</li>
-                        <li><strong>أحرف صغيرة/كبيرة:</strong> البريد الإلكتروني غير حساس لحالة الأحرف عادة</li>
-                    </ul>
-
-                    <div class="warning-box">
-                        <strong>⚠️ تحذير:</strong> إذا لم تتحقق من بريدك، قد لا تستقبل رسائل مهمة. تأكد من التحقق فوراً.
-                    </div>
-
-                    <h3>إذا لم تستقبل رسالة التحقق</h3>
-                    <ol>
-                        <li>تحقق من مجلد الرسائل غير المرغوب فيها (Spam)</li>
-                        <li>أضف بريدنا (support@mad3oom.online) إلى جهات الاتصال الموثوقة</li>
-                        <li>انتظر 5 دقائق وحاول مرة أخرى</li>
-                        <li>إذا استمرت المشكلة، تواصل مع فريق الدعم</li>
-                    </ol>
-                `
-            },
-            {
-                id: 'two-factor',
-                title: 'تفعيل المصادقة الثنائية (2FA)',
-                category: 'security',
-                icon: '🔑',
-                excerpt: 'طبقة أمان إضافية لحماية حسابك من الوصول غير المصرح به.',
-                content: `
-                    <h3>ما هي المصادقة الثنائية؟</h3>
-                    <p>المصادقة الثنائية (2FA) توفر طبقة أمان إضافية لحسابك. بدلاً من استخدام كلمة المرور فقط، ستحتاج إلى تأكيد إضافي:</p>
-                    <ul>
-                        <li>كلمة المرور الخاصة بك</li>
-                        <li>رمز من هاتفك (تطبيق أو رسالة نصية)</li>
-                    </ul>
-
-                    <h3>كيفية تفعيل 2FA</h3>
-                    <ol>
-                        <li>اذهب إلى "الإعدادات" > "الأمان"</li>
-                        <li>انقر على "تفعيل المصادقة الثنائية"</li>
-                        <li>اختر الطريقة المفضلة:
-                            <ul>
-                                <li><strong>تطبيق المصادقة:</strong> Google Authenticator أو Microsoft Authenticator</li>
-                                <li><strong>رسالة نصية:</strong> رمز يصل إلى هاتفك</li>
-                            </ul>
-                        </li>
-                        <li>اتبع التعليمات على الشاشة</li>
-                        <li>احفظ رموز النسخ الاحتياطية في مكان آمن</li>
-                    </ol>
-
-                    <div class="tip-box">
-                        <strong>💡 نصيحة:</strong> احفظ الرموز الاحتياطية في ملف آمن. إذا فقدت هاتفك، ستحتاج إليها للوصول إلى حسابك.
-                    </div>
-                `
-            },
-
-            // ==================== General Help ====================
-            {
-                id: 'first-steps',
-                title: 'خطواتك الأولى في منصة مدعوم',
-                category: 'general',
-                icon: '🚀',
-                excerpt: 'دليل شامل للمستخدمين الجدد للتعرف على واجهة المنصة.',
-                content: `
-                    <h3>أهلاً بك في مدعوم!</h3>
-                    <p>صممنا هذه المنصة لتكون سهلة الاستخدام وقوية في نفس الوقت. إليك كيف تبدأ رحلتك:</p>
-
-                    <h3>1. لوحة التحكم (Dashboard)</h3>
-                    <p>هنا يمكنك متابعة كل شيء في لمحة واحدة:</p>
-                    <ul>
-                        <li>ملخص نشاطك الأخير</li>
-                        <li>المحادثات الجديدة</li>
-                        <li>الإحصائيات والتقارير</li>
-                        <li>الإشعارات المهمة</li>
-                    </ul>
-
-                    <h3>2. المحادثات والدعم</h3>
-                    <p>للتواصل مع فريق الدعم أو استخدام البوت الذكي:</p>
-                    <ul>
-                        <li>انقر على أيقونة الدردشة في الزاوية السفلية</li>
-                        <li>اكتب سؤالك أو مشكلتك</li>
-                        <li>سيرد عليك البوت أو فريق الدعم قريباً</li>
-                    </ul>
-
-                    <h3>3. المجتمع والتعاون</h3>
-                    <p>انضم للنقاشات مع مستخدمين آخرين:</p>
-                    <ul>
-                        <li>منتدى النقاش العام</li>
-                        <li>مشاركة التجارب والنصائح</li>
-                        <li>تبادل الخبرات مع الخبراء</li>
-                    </ul>
-
-                    <h3>4. الإعدادات الشخصية</h3>
-                    <p>خصص تجربتك حسب احتياجاتك:</p>
-                    <ul>
-                        <li>تحديث معلومات الملف الشخصي</li>
-                        <li>تغيير تفضيلات الإشعارات</li>
-                        <li>اختيار الوضع الفاتح أو المظلم</li>
-                        <li>إدارة الخصوصية والأمان</li>
-                    </ul>
-
-                    <div class="tip-box">
-                        <strong>💡 نصيحة:</strong> استكشف جميع الميزات ببطء. كلما تعمقت، اكتشفت المزيد من الإمكانيات!
-                    </div>
-                `
-            },
-            {
-                id: 'profile-setup',
-                title: 'إعداد ملفك الشخصي',
-                category: 'general',
-                icon: '👤',
-                excerpt: 'كيفية تحديث معلوماتك الشخصية وجعل ملفك احترافياً.',
-                content: `
-                    <h3>لماذا ملف شخصي كامل؟</h3>
-                    <p>ملف شخصي مكتمل يساعد على:</p>
-                    <ul>
-                        <li>بناء الثقة مع الآخرين</li>
-                        <li>تحسين تجربتك في المنصة</li>
-                        <li>الحصول على توصيات مخصصة</li>
-                    </ul>
-
-                    <h3>خطوات إعداد ملفك</h3>
-                    <ol>
-                        <li>اذهب إلى "الملف الشخصي" من القائمة الجانبية</li>
-                        <li>أضف صورة ملف شخصي احترافية</li>
-                        <li>اكتب نبذة عن نفسك (100-200 كلمة)</li>
-                        <li>أضف روابط وسائل التواصل (اختياري)</li>
-                        <li>حدد مجالات اهتمامك</li>
-                        <li>انقر على "حفظ التغييرات"</li>
-                    </ol>
-
-                    <h3>نصائح لملف شخصي قوي</h3>
-                    <ul>
-                        <li>استخدم صورة واضحة وعالية الجودة</li>
-                        <li>اكتب نبذة حقيقية وصادقة</li>
-                        <li>حدث ملفك بانتظام</li>
-                        <li>كن احترافياً في اختيار الصور والمعلومات</li>
-                    </ul>
-                `
-            },
-
-            // ==================== Features & Tools ====================
-            {
-                id: 'chat-features',
-                title: 'استخدام ميزات الدردشة المتقدمة',
-                category: 'features',
-                icon: '💬',
-                excerpt: 'تعرف على جميع ميزات الدردشة والرسائل المتقدمة.',
-                content: `
-                    <h3>ميزات الدردشة الأساسية</h3>
-                    <ul>
-                        <li><strong>الرسائل النصية:</strong> أرسل رسائل فورية</li>
-                        <li><strong>الملفات:</strong> شارك الملفات والصور</li>
-                        <li><strong>الرموز التعبيرية:</strong> أضف تعبيرات عاطفية</li>
-                        <li><strong>الرد السريع:</strong> رد على رسالة معينة</li>
-                    </ul>
-
-                    <h3>ميزات متقدمة</h3>
-                    <ul>
-                        <li><strong>البحث في المحادثات:</strong> ابحث عن رسائل قديمة</li>
-                        <li><strong>الدبابيس:</strong> ثبت الرسائل المهمة</li>
-                        <li><strong>الإشعارات المخصصة:</strong> اختر متى تريد الإشعارات</li>
-                        <li><strong>الأرشفة:</strong> أرشف المحادثات القديمة</li>
-                    </ul>
-
-                    <h3>اختصارات لوحة المفاتيح</h3>
-                    <ul>
-                        <li><strong>Enter:</strong> إرسال الرسالة</li>
-                        <li><strong>Shift + Enter:</strong> سطر جديد</li>
-                        <li><strong>Ctrl + K:</strong> البحث السريع</li>
-                    </ul>
-                `
-            },
-            {
-                id: 'notifications',
-                title: 'إدارة الإشعارات',
-                category: 'features',
-                icon: '🔔',
-                excerpt: 'تحكم كامل في الإشعارات حسب تفضيلاتك.',
-                content: `
-                    <h3>أنواع الإشعارات</h3>
-                    <ul>
-                        <li><strong>رسائل جديدة:</strong> عندما يرسل لك أحد رسالة</li>
-                        <li><strong>تحديثات النظام:</strong> تحديثات مهمة من المنصة</li>
-                        <li><strong>تنبيهات الأمان:</strong> محاولات تسجيل دخول جديدة</li>
-                        <li><strong>إشعارات المجتمع:</strong> ردود على منشوراتك</li>
-                    </ul>
-
-                    <h3>كيفية تخصيص الإشعارات</h3>
-                    <ol>
-                        <li>اذهب إلى "الإعدادات" > "الإشعارات"</li>
-                        <li>اختر نوع الإشعار</li>
-                        <li>حدد الطريقة (البريد الإلكتروني، الهاتف، أو الويب)</li>
-                        <li>اختر التوقيت المفضل</li>
-                        <li>احفظ التغييرات</li>
-                    </ol>
-
-                    <div class="tip-box">
-                        <strong>💡 نصيحة:</strong> قلل الإشعارات غير الضرورية لتحسين التركيز والإنتاجية.
-                    </div>
-                `
-            },
-
-            // ==================== Troubleshooting ====================
-            {
-                id: 'login-issues',
-                title: 'حل مشاكل تسجيل الدخول',
-                category: 'troubleshooting',
-                icon: '🚨',
-                excerpt: 'حلول سريعة للمشاكل الشائعة عند تسجيل الدخول.',
-                content: `
-                    <h3>المشكلة: "بيانات اعتماد غير صحيحة"</h3>
-                    <p>تحقق من:</p>
-                    <ul>
-                        <li>حالة الأحرف في كلمة المرور</li>
-                        <li>عدم وجود مسافات قبل أو بعد البريد الإلكتروني</li>
-                        <li>استخدام البريد الإلكتروني الصحيح</li>
-                        <li>Caps Lock مطفأ</li>
-                    </ul>
-
-                    <h3>المشكلة: "حسابك مقفل"</h3>
-                    <p>إذا حاولت تسجيل الدخول عدة مرات بشكل خاطئ، قد يُقفل حسابك مؤقتاً:</p>
-                    <ol>
-                        <li>انتظر 30 دقيقة</li>
-                        <li>حاول مرة أخرى</li>
-                        <li>إذا استمرت المشكلة، استخدم "نسيت كلمة المرور"</li>
-                    </ol>
-
-                    <h3>المشكلة: "لم أستقبل رسالة التحقق"</h3>
-                    <ul>
-                        <li>تحقق من مجلد الرسائل غير المرغوب فيها</li>
-                        <li>أضف بريدنا إلى الجهات الموثوقة</li>
-                        <li>انتظر 5 دقائق وحاول مرة أخرى</li>
-                        <li>تأكد من صحة بريدك الإلكتروني</li>
-                    </ul>
-
-                    <div class="warning-box">
-                        <strong>⚠️ تحذير:</strong> لا تشارك كلمة المرور مع أحد. فريق الدعم لن يطلب منك كلمة المرور أبداً.
-                    </div>
-                `
-            },
-            {
-                id: 'performance',
-                title: 'تحسين أداء المنصة',
-                category: 'troubleshooting',
-                icon: '⚡',
-                excerpt: 'نصائح لتسريع المنصة وتحسين الأداء.',
-                content: `
-                    <h3>المشكلة: "المنصة بطيئة"</h3>
-                    <p>جرب هذه الحلول:</p>
-                    <ul>
-                        <li>امسح ذاكرة التخزين المؤقتة (Cache) للمتصفح</li>
-                        <li>أغلق التطبيقات الأخرى التي تستهلك الإنترنت</li>
-                        <li>تحقق من سرعة الإنترنت</li>
-                        <li>استخدم متصفح حديث (Chrome, Firefox, Safari)</li>
-                    </ul>
-
-                    <h3>كيفية مسح ذاكرة التخزين المؤقتة</h3>
-                    <ol>
-                        <li>في Chrome: Ctrl + Shift + Delete (أو Cmd + Shift + Delete على Mac)</li>
-                        <li>اختر "جميع الأوقات"</li>
-                        <li>اختر "ملفات تعريف الارتباط والبيانات الأخرى"</li>
-                        <li>انقر على "حذف البيانات"</li>
-                    </ol>
-
-                    <h3>نصائح للأداء الأفضل</h3>
-                    <ul>
-                        <li>استخدم اتصال إنترنت سلكي بدلاً من Wi-Fi</li>
-                        <li>أغلق علامات التبويب غير المستخدمة</li>
-                        <li>عطّل الإضافات غير الضرورية</li>
-                        <li>حدّث متصفحك بانتظام</li>
-                    </ul>
-                `
-            },
-
-            // ==================== Chat & Support ====================
-            {
-                id: 'contact-support',
-                title: 'كيفية التواصل مع فريق الدعم',
-                category: 'chat',
-                icon: '📞',
-                excerpt: 'طرق مختلفة للتواصل مع فريق الدعم والحصول على المساعدة.',
-                content: `
-                    <h3>طرق التواصل</h3>
-                    <ul>
-                        <li><strong>الدردشة الحية:</strong> أسرع طريقة للمساعدة الفورية</li>
-                        <li><strong>البريد الإلكتروني:</strong> للمشاكل المعقدة</li>
-                        <li><strong>المنتدى:</strong> للأسئلة العامة والنقاشات</li>
-                        <li><strong>قاعدة المعرفة:</strong> حلول ذاتية سريعة</li>
-                    </ul>
-
-                    <h3>ساعات الدعم</h3>
-                    <ul>
-                        <li><strong>الدردشة الحية:</strong> السبت - الخميس، 9 صباحاً - 6 مساءً</li>
-                        <li><strong>البريد الإلكتروني:</strong> الرد خلال 24 ساعة</li>
-                    </ul>
-
-                    <h3>نصائح للحصول على دعم أفضل</h3>
-                    <ul>
-                        <li>اشرح المشكلة بوضوح</li>
-                        <li>أرفق لقطات شاشة إن أمكن</li>
-                        <li>اذكر رقم حسابك أو بريدك الإلكتروني</li>
-                        <li>كن صبوراً - فريقنا يعمل بجد لمساعدتك</li>
-                    </ul>
-
-                    <div class="tip-box">
-                        <strong>💡 نصيحة:</strong> جرب البحث في قاعدة المعرفة أولاً - قد تجد الحل بسرعة!
-                    </div>
-                `
-            },
-            {
-                id: 'feedback',
-                title: 'إرسال ملاحظات واقتراحات',
-                category: 'chat',
-                icon: '💭',
-                excerpt: 'شارك أفكارك واقتراحاتك لتحسين المنصة.',
-                content: `
-                    <h3>نحن نقدر رأيك!</h3>
-                    <p>ملاحظاتك تساعدنا على تحسين المنصة باستمرار. سواء كان لديك:</p>
-                    <ul>
-                        <li>اقتراح لميزة جديدة</li>
-                        <li>تحسين على ميزة حالية</li>
-                        <li>ملاحظة عن التصميم</li>
-                        <li>أي فكرة أخرى</li>
-                    </ul>
-
-                    <h3>كيفية إرسال ملاحظات</h3>
-                    <ol>
-                        <li>اذهب إلى صفحة المجتمع</li>
-                        <li>انقر على "تقديم اقتراح جديد"</li>
-                        <li>اختر التصنيف المناسب</li>
-                        <li>اكتب وصفاً مفصلاً</li>
-                        <li>انقر على "إرسال"</li>
-                    </ol>
-
-                    <h3>ماذا يحدث بعد الإرسال؟</h3>
-                    <ul>
-                        <li>سنراجع اقتراحك بعناية</li>
-                        <li>قد نطلب توضيحات إضافية</li>
-                        <li>سنخبرك بالقرار النهائي</li>
-                        <li>إذا تم قبول الاقتراح، ستُضاف الميزة في التحديثات القادمة</li>
-                    </ul>
-                `
+        function renderArticles(articles) {
+            if (articles.length === 0) {
+                articlesList.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--color-text-secondary);">لا توجد مقالات تطابق بحثك.</div>';
+                return;
             }
-        ];
 
-        // Render Articles
-        function renderArticles(filter = 'all', search = '') {
-            const container = document.getElementById('articlesContainer');
-            const emptyState = document.getElementById('emptyState');
-            
-            let filtered = articles.filter(article => {
-                const categoryMatch = filter === 'all' || article.category === filter;
-                const searchMatch = search === '' || 
-                    article.title.includes(search) || 
-                    article.excerpt.includes(search) ||
-                    article.category.includes(search);
-                return categoryMatch && searchMatch;
-            });
-
-            if (filtered.length === 0) {
-                container.innerHTML = '';
-                emptyState.style.display = 'block';
-            } else {
-                emptyState.style.display = 'none';
-                container.innerHTML = filtered.map(article => `
-                    <div class="article-card" onclick="openArticle('${article.id}')">
-                        <div class="article-icon">${article.icon}</div>
-                        <h3 class="article-title">${article.title}</h3>
-                        <p class="article-excerpt">${article.excerpt}</p>
-                        <div class="article-meta">
-                            <span class="article-category-tag">${getCategoryName(article.category)}</span>
-                        </div>
-                    </div>
-                `).join('');
-            }
+            articlesList.innerHTML = articles.map(article => `
+                <div class="article-card" onclick="window.openArticle('${article.id}')">
+                    <div class="article-category">${article.category}</div>
+                    <h3 class="article-title">${article.title}</h3>
+                    <p class="article-excerpt">${article.excerpt || article.content.substring(0, 100) + '...'}</p>
+                </div>
+            `).join('');
         }
 
-        function getCategoryName(category) {
-            const names = {
-                'security': 'الأمان والحساب',
-                'general': 'مساعدة عامة',
-                'features': 'الميزات والأدوات',
-                'troubleshooting': 'استكشاف الأخطاء',
-                'chat': 'الدردشة والدعم'
-            };
-            return names[category] || category;
-        }
+        window.openArticle = (id) => {
+            const article = allArticles.find(a => a.id === id);
+            if (!article) return;
 
-        window.filterByCategory = function(category) {
-            document.querySelectorAll('.category-item').forEach(item => item.classList.remove('active'));
-            event.target.closest('.category-item').classList.add('active');
-            renderArticles(category, document.getElementById('searchInput').value);
+            modalBody.innerHTML = `
+                <div class="article-category" style="margin-bottom: 0.5rem;">${article.category}</div>
+                <h2 style="margin-bottom: 1.5rem; font-size: 2rem;">${article.title}</h2>
+                <div class="article-full-content">${article.content}</div>
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--color-border); font-size: 0.8rem; color: var(--color-text-secondary);">
+                    آخر تحديث: ${new Date(article.updated_at).toLocaleDateString('ar-EG')}
+                </div>
+            `;
+            articleModal.classList.add('active');
         };
 
-        window.openArticle = function(id) {
-            const article = articles.find(a => a.id === id);
-            if (article) {
-                document.getElementById('modalTitle').textContent = article.title;
-                document.getElementById('modalCategory').textContent = getCategoryName(article.category);
-                document.getElementById('modalContent').innerHTML = article.content;
-                document.getElementById('articleModal').classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
+        closeModal.onclick = () => articleModal.classList.remove('active');
+        window.onclick = (e) => { if (e.target === articleModal) articleModal.classList.remove('active'); };
+
+        kbSearch.oninput = (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allArticles.filter(a => 
+                a.title.toLowerCase().includes(term) || 
+                a.content.toLowerCase().includes(term) ||
+                a.category.toLowerCase().includes(term)
+            );
+            renderArticles(filtered);
         };
 
-        window.closeArticle = function() {
-            document.getElementById('articleModal').classList.remove('active');
-            document.body.style.overflow = 'auto';
-        };
+        // Realtime setup
+        supabase
+            .channel('kb_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'knowledge_base' }, () => {
+                fetchArticles();
+            })
+            .subscribe();
 
-        document.getElementById('articleModal').onclick = function(e) {
-            if (e.target === this) closeArticle();
-        };
-
-        document.getElementById('searchInput').oninput = function(e) {
-            const activeCategory = document.querySelector('.category-item.active');
-            const category = activeCategory?.textContent.includes('جميع') ? 'all' : 
-                           activeCategory?.textContent.includes('الأمان') ? 'security' :
-                           activeCategory?.textContent.includes('عامة') ? 'general' :
-                           activeCategory?.textContent.includes('الميزات') ? 'features' :
-                           activeCategory?.textContent.includes('استكشاف') ? 'troubleshooting' :
-                           activeCategory?.textContent.includes('الدردشة') ? 'chat' : 'all';
-            renderArticles(category, e.target.value);
-        };
-
-        renderArticles();
+        // Initial load
+        fetchArticles();
     </script>
 </body>
 </html>

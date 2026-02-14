@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة قاعدة المعرفة - لوحة الإدارة</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme-preference') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch(e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+    <script src="/theme-manager.js" defer></script>
+    <style>
+        .admin-container { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .btn { padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; font-family: 'Cairo'; transition: all 0.2s; }
+        .btn-primary { background: var(--color-primary); color: white; }
+        .btn-danger { background: var(--color-danger); color: white; }
+        .btn-secondary { background: var(--color-muted); color: var(--color-text); }
+        
+        .articles-table { width: 100%; border-collapse: collapse; background: var(--color-surface); border-radius: 1rem; overflow: hidden; box-shadow: var(--shadow-sm); }
+        .articles-table th, .articles-table td { padding: 1rem; text-align: right; border-bottom: 1px solid var(--color-border); }
+        .articles-table th { background: var(--color-muted); font-weight: 700; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; padding: 1rem; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--color-surface); padding: 2rem; border-radius: 1rem; width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        .form-control { width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--color-border); background: var(--color-muted); color: var(--color-text); font-family: 'Cairo'; }
+        textarea.form-control { min-height: 150px; resize: vertical; }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+
+    <main class="admin-main">
+        <div class="admin-container">
+            <div class="page-header">
+                <div>
+                    <h1 style="font-weight: 800; font-size: 1.75rem; margin: 0;">إدارة قاعدة المعرفة</h1>
+                    <p style="color: var(--color-text-secondary); margin-top: 0.5rem;">إضافة وتعديل وحذف مقالات قاعدة المعرفة</p>
+                </div>
+                <button class="btn btn-primary" id="addArticleBtn">إضافة مقال جديد</button>
+            </div>
+
+            <table class="articles-table">
+                <thead>
+                    <tr>
+                        <th>العنوان</th>
+                        <th>التصنيف</th>
+                        <th>تاريخ التحديث</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="articlesTableBody">
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 3rem;">جاري تحميل المقالات...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Article Form Modal -->
+    <div id="articleModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle" style="margin-bottom: 1.5rem;">إضافة مقال</h2>
+            <form id="articleForm">
+                <input type="hidden" id="articleId">
+                <div class="form-group">
+                    <label>العنوان</label>
+                    <input type="text" id="title" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>التصنيف</label>
+                    <select id="category" class="form-control" required>
+                        <option value="أساسيات تقنية">أساسيات تقنية</option>
+                        <option value="الأمان">الأمان</option>
+                        <option value="الدعم الفني">الدعم الفني</option>
+                        <option value="تطبيقات">تطبيقات</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>مقتطف (وصف قصير)</label>
+                    <input type="text" id="excerpt" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>المحتوى</label>
+                    <textarea id="content" class="form-control" required></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ المقال</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initSidebar } from '/assets/js/admin/sidebar.js';
+        import { supabase } from '/api-config.js';
+
+        // Initialize Admin Sidebar
+        initSidebar();
+
+        const tableBody = document.getElementById('articlesTableBody');
+        const articleModal = document.getElementById('articleModal');
+        const articleForm = document.getElementById('articleForm');
+        const addArticleBtn = document.getElementById('addArticleBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const modalTitle = document.getElementById('modalTitle');
+
+        let allArticles = [];
+
+        async function fetchArticles() {
+            const { data, error } = await supabase
+                .from('knowledge_base')
+                .select('*')
+                .order('updated_at', { ascending: false });
+
+            if (error) {
+                console.error('Error:', error);
+                return;
+            }
+
+            allArticles = data;
+            renderTable();
+        }
+
+        function renderTable() {
+            if (allArticles.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">لا توجد مقالات حالياً.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = allArticles.map(article => `
+                <tr>
+                    <td style="font-weight: 600;">${article.title}</td>
+                    <td><span class="badge">${article.category}</span></td>
+                    <td>${new Date(article.updated_at).toLocaleDateString('ar-EG')}</td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-secondary btn-sm" onclick="window.editArticle('${article.id}')">تعديل</button>
+                            <button class="btn btn-danger btn-sm" onclick="window.deleteArticle('${article.id}')">حذف</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        addArticleBtn.onclick = () => {
+            articleForm.reset();
+            document.getElementById('articleId').value = '';
+            modalTitle.textContent = 'إضافة مقال جديد';
+            articleModal.classList.add('active');
+        };
+
+        cancelBtn.onclick = () => articleModal.classList.remove('active');
+
+        articleForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('articleId').value;
+            const articleData = {
+                title: document.getElementById('title').value,
+                category: document.getElementById('category').value,
+                excerpt: document.getElementById('excerpt').value,
+                content: document.getElementById('content').value,
+                updated_at: new Date()
+            };
+
+            let error;
+            if (id) {
+                const { error: err } = await supabase.from('knowledge_base').update(articleData).eq('id', id);
+                error = err;
+            } else {
+                const { error: err } = await supabase.from('knowledge_base').insert([articleData]);
+                error = err;
+            }
+
+            if (error) {
+                alert('حدث خطأ أثناء الحفظ: ' + error.message);
+            } else {
+                articleModal.classList.remove('active');
+                fetchArticles();
+            }
+        };
+
+        window.editArticle = (id) => {
+            const article = allArticles.find(a => a.id === id);
+            if (!article) return;
+
+            document.getElementById('articleId').value = article.id;
+            document.getElementById('title').value = article.title;
+            document.getElementById('category').value = article.category;
+            document.getElementById('excerpt').value = article.excerpt || '';
+            document.getElementById('content').value = article.content;
+            
+            modalTitle.textContent = 'تعديل المقال';
+            articleModal.classList.add('active');
+        };
+
+        window.deleteArticle = async (id) => {
+            if (confirm('هل أنت متأكد من حذف هذا المقال؟')) {
+                const { error } = await supabase.from('knowledge_base').delete().eq('id', id);
+                if (error) alert('خطأ في الحذف: ' + error.message);
+                else fetchArticles();
+            }
+        };
+
+        // Realtime setup
+        supabase
+            .channel('kb_admin_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'knowledge_base' }, () => {
+                fetchArticles();
+            })
+            .subscribe();
+
+        fetchArticles();
+    </script>
+</body>
+</html>
