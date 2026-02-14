@@ -435,26 +435,33 @@ function setupEventListeners() {
         }
     });
 
-    // API Keys
+    // API Keys - حفظ مفاتيح API في Supabase بشكل آمن
     document.getElementById('saveApiBtn')?.addEventListener('click', async () => {
         const settings = {
             openai_key: document.getElementById('openaiKey').value,
             telegram_token: document.getElementById('telegramBotToken').value,
-            gemini_key: document.getElementById('geminiKey')?.value || ''
+            gemini_key: document.getElementById('geminiKey')?.value || '',
+            updated_at: new Date().toISOString()
         };
+        
         try {
-            const { data } = await supabase.from('api_keys').select('id').limit(1).maybeSingle();
-            let error;
-            if (data) {
-                ({ error } = await supabase.from('api_keys').update(settings).eq('id', data.id));
+            // التحقق من وجود سجل سابق
+            const { data: existingRecord } = await supabase.from('api_keys').select('id').limit(1).maybeSingle();
+            
+            let result;
+            if (existingRecord) {
+                result = await supabase.from('api_keys').update(settings).eq('id', existingRecord.id);
             } else {
-                ({ error } = await supabase.from('api_keys').insert(settings));
+                result = await supabase.from('api_keys').insert([settings]);
             }
-            if (error) throw error;
-            showAlert('تم حفظ مفاتيح التكامل بنجاح', 'success');
-            await logActivity('admin_updated_settings', { section: 'api' });
+            
+            if (result.error) throw result.error;
+            
+            showAlert('تم حفظ مفاتيح API في Supabase بنجاح', 'success');
+            await logActivity('admin_updated_settings', { section: 'api_keys_storage' });
         } catch (error) {
-            showAlert(error.message, 'error');
+            console.error('Error saving API keys:', error);
+            showAlert('خطأ في حفظ المفاتيح: ' + error.message, 'error');
         }
     });
 

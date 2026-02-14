@@ -423,28 +423,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            // 1. جلب مفاتيح الـ API
-            const { data: apiKeys } = await supabase.from('api_keys').select('*').limit(1).maybeSingle();
-            const geminiKey = apiKeys?.gemini_key || 'AIzaSyAt_r2uKxYft-JvfSHmxe-aR6iFWsJSXhk'; // استخدام المفتاح المقدم كافتراضي
-
+            // 1. جلب مفاتيح الـ API من Supabase (تخزين آمن)
+            const { data: apiKeys, error: keyError } = await supabase.from('api_keys').select('gemini_key').limit(1).maybeSingle();
+            
+            if (keyError) console.error("Error fetching API keys:", keyError);
+            
+            const geminiKey = apiKeys?.gemini_key;
             let reply = "";
 
             // 2. محاولة استخدام Gemini API أولاً (الأولوية)
             if (geminiKey) {
                 try {
+                    // بناء سياق المحادثة (System Prompt + User Message)
+                    const systemInstruction = botSettings?.system_prompt || "أنت مساعد ذكي لمنصة مدعوم. أجب بأسلوب مهني وودود باللغة العربية.";
+                    
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: `أنت بوت ذكي لمنصة مدعوم. التعليمات: ${botSettings.system_prompt || 'كن مساعداً مفيداً'}. رسالة العميل: ${text}` }] }]
+                            contents: [
+                                { 
+                                    role: "user", 
+                                    parts: [{ text: `التعليمات: ${systemInstruction}\n\nرسالة العميل: ${text}` }] 
+                                }
+                            ],
+                            generationConfig: {
+                                temperature: 0.7,
+                                topK: 40,
+                                topP: 0.95,
+                                maxOutputTokens: 1024,
+                            }
                         })
                     });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || "Gemini API request failed");
+                    }
+
                     const data = await response.json();
                     if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
                         reply = data.candidates[0].content.parts[0].text;
                     }
                 } catch (geminiErr) {
                     console.error("Gemini API Error:", geminiErr);
+                    // سيستمر الكود للمحاولة عبر الذاكرة الذكية إذا فشل Gemini
                 }
             }
 
