@@ -33,6 +33,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     let botSettings = null;
     let isTestMode = false;
     let isManualMode = false;
+    let apiKeysTableName = null;
+    let hasSmartMemoryTable = null;
+
+    async function detectApiKeysTable() {
+        if (apiKeysTableName) return apiKeysTableName;
+
+        const apiTables = ['bot_api_keys', 'api_keys'];
+        for (const tableName of apiTables) {
+            const { error } = await supabase.from(tableName).select('id').limit(1);
+            if (!error) {
+                apiKeysTableName = tableName;
+                return tableName;
+            }
+        }
+
+        return null;
+    }
+
+    async function fetchGeminiKey() {
+        const tableName = await detectApiKeysTable();
+        if (!tableName) return null;
+
+        if (tableName === 'bot_api_keys') {
+            const { data, error } = await supabase
+                .from('bot_api_keys')
+                .select('key_value, status, created_at')
+                .eq('status', 'active')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (error) throw error;
+            return data?.key_value?.trim() || null;
+        }
+
+        const { data, error } = await supabase
+            .from('api_keys')
+            .select('gemini_key, updated_at')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) throw error;
+        return data?.gemini_key?.trim() || null;
+    }
+
+    async function getSmartMemoryReply(text) {
+        if (hasSmartMemoryTable === false) return null;
+
+        const { data: memories, error } = await supabase
+            .from('smart_memory')
+            .select('reply_text')
+            .textSearch('keyword', text)
+            .limit(1);
+
+        if (error) {
+            if (error.code === 'PGRST205') {
+                hasSmartMemoryTable = false;
+                return null;
+            }
+            throw error;
+        }
+
+        hasSmartMemoryTable = true;
+        return memories && memories.length > 0 ? memories[0].reply_text : null;
+    }
 
     // 1. Initialize Auth
     async function initAuth() {
@@ -299,7 +365,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         session_id: currentSessionId,
                         message_text: botSettings.welcome_message,
                         is_bot_reply: true,
-                        sender_id: 'bot'
+                        sender_id: null
                     }]);
                 }
                 
@@ -435,16 +501,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         try {
             // 1. جلب مفاتيح الـ API من Supabase (تخزين آمن)
-            const { data: apiKeys, error: keyError } = await supabase
-                .from('api_keys')
-                .select('gemini_key, updated_at')
-                .order('updated_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-            
-            if (keyError) console.error("[Bot] Error fetching API keys:", keyError);
-            
-            const geminiKey = apiKeys?.gemini_key?.trim();
+            let geminiKey = null;
+            try {
+                geminiKey = await fetchGeminiKey();
+            } catch (keyError) {
+                console.error("[Bot] Error fetching API keys:", keyError);
+            }
             let reply = "";
 
             // 2. محاولة استخدام Gemini API أولاً (الأولوية)
@@ -495,14 +557,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log("[Bot] Falling back to smart memory/custom replies...");
                 if (botSettings?.smart_memory_enabled) {
                     try {
-                        const { data: memories } = await supabase
-                            .from('smart_memory')
-                            .select('reply_text')
-                            .textSearch('keyword', text)
-                            .limit(1);
-                        if (memories && memories.length > 0) {
-                            reply = memories[0].reply_text;
-                        }
+                        reply = await getSmartMemoryReply(text);
                     } catch (err) {
                         console.error("[Bot] Error searching smart memory:", err);
                     }
@@ -530,7 +585,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     session_id: currentSessionId, 
                     message_text: reply, 
                     is_bot_reply: true,
-                    sender_id: 'bot'
+                    sender_id: null
                 }]);
                 
                 if (insertError) {
