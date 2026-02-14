@@ -499,30 +499,31 @@ const { data, error } = await supabase
 
     function isBotEnabled(settings) {
         if (!settings) return true;
-        if (typeof settings.bot_enabled === 'boolean') return settings.bot_enabled;
+        // التحقق من الحقل الصحيح في قاعدة البيانات هو is_enabled
         if (typeof settings.is_enabled === 'boolean') return settings.is_enabled;
+        if (typeof settings.bot_enabled === 'boolean') return settings.bot_enabled;
         return true;
     }
-async function fetchGeminiReply(message) {
+async function fetchGrokReply(message) {
+  // تم تحديث الوظيفة لتستخدم Grok عبر Edge Function
   const { data, error } = await supabase.functions.invoke('gemini-proxy', {
-  body: {
-    message,
-    userId: currentUser.id   // 👈 السطر المهم
-  }
-});
-
+    body: {
+      message,
+      userId: currentUser?.id 
+    }
+  });
 
   if (error) {
-    console.error(error);
+    console.error("[Bot] AI Proxy Error:", error);
     return null;
   }
 
   if (!data?.reply || data.reply.trim() === "") {
-    console.warn("Gemini returned empty reply");
+    console.warn("[Bot] AI returned empty reply");
     return null;
   }
 
-  console.log("Gemini reply:", data.reply);
+  console.log("[Bot] AI reply received");
   return data.reply;
 }
 
@@ -543,7 +544,7 @@ async function fetchGeminiReply(message) {
             // 1. محاولة استخدام الذاكرة المحلية أولاً
             if (botSettings?.smart_memory_enabled) {
                 try {
-                    reply = await getSmartMemoryReply(text);
+                    reply = await getSmartMemoryReply(text.trim());
                     if (reply) {
                         console.log('[Bot] Reply resolved from chatbot_memory');
                     }
@@ -556,24 +557,26 @@ async function fetchGeminiReply(message) {
             if (!reply) {
                console.log("[Bot] Attempting Gemini via Edge Function...");
 
-const geminiReply = await fetchGeminiReply(text);
-if (geminiReply && geminiReply.trim() !== "") {
-  reply = geminiReply;
+const grokReply = await fetchGrokReply(text);
+if (grokReply && grokReply.trim() !== "") {
+  reply = grokReply;
 } else {
-  console.warn("AI returned empty reply");
+  console.warn("[Bot] Grok AI returned empty reply");
 }
                 }
 
 
-            // 4. إذا فشل Gemini نستخدم الردود المخصصة
-            if (!reply && botSettings?.custom_replies) {
-                const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
-                if (matched) reply = matched.reply;
+            // 3. إذا فشل Grok نستخدم الردود المخصصة (Custom Replies)
+            if (!reply && botSettings?.custom_replies && Array.isArray(botSettings.custom_replies)) {
+                const matched = botSettings.custom_replies.find(r => 
+                    text.toLowerCase().includes((r.keyword || r.trigger || "").toLowerCase())
+                );
+                if (matched) reply = matched.reply || matched.response;
             }
 
-            // 4. رد افتراضي إذا لم يتوفر أي شيء
+            // 4. رد افتراضي في حالة الفشل التام
           if (!reply) {
-  reply = await fetchGeminiReply("رد على العميل بشكل عام");
+  reply = "أهلاً بك، كيف يمكنني مساعدتك اليوم؟";
 }
 
 
