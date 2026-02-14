@@ -1,4 +1,4 @@
-import { supabase } from '../../api-config.js';
+import { supabase, supabaseRestFetch } from '../../api-config.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Core Elements
@@ -33,71 +33,126 @@ document.addEventListener('DOMContentLoaded', async () => {
     let botSettings = null;
     let isTestMode = false;
     let isManualMode = false;
-    let apiKeysTableName = null;
-    let hasSmartMemoryTable = null;
+    let hasChatbotMemoryTable = null;
 
-    async function detectApiKeysTable() {
-        if (apiKeysTableName) return apiKeysTableName;
+    function logRlsFailure(tableName, error, context = '') {
+        const details = {
+            context,
+            table: tableName,
+            code: error?.code || 'unknown',
+            hint: error?.hint || 'none',
+            message: error?.message || 'unknown error'
+        };
 
-        const apiTables = ['bot_api_keys', 'api_keys'];
-        for (const tableName of apiTables) {
-            const { error } = await supabase.from(tableName).select('id').limit(1);
-            if (!error) {
-                apiKeysTableName = tableName;
-                return tableName;
-            }
+        if (error?.code === '42501') {
+            console.error('[Bot] RLS blocked', details);
+            return;
         }
 
-        return null;
+        console.error('[Supabase][RLS/Query Failure]', details);
     }
 
-    async function fetchGeminiKey() {
-        const tableName = await detectApiKeysTable();
-        if (!tableName) return null;
+    const GEMINI_KEY_COLUMN = 'gemini_api_key';
 
-        if (tableName === 'bot_api_keys') {
-            const { data, error } = await supabase
-                .from('bot_api_keys')
-                .select('key_value, status, created_at')
-                .eq('status', 'active')
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
+    async function getGeminiKey() {
+        const { data, error } = await supabase
+            .from('bot_api_keys')
+            .select('*')
+            .limit(1)
+            .single();
 
-            if (error) throw error;
-            return data?.key_value?.trim() || null;
+        if (error) {
+            throw new Error(`[GeminiKey] Query failed for bot_api_keys: ${error.message}`);
         }
 
-        const { data, error } = await supabase
-            .from('api_keys')
-            .select('gemini_key, updated_at')
-            .order('updated_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+        if (!data) {
+            throw new Error('[GeminiKey] bot_api_keys table is empty');
+        }
 
-        if (error) throw error;
-        return data?.gemini_key?.trim() || null;
+        if (!(GEMINI_KEY_COLUMN in data)) {
+            throw new Error(`[GeminiKey] Missing required column "${GEMINI_KEY_COLUMN}" in bot_api_keys`);
+        }
+
+        const geminiKey = typeof data[GEMINI_KEY_COLUMN] === 'string'
+            ? data[GEMINI_KEY_COLUMN].trim()
+            : '';
+
+        if (!geminiKey) {
+            throw new Error(`[GeminiKey] Column "${GEMINI_KEY_COLUMN}" is empty in bot_api_keys`);
+        }
+
+        return geminiKey;
     }
 
     async function getSmartMemoryReply(text) {
-        if (hasSmartMemoryTable === false) return null;
+        if (hasChatbotMemoryTable === false) return null;
 
         const { data: memories, error } = await supabase
-            .from('smart_memory')
+            .from('chatbot_memory')
             .select('reply_text')
             .textSearch('keyword', text)
             .limit(1);
 
         if (error) {
             if (error.code === 'PGRST205') {
-                hasSmartMemoryTable = false;
+                hasChatbotMemoryTable = false;
+                logRlsFailure('chatbot_memory', error, 'table-check');
                 return null;
             }
-            throw error;
+
+            logRlsFailure('chatbot_memory', error, 'getSmartMemoryReply');
+            return null;
         }
 
-        hasSmartMemoryTable = true;
+        hasChatbotMemoryTable = true;
         return memories && memories.length > 0 ? memories[0].reply_text : null;
+    }
+
+    async function testSupabaseConnection() {
+        const report = {
+            timestamp: new Date().toISOString(),
+            checks: {
+                memory: null,
+                gemini: null
+            }
+        };
+
+        try {
+            const { data, error } = await supabase.from('chatbot_memory').select('*').limit(1);
+            if (error) {
+                logRlsFailure('chatbot_memory', error, 'testSupabaseConnection');
+                report.checks.memory = { ok: false, code: error.code || 'unknown', hint: error.hint || null };
+            } else {
+                report.checks.memory = { ok: true, rows: data?.length || 0 };
+            }
+        } catch (error) {
+            report.checks.memory = { ok: false, message: error?.message || 'unknown' };
+        }
+
+        try {
+            const geminiKey = await getGeminiKey();
+            report.checks.gemini = { ok: Boolean(geminiKey), reason: geminiKey ? 'loaded' : 'missing_or_blocked' };
+        } catch (error) {
+            report.checks.gemini = { ok: false, message: error?.message || 'unknown' };
+        }
+
+        try {
+            const restResponse = await supabaseRestFetch('chatbot_memory?select=id&limit=1', { method: 'GET' });
+            report.checks.rest = {
+                ok: restResponse.ok,
+                status: restResponse.status
+            };
+            if (!restResponse.ok) {
+                console.warn('[Supabase][Debug] REST check failed for chatbot_memory', {
+                    status: restResponse.status
+                });
+            }
+        } catch (error) {
+            report.checks.rest = { ok: false, message: error?.message || 'unknown' };
+        }
+
+        console.log('[Supabase][Debug] Connection report', report);
+        return report;
     }
 
     // 1. Initialize Auth
@@ -500,17 +555,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            // 1. جلب مفاتيح الـ API من Supabase (تخزين آمن)
-            let geminiKey = null;
-            try {
-                geminiKey = await fetchGeminiKey();
-            } catch (keyError) {
-                console.error("[Bot] Error fetching API keys:", keyError);
-            }
             let reply = "";
 
-            // 2. محاولة استخدام Gemini API أولاً (الأولوية)
-            if (geminiKey) {
+            // 1. محاولة استخدام الذاكرة المحلية أولاً
+            if (botSettings?.smart_memory_enabled) {
+                try {
+                    reply = await getSmartMemoryReply(text);
+                    if (reply) {
+                        console.log('[Bot] Reply resolved from chatbot_memory');
+                    }
+                } catch (err) {
+                    console.error('[Bot] Error searching chatbot_memory:', err);
+                }
+            }
+
+            // 2. جلب مفاتيح Gemini من bot_api_keys
+            let geminiKey = null;
+            try {
+                geminiKey = await getGeminiKey();
+            } catch (keyError) {
+                console.error('[Bot] Failed to load Gemini key from bot_api_keys:', keyError.message || keyError);
+            }
+
+            // 3. إذا لا يوجد رد من الذاكرة نحاول Gemini
+            if (!reply && geminiKey) {
                 console.log("[Bot] Attempting Gemini API...");
                 try {
                     const systemInstruction = botSettings?.system_prompt || "أنت مساعد ذكي لمنصة مدعوم. أجب بأسلوب مهني وودود باللغة العربية.";
@@ -548,25 +616,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } catch (geminiErr) {
                     console.error("[Bot] Gemini API Error:", geminiErr);
                 }
-            } else {
-                console.log("[Bot] No Gemini API key found in Supabase");
             }
 
-            // 3. إذا فشل Gemini، نستخدم الذاكرة الذكية أو الردود المخصصة
-            if (!reply) {
-                console.log("[Bot] Falling back to smart memory/custom replies...");
-                if (botSettings?.smart_memory_enabled) {
-                    try {
-                        reply = await getSmartMemoryReply(text);
-                    } catch (err) {
-                        console.error("[Bot] Error searching smart memory:", err);
-                    }
-                }
-                
-                if (!reply && botSettings?.custom_replies) {
-                    const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
-                    if (matched) reply = matched.reply;
-                }
+            // 4. إذا فشل Gemini نستخدم الردود المخصصة
+            if (!reply && botSettings?.custom_replies) {
+                const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
+                if (matched) reply = matched.reply;
             }
 
             // 4. رد افتراضي إذا لم يتوفر أي شيء
@@ -650,6 +705,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 
+    await testSupabaseConnection();
     await loadBotSettings();
     await initAuth();
 });
