@@ -52,10 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('[Supabase][RLS/Query Failure]', details);
     }
 
-    async function fetchGeminiReply(message, systemInstruction) {
-        if (!supabase) {
-            throw new Error('Supabase client not initialized');
-        }
+  
 
         const payload = {
             message: `التعليمات: ${systemInstruction}\n\nرسالة العميل: ${message}`
@@ -82,8 +79,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const { data: memories, error } = await supabase
             .from('chatbot_memory')
-            .select('reply_text')
-            .textSearch('keyword', text)
+            .select('admin_reply')
+.textSearch('user_message', text)
             .limit(1);
 
         if (error) {
@@ -589,6 +586,7 @@ if (geminiReply) {
     reply = geminiReply;
     console.log("[Bot] Gemini reply received");
 }
+                }
 
 
             // 4. إذا فشل Gemini نستخدم الردود المخصصة
