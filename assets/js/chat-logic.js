@@ -450,6 +450,7 @@ const { data, error } = await supabase
         
         const msgDiv = document.createElement('div');
         msgDiv.className = `msg ${type}`;
+        msgDiv.style.position = 'relative';
         
         const time = new Date(timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
         
@@ -457,9 +458,56 @@ const { data, error } = await supabase
             <div class="msg-text">${text}</div>
             <div style="font-size:0.65rem; opacity:0.7; margin-top:0.3rem; text-align:${type === 'sent' ? 'left' : 'right'}">${time}</div>
         `;
+
+        // إضافة حدث النقر بالزر الأيمن
+        msgDiv.oncontextmenu = (e) => {
+            e.preventDefault();
+            showContextMenu(e.pageX, e.pageY, text, msgDiv);
+        };
         
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showContextMenu(x, y, text, element) {
+        contextMenu.innerHTML = `
+            <div class="reactions-row">
+                <span class="reaction-option" onclick="addReaction('❤️', '${element.id}')">❤️</span>
+                <span class="reaction-option" onclick="addReaction('👍', '${element.id}')">👍</span>
+                <span class="reaction-option" onclick="addReaction('😂', '${element.id}')">😂</span>
+                <span class="reaction-option" onclick="addReaction('😮', '${element.id}')">😮</span>
+            </div>
+            <div class="context-menu-item" onclick="replyToMessage('${text.replace(/'/g, "\\'")}')">
+                <span>💬</span> رد على الرسالة
+            </div>
+            <div class="context-menu-item" onclick="navigator.clipboard.writeText('${text.replace(/'/g, "\\'")}')">
+                <span>📋</span> نسخ النص
+            </div>
+        `;
+        
+        contextMenu.style.top = `${y}px`;
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.display = 'block';
+
+        // وظائف داخلية للتعامل مع التفاعل والرد
+        window.addReaction = (emoji, elementId) => {
+            let badge = element.querySelector('.reaction-badge');
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'reaction-badge';
+                element.appendChild(badge);
+            }
+            badge.innerText = emoji;
+            contextMenu.style.display = 'none';
+        };
+
+        window.replyToMessage = (replyText) => {
+            if (chatInput) {
+                chatInput.value = `الرد على: "${replyText.substring(0, 30)}${replyText.length > 30 ? '...' : ''}" \n- `;
+                chatInput.focus();
+            }
+            contextMenu.style.display = 'none';
+        };
     }
 
     async function sendMessage() {
@@ -662,6 +710,113 @@ const { error: insertError } = await supabase
             }
         };
     }
+
+    // --- منطق إنهاء المحادثة والتقييم ---
+    const ratingModal = document.getElementById('ratingModal');
+    const stars = document.querySelectorAll('.star');
+    const submitRatingBtn = document.getElementById('submitRatingBtn');
+    let selectedRating = 0;
+
+    if (endChatBtn) {
+        endChatBtn.onclick = async () => {
+            if (confirm('هل أنت متأكد من إنهاء المحادثة؟')) {
+                if (ratingModal) {
+                    ratingModal.style.display = 'flex';
+                } else {
+                    finishChat();
+                }
+            }
+        };
+    }
+
+    if (stars) {
+        stars.forEach(star => {
+            star.onclick = () => {
+                selectedRating = parseInt(star.dataset.value);
+                stars.forEach(s => {
+                    s.classList.toggle('active', parseInt(s.dataset.value) <= selectedRating);
+                });
+            };
+        });
+    }
+
+    if (submitRatingBtn) {
+        submitRatingBtn.onclick = async () => {
+            const comment = document.getElementById('ratingComment')?.value;
+            // هنا يمكن حفظ التقييم في قاعدة البيانات إذا كان هناك جدول للتقييمات
+            console.log('Rating submitted:', { rating: selectedRating, comment });
+            
+            // إغلاق الجلسة في قاعدة البيانات
+            if (currentSessionId) {
+                await supabase.from('chat_sessions').update({ status: 'closed' }).eq('id', currentSessionId);
+            }
+            
+            finishChat();
+        };
+    }
+
+    function finishChat() {
+        if (ratingModal) ratingModal.style.display = 'none';
+        alert('شكراً لك! تم إنهاء المحادثة.');
+        window.location.href = '/customer-dashboard.html';
+    }
+
+    // --- منطق القائمة السياقية (Context Menu) للرد والتفاعل ---
+    const contextMenu = document.createElement('div');
+    contextMenu.id = 'chatContextMenu';
+    contextMenu.style.cssText = `
+        position: fixed;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        display: none;
+        z-index: 10000;
+        min-width: 150px;
+        overflow: hidden;
+        border: 1px solid #eee;
+    `;
+    document.body.appendChild(contextMenu);
+
+    document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
+
+    // إضافة ستايل التفاعلات
+    const reactionStyle = document.createElement('style');
+    reactionStyle.textContent = `
+        .reaction-badge {
+            position: absolute;
+            bottom: -10px;
+            right: 10px;
+            background: white;
+            border-radius: 12px;
+            padding: 2px 6px;
+            font-size: 0.8rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: default;
+        }
+        .context-menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .context-menu-item:hover { background: #f0f4ff; }
+        .reactions-row {
+            display: flex;
+            padding: 10px;
+            gap: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .reaction-option {
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .reaction-option:hover { transform: scale(1.3); }
+    `;
+    document.head.appendChild(reactionStyle);
 
     await testSupabaseConnection();
     await loadBotSettings();
