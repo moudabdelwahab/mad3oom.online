@@ -416,9 +416,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    function isBotEnabled(settings) {
+        if (!settings) return true;
+        if (typeof settings.bot_enabled === 'boolean') return settings.bot_enabled;
+        if (typeof settings.is_enabled === 'boolean') return settings.is_enabled;
+        return true;
+    }
+
     async function handleBotReply(text) {
         console.log("[Bot] Handling reply for:", text);
-        if (!botSettings || !botSettings.bot_enabled) {
+        if (!isBotEnabled(botSettings)) {
             console.log("[Bot] Bot is disabled or settings not loaded");
             return;
         }
@@ -428,11 +435,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         try {
             // 1. جلب مفاتيح الـ API من Supabase (تخزين آمن)
-            const { data: apiKeys, error: keyError } = await supabase.from('api_keys').select('gemini_key').limit(1).maybeSingle();
+            const { data: apiKeys, error: keyError } = await supabase
+                .from('api_keys')
+                .select('gemini_key, updated_at')
+                .order('updated_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
             
             if (keyError) console.error("[Bot] Error fetching API keys:", keyError);
             
-            const geminiKey = apiKeys?.gemini_key;
+            const geminiKey = apiKeys?.gemini_key?.trim();
             let reply = "";
 
             // 2. محاولة استخدام Gemini API أولاً (الأولوية)
@@ -537,9 +549,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function loadBotSettings() {
         try {
             const { data } = await supabase.from('bot_settings').select('*').limit(1).maybeSingle();
-            if (data) botSettings = data;
+            botSettings = data || {
+                bot_enabled: true,
+                smart_memory_enabled: false,
+                custom_replies: []
+            };
         } catch (error) {
             console.error("Error loading bot settings:", error);
+            botSettings = {
+                bot_enabled: true,
+                smart_memory_enabled: false,
+                custom_replies: []
+            };
         }
     }
 
