@@ -148,6 +148,9 @@ async function loadAllSettings() {
         if (apiKeys) {
             document.getElementById('openaiKey').value = apiKeys.openai_key || '';
             document.getElementById('telegramBotToken').value = apiKeys.telegram_token || '';
+            if (document.getElementById('geminiKey')) {
+                document.getElementById('geminiKey').value = apiKeys.gemini_key || '';
+            }
         }
 
         // 10. Load Rules & Roles
@@ -436,7 +439,8 @@ function setupEventListeners() {
     document.getElementById('saveApiBtn')?.addEventListener('click', async () => {
         const settings = {
             openai_key: document.getElementById('openaiKey').value,
-            telegram_token: document.getElementById('telegramBotToken').value
+            telegram_token: document.getElementById('telegramBotToken').value,
+            gemini_key: document.getElementById('geminiKey')?.value || ''
         };
         try {
             const { data } = await supabase.from('api_keys').select('id').limit(1).maybeSingle();

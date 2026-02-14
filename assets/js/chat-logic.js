@@ -143,48 +143,48 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const card = document.createElement('div');
                     card.className = 'session-card';
                     card.id = `session-${session.id}`;
-		                    card.innerHTML = `
-		                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
-		                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-	                                    <input type="checkbox" class="user-select-checkbox" data-user-id="${session.user_id || session.guest_id}" data-user-name="${safeName}" style="width: 16px; height: 16px; cursor: pointer;">
-	                                    <span class="card-tag" style="background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'}; font-size: 0.6rem;">
-	                                        ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
-	                                    </span>
-	                                </div>
-		                            <button class="end-chat-btn-small" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">إغلاق المحادثة</button>
-		                        </div>
-		                        
-		                        <div style="display:flex; align-items:center; gap:0.75rem;">
-		                            <div style="width:36px; height:36px; background:#eef2ff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366; font-size:1rem; flex-shrink:0;">${firstChar}</div>
-		                            <div style="overflow:hidden; flex-grow:1;">
-		                                <div style="font-weight:700; color:#1a1a1a; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeName}</div>
-		                                <div style="font-size:0.65rem; color:#999;">${date} | ${time}</div>
-		                            </div>
-		                        </div>
-
-		                        <div class="last-message-preview" style="background:#f8f9fa; padding:0.6rem; border-radius:8px; font-size:0.8rem; color:#666; line-height:1.3; height:40px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; border:1px solid #f1f5f9;">
-		                            ${lastMsg}
-		                        </div>
-
-		                        <div style="display: flex; gap: 0.5rem; margin-top: auto;">
-                                <button class="view-chat-btn" style="flex: 1; background:var(--primary-blue); color:white; border:none; padding:8px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600;">
-                                    عرض المحادثة
-                                </button>
-                                <button class="quick-msg-btn" data-user-id="${session.user_id || session.guest_id}" data-user-name="${safeName}" title="إرسال رسالة مباشرة" style="background: #eef2ff; color: var(--primary-blue); border: 1px solid #d0d7ff; padding: 8px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                                </button>
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" class="user-select-checkbox" data-user-id="${session.user_id || session.guest_id}" data-user-name="${safeName}" style="width: 16px; height: 16px; cursor: pointer;">
+                                <span class="card-tag" style="background:${session.is_manual_mode ? '#fff3cd' : '#d1e7dd'}; color:${session.is_manual_mode ? '#856404' : '#0f5132'}; font-size: 0.6rem;">
+                                    ${session.is_manual_mode ? 'رد يدوي' : 'بوت نشط'}
+                                </span>
                             </div>
-		                    `;
+                            <button class="end-chat-btn-small" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold; cursor:pointer;">إغلاق المحادثة</button>
+                        </div>
+                        
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
+                            <div style="width:36px; height:36px; background:#eef2ff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#003366; font-size:1rem; flex-shrink:0;">${firstChar}</div>
+                            <div style="overflow:hidden; flex-grow:1;">
+                                <div style="font-weight:700; color:#1a1a1a; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeName}</div>
+                                <div style="font-size:0.65rem; color:#999;">${date} | ${time}</div>
+                            </div>
+                        </div>
 
-	                        const checkbox = card.querySelector('.user-select-checkbox');
-	                        checkbox.onclick = (e) => e.stopPropagation();
-	                        checkbox.onchange = (e) => updateSelectedUsers();
+                        <div class="last-message-preview" style="background:#f8f9fa; padding:0.6rem; border-radius:8px; font-size:0.8rem; color:#666; line-height:1.3; height:40px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; border:1px solid #f1f5f9;">
+                            ${lastMsg}
+                        </div>
 
-	                        const quickMsgBtn = card.querySelector('.quick-msg-btn');
-	                        quickMsgBtn.onclick = (e) => {
-	                            e.stopPropagation();
-	                            openQuickMessage(quickMsgBtn.dataset.userId, quickMsgBtn.dataset.userName);
-	                        };
+                        <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+                            <button class="view-chat-btn" style="flex: 1; background:var(--primary-blue); color:white; border:none; padding:8px; border-radius:8px; cursor:pointer; font-size:0.85rem; font-weight:600;">
+                                عرض المحادثة
+                            </button>
+                            <button class="quick-msg-btn" data-user-id="${session.user_id || session.guest_id}" data-user-name="${safeName}" title="إرسال رسالة مباشرة" style="background: #eef2ff; color: var(--primary-blue); border: 1px solid #d0d7ff; padding: 8px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            </button>
+                        </div>
+                    `;
+
+                    const checkbox = card.querySelector('.user-select-checkbox');
+                    checkbox.onclick = (e) => e.stopPropagation();
+                    checkbox.onchange = (e) => updateSelectedUsers();
+
+                    const quickMsgBtn = card.querySelector('.quick-msg-btn');
+                    quickMsgBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        openQuickMessage(quickMsgBtn.dataset.userId, quickMsgBtn.dataset.userName);
+                    };
 
                     const viewBtn = card.querySelector('.view-chat-btn');
                     const endBtn = card.querySelector('.end-chat-btn-small');
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     endBtn.onclick = async (e) => {
                         e.stopPropagation();
                         if (confirm('هل أنت متأكد من رغبتك في إغلاق هذه المحادثة؟')) {
-                            const { error } = await supabase.from('chat_sessions').update({ status: 'closed', updated_at: new Date() }).eq('id', session.id);
+                            const { error } = await supabase.from('chat_sessions').update({ status: 'closed' }).eq('id', session.id);
                             if (!error) loadAllSessions();
                             else alert('حدث خطأ أثناء إغلاق المحادثة');
                         }
@@ -248,6 +248,69 @@ document.addEventListener('DOMContentLoaded', async () => {
         subscribeToMessages(sessionId);
     }
 
+    async function setupUserChat() {
+        try {
+            // البحث عن جلسة نشطة للمستخدم أو الضيف
+            let query = supabase.from('chat_sessions').select('id, is_manual_mode').eq('status', 'active');
+            
+            if (currentUser.isGuest) {
+                query = query.eq('guest_id', currentUser.id);
+            } else {
+                query = query.eq('user_id', currentUser.id);
+            }
+            
+            const { data: sessions, error } = await query;
+            
+            if (error) throw error;
+            
+            if (sessions && sessions.length > 0) {
+                currentSessionId = sessions[0].id;
+                isManualMode = sessions[0].is_manual_mode;
+                loadMessages(currentSessionId);
+                subscribeToMessages(currentSessionId);
+            } else {
+                // إنشاء جلسة جديدة
+                const newSession = {
+                    status: 'active',
+                    is_manual_mode: false
+                };
+                
+                if (currentUser.isGuest) {
+                    newSession.guest_id = currentUser.id;
+                    newSession.user_id = 'guest';
+                } else {
+                    newSession.user_id = currentUser.id;
+                }
+                
+                const { data: created, error: createErr } = await supabase
+                    .from('chat_sessions')
+                    .insert([newSession])
+                    .select()
+                    .single();
+                    
+                if (createErr) throw createErr;
+                
+                currentSessionId = created.id;
+                isManualMode = created.is_manual_mode;
+                
+                // إرسال رسالة الترحيب
+                if (botSettings && botSettings.bot_enabled && botSettings.welcome_message) {
+                    await supabase.from('chat_messages').insert([{
+                        session_id: currentSessionId,
+                        message_text: botSettings.welcome_message,
+                        is_bot_reply: true,
+                        sender_id: 'bot'
+                    }]);
+                }
+                
+                loadMessages(currentSessionId);
+                subscribeToMessages(currentSessionId);
+            }
+        } catch (err) {
+            console.error("Error setting up user chat:", err);
+        }
+    }
+
     async function loadMessages(sessionId) {
         if (chatMessages) chatMessages.innerHTML = '<div style="text-align:center; padding:2rem; color:#888;">جاري تحميل الرسائل...</div>';
         
@@ -262,11 +325,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (chatMessages) {
                 chatMessages.innerHTML = '';
-                if (messages) {
+                if (messages && messages.length > 0) {
                     messages.forEach(msg => {
-                        const type = (msg.is_bot_reply || msg.is_admin_reply) ? 'sent' : 'received';
+                        const type = (msg.is_bot_reply || msg.is_admin_reply) ? 'received' : 'sent';
                         appendMessage(msg.message_text, type, msg.created_at);
                     });
+                } else {
+                    // إذا لم تكن هناك رسائل، نعرض رسالة الترحيب من الإعدادات
+                    if (botSettings && botSettings.welcome_message) {
+                        appendMessage(botSettings.welcome_message, 'received', new Date());
+                    }
                 }
             }
         } catch (error) {
@@ -285,8 +353,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 filter: `session_id=eq.${sessionId}`
             }, (payload) => {
                 const msg = payload.new;
-                const type = (msg.is_bot_reply || msg.is_admin_reply) ? 'sent' : 'received';
-                appendMessage(msg.message_text, type, msg.created_at);
+                // إذا كان المستخدم هو من أرسل الرسالة، لا نكررها (لأنها أضيفت بالفعل عبر appendMessage في sendMessage)
+                // ولكن في حالة الاستقبال من البوت أو الأدمن، يجب إضافتها
+                const isFromMe = msg.sender_id === currentUser.id;
+                if (!isFromMe) {
+                    const type = (msg.is_bot_reply || msg.is_admin_reply) ? 'received' : 'sent';
+                    appendMessage(msg.message_text, type, msg.created_at);
+                }
             })
             .subscribe();
     }
@@ -322,6 +395,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (!currentSessionId) return;
 
+        // إضافة الرسالة للواجهة فوراً لتجربة مستخدم أفضل
+        appendMessage(text, 'sent', new Date());
+
         try {
             const { error } = await supabase.from('chat_messages').insert([{ 
                 session_id: currentSessionId, 
@@ -346,28 +422,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typingIndicator) typingIndicator.style.display = 'block';
         if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        setTimeout(async () => {
-            if (typingIndicator) typingIndicator.style.display = 'none';
-            
-            let reply = "عذراً، لم أفهم طلبك. هل يمكنك التوضيح أكثر؟";
-            
-            if (botSettings?.smart_memory_enabled) {
+        try {
+            // 1. جلب مفاتيح الـ API
+            const { data: apiKeys } = await supabase.from('api_keys').select('*').limit(1).maybeSingle();
+            const geminiKey = apiKeys?.gemini_key || 'AIzaSyAt_r2uKxYft-JvfSHmxe-aR6iFWsJSXhk'; // استخدام المفتاح المقدم كافتراضي
+
+            let reply = "";
+
+            // 2. محاولة استخدام Gemini API أولاً (الأولوية)
+            if (geminiKey) {
                 try {
-                    const { data: memories } = await supabase
-                        .from('smart_memory')
-                        .select('reply_text')
-                        .textSearch('keyword', text)
-                        .limit(1);
-                    if (memories && memories.length > 0) {
-                        reply = memories[0].reply_text;
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: `أنت بوت ذكي لمنصة مدعوم. التعليمات: ${botSettings.system_prompt || 'كن مساعداً مفيداً'}. رسالة العميل: ${text}` }] }]
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                        reply = data.candidates[0].content.parts[0].text;
                     }
-                } catch (err) {
-                    console.error("Error searching smart memory:", err);
+                } catch (geminiErr) {
+                    console.error("Gemini API Error:", geminiErr);
                 }
-            } else if (botSettings?.custom_replies) {
-                const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
-                if (matched) reply = matched.reply;
             }
+
+            // 3. إذا فشل Gemini، نستخدم الذاكرة الذكية أو الردود المخصصة
+            if (!reply) {
+                if (botSettings?.smart_memory_enabled) {
+                    try {
+                        const { data: memories } = await supabase
+                            .from('smart_memory')
+                            .select('reply_text')
+                            .textSearch('keyword', text)
+                            .limit(1);
+                        if (memories && memories.length > 0) {
+                            reply = memories[0].reply_text;
+                        }
+                    } catch (err) {
+                        console.error("Error searching smart memory:", err);
+                    }
+                }
+                
+                if (!reply && botSettings?.custom_replies) {
+                    const matched = botSettings.custom_replies.find(r => text.includes(r.keyword));
+                    if (matched) reply = matched.reply;
+                }
+            }
+
+            // 4. رد افتراضي إذا لم يتوفر أي شيء
+            if (!reply) reply = "عذراً، لم أفهم طلبك. هل يمكنك التوضيح أكثر؟";
+
+            // إخفاء مؤشر الكتابة وإرسال الرد
+            if (typingIndicator) typingIndicator.style.display = 'none';
             
             if (isTestMode) {
                 appendMessage(reply, 'received', new Date());
@@ -379,7 +487,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sender_id: 'bot'
                 }]);
             }
-        }, (botSettings?.response_delay_seconds || 1) * 1000);
+        } catch (error) {
+            console.error("Bot reply error:", error);
+            if (typingIndicator) typingIndicator.style.display = 'none';
+        }
     }
 
     async function loadBotSettings() {
