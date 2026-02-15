@@ -19,7 +19,7 @@ supabase.auth.onAuthStateChange((_event, session) => {
 });
 
 export function debugSupabaseAuthError(error) {
-    logSupabaseAuthDiagnostics(error, supabaseConfig);
+    debugSupabaseAuthError(error);
 }
 
 export async function supabaseRestFetch(path, options = {}) {
