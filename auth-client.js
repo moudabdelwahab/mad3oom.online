@@ -1,4 +1,4 @@
-import { supabase, debugSupabaseAuthError } from './api-config.js';
+import { supabase, debugAuthError } from './api-config.js';
 import { logActivity } from './activity-service.js';
 
 /* =========================================================
@@ -61,7 +61,7 @@ export async function signIn(identifier, password) {
     // محاولة تسجيل الدخول
     const result = await supabase.auth.signInWithPassword({ email, password: normalizedPassword });
     if (result.error) {
-        debugSupabaseAuthError(result.error);
+        debugAuthError(result.error);
         return result;
     }
 
@@ -151,7 +151,7 @@ export async function signUp(email, password, metadata = {}) {
     });
 
     if (result.error) {
-        debugSupabaseAuthError(result.error);
+        debugAuthError(result.error);
     }
 
     // ملاحظة: في Supabase، عند تفعيل تأكيد البريد، قد لا يتم إنشاء سجل في جدول profiles فوراً 
