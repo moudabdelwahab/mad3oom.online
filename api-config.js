@@ -13,22 +13,29 @@ export const supabase = createClient(
     supabaseConfig.anonKey
 );
 
+let currentSession = null;
+
+supabase.auth.onAuthStateChange((_event, session) => {
+    currentSession = session;
+});
+
 export function debugSupabaseAuthError(error) {
     logSupabaseAuthDiagnostics(error, supabaseConfig);
 }
 
 export async function supabaseRestFetch(path, options = {}) {
-    const { data: { session } } = await supabase.auth.getSession();
+    const cleanPath = path.replace(/^\/+/, '');
+
     const headers = {
         apikey: supabaseConfig.anonKey,
-        Authorization: session?.access_token
-            ? `Bearer ${session.access_token}`
+        Authorization: currentSession?.access_token
+            ? `Bearer ${currentSession.access_token}`
             : `Bearer ${supabaseConfig.anonKey}`,
-        'Content-Type': 'application/json',
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
         ...(options.headers || {})
     };
 
-    return fetch(`${supabaseConfig.url}/rest/v1/${path}`, {
+    return fetch(`${supabaseConfig.url}/rest/v1/${cleanPath}`, {
         ...options,
         headers
     });
