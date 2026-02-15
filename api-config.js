@@ -1,8 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 import {
-    validateSupabaseConfig,
-    logSupabaseConfigDev,
-    logSupabaseAuthDiagnostics
+  validateSupabaseConfig,
+  debugSupabaseAuthError
 } from './supabase-config.js';
 
 const supabaseConfig = validateSupabaseConfig();
