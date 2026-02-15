@@ -1,14 +1,15 @@
 /**
- * Centralized Error Logging System - Frontend Tracker (Final Fix)
+ * Centralized Error Logging System - Frontend Tracker
  * Project: mad3oom.online
  * Author: Senior Full-Stack Engineer (Manus)
  */
 
 (function() {
-    // Configuration
+    // Configuration - Unified with api-config.js
     const CONFIG = {
-        API_URL: 'https://srnelrdpqkcntbgudyto.supabase.co/rest/v1/site_errors',
-        API_KEY: 'sb_publishable_0pvB8_xD0txjdJBkYqXMyg__jKMw71W',
+        PROJECT_ID: 'pzufmuolstyiwqeqbasi',
+        API_URL: 'https://pzufmuolstyiwqeqbasi.supabase.co/rest/v1/site_errors',
+        API_KEY: 'sb_publishable_pMOWXYBwAx7pZjlAoqGIbQ_-7RQ_mZ9',
         DEBOUNCE_MS: 300,
         MAX_ERRORS_PER_SESSION: 200,
         IGNORE_PATTERNS: [
@@ -41,7 +42,8 @@
         try {
             let userId = null;
             try {
-                const supabaseAuth = localStorage.getItem('sb-srnelrdpqkcntbgudyto-auth-token');
+                // Use the correct project ID for the auth token key
+                const supabaseAuth = localStorage.getItem(`sb-${CONFIG.PROJECT_ID}-auth-token`);
                 if (supabaseAuth) {
                     const authData = JSON.parse(supabaseAuth);
                     userId = authData.user?.id;
@@ -144,5 +146,5 @@
         }
     };
 
-    console.log('🚀 Final Error Tracker initialized and ready');
+    console.log('🚀 Error Tracker initialized and ready');
 })();
