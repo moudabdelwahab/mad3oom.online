@@ -28,25 +28,38 @@ export function isUserBanned(profile) {
  * تسجيل الدخول اللحظي
  */
 export async function signIn(identifier, password) {
-    let email = identifier;
+    const normalizedIdentifier = (identifier || '').trim();
+    const normalizedPassword = password || '';
+
+    if (!normalizedIdentifier || !normalizedPassword) {
+        return { data: null, error: { message: 'يرجى إدخال البريد الإلكتروني/اسم المستخدم وكلمة المرور.' } };
+    }
+
+    let email = normalizedIdentifier;
 
     // إذا لم يكن المعرف بريداً إلكترونياً، نفترض أنه اسم مستخدم ونبحث عن البريد المرتبط به
-    if (!identifier.includes('@')) {
-        const { data: profile } = await supabase
+    if (!normalizedIdentifier.includes('@')) {
+        const { data: profile, error: profileLookupError } = await supabase
             .from('profiles')
             .select('email')
-            .eq('username', identifier)
+            .eq('username', normalizedIdentifier)
             .maybeSingle();
+
+        if (profileLookupError) {
+            return { data: null, error: { message: 'تعذر التحقق من اسم المستخدم حالياً. حاول مرة أخرى.' } };
+        }
         
         if (profile?.email) {
-            email = profile.email;
+            email = profile.email.trim().toLowerCase();
         } else {
             return { data: null, error: { message: 'اسم المستخدم غير موجود.' } };
         }
+    } else {
+        email = normalizedIdentifier.toLowerCase();
     }
 
     // محاولة تسجيل الدخول
-    const result = await supabase.auth.signInWithPassword({ email, password });
+    const result = await supabase.auth.signInWithPassword({ email, password: normalizedPassword });
     if (result.error) return result;
 
     const user = result.data.user;
