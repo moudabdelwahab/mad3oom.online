@@ -5,11 +5,32 @@
  */
 
 (function() {
+    const EXPECTED_PROJECT_REF = 'nlcxrkzlikhzyqxexego';
+
+    function readRuntimeEnv(name) {
+        return window.__ENV__?.[name] || null;
+    }
+
+    function extractProjectRef(url) {
+        if (!url) return null;
+
+        try {
+            const { hostname } = new URL(url);
+            return hostname.split('.')[0] || null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    const SUPABASE_URL = readRuntimeEnv('SUPABASE_URL');
+    const SUPABASE_ANON_KEY = readRuntimeEnv('SUPABASE_ANON_KEY');
+    const detectedProjectRef = extractProjectRef(SUPABASE_URL);
+
     // Configuration - Unified with api-config.js
     const CONFIG = {
-        PROJECT_ID: 'pzufmuolstyiwqeqbasi',
-        API_URL: 'https://pzufmuolstyiwqeqbasi.supabase.co/rest/v1/site_errors',
-        API_KEY: 'sb_publishable_pMOWXYBwAx7pZjlAoqGIbQ_-7RQ_mZ9',
+        PROJECT_ID: detectedProjectRef,
+        API_URL: SUPABASE_URL ? `${SUPABASE_URL}/rest/v1/site_errors` : null,
+        API_KEY: SUPABASE_ANON_KEY,
         DEBOUNCE_MS: 300,
         MAX_ERRORS_PER_SESSION: 200,
         IGNORE_PATTERNS: [
@@ -21,6 +42,13 @@
             /originalPrompt/i
         ]
     };
+
+    if (!CONFIG.API_URL || !CONFIG.API_KEY || detectedProjectRef !== EXPECTED_PROJECT_REF) {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.warn('[Error Tracker] Disabled: invalid Supabase environment configuration.');
+        }
+        return;
+    }
 
     let errorCount = 0;
     let lastErrorTime = 0;
@@ -42,7 +70,6 @@
         try {
             let userId = null;
             try {
-                // Use the correct project ID for the auth token key
                 const supabaseAuth = localStorage.getItem(`sb-${CONFIG.PROJECT_ID}-auth-token`);
                 if (supabaseAuth) {
                     const authData = JSON.parse(supabaseAuth);
@@ -58,31 +85,28 @@
                 created_at: new Date().toISOString()
             };
 
-            console.log('📡 Reporting error to Supabase...', payload.message);
-
             const response = await fetch(CONFIG.API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'apikey': CONFIG.API_KEY,
-                    'Authorization': `Bearer ${CONFIG.API_KEY}`,
-                    'Prefer': 'return=minimal'
+                    apikey: CONFIG.API_KEY,
+                    Authorization: `Bearer ${CONFIG.API_KEY}`,
+                    Prefer: 'return=minimal'
                 },
                 body: JSON.stringify(payload),
                 keepalive: true
             });
 
-            if (!response.ok) {
+            if (!response.ok && window.location.hostname === 'localhost') {
                 console.error('❌ Failed to report error:', response.status, response.statusText);
-            } else {
-                console.log('✅ Error reported successfully');
             }
         } catch (err) {
-            console.error('❌ Error Tracker Network Error:', err);
+            if (window.location.hostname === 'localhost') {
+                console.error('❌ Error Tracker Network Error:', err);
+            }
         }
     }
 
-    // 1. Capture JS Runtime Errors
     window.addEventListener('error', function(event) {
         if (event.error) {
             reportError({
@@ -94,7 +118,6 @@
                 stack_trace: event.error.stack
             });
         } else {
-            // Resource errors (img, script, etc)
             const target = event.target || event.srcElement;
             if (target instanceof HTMLElement) {
                 const url = target.src || target.href;
@@ -108,7 +131,6 @@
         }
     }, true);
 
-    // 2. Capture Unhandled Promise Rejections
     window.addEventListener('unhandledrejection', function(event) {
         const reason = event.reason;
         reportError({
@@ -119,12 +141,10 @@
         });
     });
 
-    // 3. Capture Fetch Errors (including 4xx and 5xx)
     const originalFetch = window.fetch;
     window.fetch = async function(...args) {
         try {
             const response = await originalFetch.apply(this, args);
-            // Don't report errors for our own logging API to avoid infinite loops
             const url = typeof args[0] === 'string' ? args[0] : args[0].url;
             if (!response.ok && !url.includes('site_errors')) {
                 reportError({
@@ -146,5 +166,7 @@
         }
     };
 
-    console.log('🚀 Error Tracker initialized and ready');
+    if (window.location.hostname === 'localhost') {
+        console.log('🚀 Error Tracker initialized and ready');
+    }
 })();

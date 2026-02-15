@@ -1,28 +1,34 @@
-// api-config.js
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import {
+    validateSupabaseConfig,
+    logSupabaseConfigDev,
+    logSupabaseAuthDiagnostics
+} from './supabase-config.js';
 
-const SUPABASE_URL = 'https://pzufmuolstyiwqeqbasi.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_pMOWXYBwAx7pZjlAoqGIbQ_-7RQ_mZ9';
-
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('Supabase env not loaded');
-}
+const supabaseConfig = validateSupabaseConfig();
+logSupabaseConfigDev(supabaseConfig);
 
 export const supabase = createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
+    supabaseConfig.url,
+    supabaseConfig.anonKey
 );
+
+export function debugSupabaseAuthError(error) {
+    logSupabaseAuthDiagnostics(error, supabaseConfig);
+}
 
 export async function supabaseRestFetch(path, options = {}) {
     const { data: { session } } = await supabase.auth.getSession();
     const headers = {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': session?.access_token ? `Bearer ${session.access_token}` : `Bearer ${SUPABASE_ANON_KEY}`,
+        apikey: supabaseConfig.anonKey,
+        Authorization: session?.access_token
+            ? `Bearer ${session.access_token}`
+            : `Bearer ${supabaseConfig.anonKey}`,
         'Content-Type': 'application/json',
         ...(options.headers || {})
     };
 
-    return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    return fetch(`${supabaseConfig.url}/rest/v1/${path}`, {
         ...options,
         headers
     });
