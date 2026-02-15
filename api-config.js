@@ -4,38 +4,42 @@ import {
   debugSupabaseAuthError
 } from './supabase-config.js';
 
+// validate config
 const supabaseConfig = validateSupabaseConfig();
-logSupabaseConfigDev(supabaseConfig);
 
+// create client
 export const supabase = createClient(
-    supabaseConfig.url,
-    supabaseConfig.anonKey
+  supabaseConfig.url,
+  supabaseConfig.anonKey
 );
 
+// keep session cached
 let currentSession = null;
 
 supabase.auth.onAuthStateChange((_event, session) => {
-    currentSession = session;
+  currentSession = session;
 });
 
-export function debugSupabaseAuthError(error) {
-    debugSupabaseAuthError(error);
+// optional: helper لإظهار أخطاء auth من أي مكان
+export function debugAuthError(error) {
+  debugSupabaseAuthError(error);
 }
 
+// REST helper
 export async function supabaseRestFetch(path, options = {}) {
-    const cleanPath = path.replace(/^\/+/, '');
+  const cleanPath = path.replace(/^\/+/, '');
 
-    const headers = {
-        apikey: supabaseConfig.anonKey,
-        Authorization: currentSession?.access_token
-            ? `Bearer ${currentSession.access_token}`
-            : `Bearer ${supabaseConfig.anonKey}`,
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(options.headers || {})
-    };
+  const headers = {
+    apikey: supabaseConfig.anonKey,
+    Authorization: currentSession?.access_token
+      ? `Bearer ${currentSession.access_token}`
+      : `Bearer ${supabaseConfig.anonKey}`,
+    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.headers || {})
+  };
 
-    return fetch(`${supabaseConfig.url}/rest/v1/${cleanPath}`, {
-        ...options,
-        headers
-    });
+  return fetch(`${supabaseConfig.url}/rest/v1/${cleanPath}`, {
+    ...options,
+    headers
+  });
 }
