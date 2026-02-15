@@ -20,6 +20,50 @@ export function isUserBanned(profile) {
     return false;
 }
 
+function mapSignInError(error) {
+    const rawMessage = (error?.message || '').trim();
+    const normalizedMessage = rawMessage.toLowerCase();
+
+    if (normalizedMessage.includes('invalid login credentials')) {
+        return {
+            ...error,
+            message: 'بيانات تسجيل الدخول غير صحيحة. تأكد من البريد/اسم المستخدم وكلمة المرور أو استخدم "نسيت كلمة المرور".'
+        };
+    }
+
+    if (normalizedMessage.includes('email not confirmed')) {
+        return { ...error, message: 'بريدك الإلكتروني غير مُفعّل. فعّل الحساب من رسالة البريد أولاً.' };
+    }
+
+    if (normalizedMessage.includes('email logins are disabled')) {
+        return { ...error, message: 'تسجيل الدخول عبر البريد الإلكتروني معطّل حالياً من إعدادات النظام.' };
+    }
+
+    if (normalizedMessage.includes('too many requests')) {
+        return { ...error, message: 'تم تجاوز عدد المحاولات المسموح. انتظر قليلاً ثم حاول مرة أخرى.' };
+    }
+
+    return error;
+}
+
+async function signInWithFallback(email, password) {
+    const primaryResult = await supabase.auth.signInWithPassword({ email, password });
+    if (!primaryResult.error) return primaryResult;
+
+    const trimmedPassword = password.trim();
+    const hasOuterSpaces = trimmedPassword !== password;
+    const isInvalidCreds = (primaryResult.error?.message || '').toLowerCase().includes('invalid login credentials');
+
+    if (!hasOuterSpaces || !isInvalidCreds) {
+        return { ...primaryResult, error: mapSignInError(primaryResult.error) };
+    }
+
+    const retryResult = await supabase.auth.signInWithPassword({ email, password: trimmedPassword });
+    if (!retryResult.error) return retryResult;
+
+    return { ...retryResult, error: mapSignInError(retryResult.error) };
+}
+
 /* =========================================================
    Auth Core
 ========================================================= */
@@ -28,25 +72,38 @@ export function isUserBanned(profile) {
  * تسجيل الدخول اللحظي
  */
 export async function signIn(identifier, password) {
-    let email = identifier;
+    const normalizedIdentifier = (identifier || '').trim();
+    const normalizedPassword = password || '';
+
+    if (!normalizedIdentifier || !normalizedPassword) {
+        return { data: null, error: { message: 'يرجى إدخال البريد الإلكتروني/اسم المستخدم وكلمة المرور.' } };
+    }
+
+    let email = normalizedIdentifier;
 
     // إذا لم يكن المعرف بريداً إلكترونياً، نفترض أنه اسم مستخدم ونبحث عن البريد المرتبط به
-    if (!identifier.includes('@')) {
-        const { data: profile } = await supabase
+    if (!normalizedIdentifier.includes('@')) {
+        const { data: profile, error: profileLookupError } = await supabase
             .from('profiles')
             .select('email')
-            .eq('username', identifier)
+            .eq('username', normalizedIdentifier)
             .maybeSingle();
+
+        if (profileLookupError) {
+            return { data: null, error: { message: 'تعذر التحقق من اسم المستخدم حالياً. حاول مرة أخرى.' } };
+        }
         
         if (profile?.email) {
-            email = profile.email;
+            email = profile.email.trim().toLowerCase();
         } else {
             return { data: null, error: { message: 'اسم المستخدم غير موجود.' } };
         }
+    } else {
+        email = normalizedIdentifier.toLowerCase();
     }
 
     // محاولة تسجيل الدخول
-    const result = await supabase.auth.signInWithPassword({ email, password });
+    const result = await signInWithFallback(email, normalizedPassword);
     if (result.error) return result;
 
     const user = result.data.user;
