@@ -1,4 +1,4 @@
-import { supabase } from './api-config.js';
+import { supabase, debugSupabaseAuthError } from './api-config.js';
 import { logActivity } from './activity-service.js';
 
 /* =========================================================
@@ -60,7 +60,10 @@ export async function signIn(identifier, password) {
 
     // محاولة تسجيل الدخول
     const result = await supabase.auth.signInWithPassword({ email, password: normalizedPassword });
-    if (result.error) return result;
+    if (result.error) {
+        debugSupabaseAuthError(result.error);
+        return result;
+    }
 
     const user = result.data.user;
 
@@ -147,6 +150,10 @@ export async function signUp(email, password, metadata = {}) {
         }
     });
 
+    if (result.error) {
+        debugSupabaseAuthError(result.error);
+    }
+
     // ملاحظة: في Supabase، عند تفعيل تأكيد البريد، قد لا يتم إنشاء سجل في جدول profiles فوراً 
     // إلا إذا كان هناك Trigger في قاعدة البيانات. البيانات الواردة في metadata سيتم تخزينها 
     // في raw_user_meta_data داخل جدول auth.users تلقائياً.
@@ -202,7 +209,12 @@ export async function logout() {
  */
 export async function getCurrentUser() {
     const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) return null;
+    if (error) {
+        debugSupabaseAuthError(error);
+        return null;
+    }
+
+    if (!user) return null;
 
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
