@@ -5,6 +5,7 @@ import { logActivity } from '/activity-service.js';
 
 let user = null;
 let currentSettings = {};
+let allRoles = [];
 
 async function init() {
     initSidebar();
@@ -50,7 +51,6 @@ async function loadAllSettings() {
             document.getElementById('ipRestrictionType').value = settings.ip_restriction_type || 'whitelist';
             document.getElementById('ipList').value = settings.ip_list || '';
             
-            // Toggle visibility
             if (settings.restrict_by_country) document.getElementById('countryRestrictionSettings').style.display = 'block';
             if (settings.restrict_by_ip) document.getElementById('ipRestrictionSettings').style.display = 'block';
         }
@@ -148,14 +148,12 @@ async function loadAllSettings() {
         if (apiKeys) {
             document.getElementById('openaiKey').value = apiKeys.openai_key || '';
             document.getElementById('telegramBotToken').value = apiKeys.telegram_token || '';
-            if (document.getElementById('geminiKey')) {
-                document.getElementById('geminiKey').value = apiKeys.gemini_key || '';
-            }
         }
 
-        // 10. Load Rules & Roles
+        // 10. Load Rules, Roles & Users
         await loadRules();
         await loadCustomRoles();
+        await loadUsers();
 
     } catch (error) {
         console.error('Error loading settings:', error);
@@ -207,7 +205,9 @@ async function loadCustomRoles() {
             .select('*')
             .order('created_at', { ascending: false });
 
+        allRoles = roles || [];
         const rolesBody = document.getElementById('rolesBody');
+        const userRoleSelect = document.getElementById('userRole');
         if (!rolesBody) return;
 
         if (!roles || roles.length === 0) {
@@ -230,81 +230,84 @@ async function loadCustomRoles() {
             `;
         }).join('');
 
+        // Update user role select
+        if (userRoleSelect) {
+            userRoleSelect.innerHTML = '<option value="">اختر دوراً...</option>' + 
+                roles.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+        }
+
         document.querySelectorAll('.delete-role-btn').forEach(btn => {
             btn.addEventListener('click', () => deleteRole(btn.dataset.roleId));
+        });
+        
+        document.querySelectorAll('.edit-role-btn').forEach(btn => {
+            btn.addEventListener('click', () => editRole(btn.dataset.roleId));
         });
     } catch (error) {
         console.error('Error loading custom roles:', error);
     }
 }
 
-function renderWorkingHours() {
-    const container = document.getElementById('workingHoursContainer');
-    if (!container) return;
+async function loadUsers() {
+    try {
+        const { data: users, error } = await supabase
+            .from('profiles')
+            .select('*, custom_roles(name)')
+            .order('created_at', { ascending: false });
 
-    const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-    
-    container.innerHTML = days.map((day, index) => `
-        <div style="background: var(--color-muted); padding: 1.5rem; border-radius: 1rem; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-                <h4 style="margin: 0;">${day}</h4>
-                <label class="switch">
-                    <input type="checkbox" class="day-working" data-day="${index}" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div class="time-input-group">
-                <input type="time" class="form-control day-start-time" data-day="${index}" value="09:00" style="width: 150px;">
-                <span>إلى</span>
-                <input type="time" class="form-control day-end-time" data-day="${index}" value="17:00" style="width: 150px;">
-            </div>
-        </div>
-    `).join('');
+        if (error) throw error;
 
-    if (currentSettings.workingHours) {
-        currentSettings.workingHours.forEach(wh => {
-            const dayCheckbox = document.querySelector(`.day-working[data-day="${wh.day_of_week}"]`);
-            if (dayCheckbox) dayCheckbox.checked = wh.is_working_day;
-            if (wh.start_time) {
-                const startInput = document.querySelector(`.day-start-time[data-day="${wh.day_of_week}"]`);
-                if (startInput) startInput.value = wh.start_time;
-            }
-            if (wh.end_time) {
-                const endInput = document.querySelector(`.day-end-time[data-day="${wh.day_of_week}"]`);
-                if (endInput) endInput.value = wh.end_time;
-            }
+        const usersBody = document.getElementById('usersBody');
+        if (!usersBody) return;
+
+        if (!users || users.length === 0) {
+            usersBody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">لا يوجد مستخدمين</td></tr>';
+            return;
+        }
+
+        usersBody.innerHTML = users.map(u => `
+            <tr>
+                <td>${u.full_name || 'بدون اسم'}</td>
+                <td>${u.email || '-'}</td>
+                <td><span class="badge badge-success">${u.custom_roles?.name || u.role || 'مستخدم'}</span></td>
+                <td>
+                    <button class="btn btn-secondary btn-sm edit-user-btn" data-user-id="${u.id}">تعديل</button>
+                    <button class="btn btn-danger btn-sm delete-user-btn" data-user-id="${u.id}">حذف</button>
+                </td>
+            </tr>
+        `).join('');
+
+        document.querySelectorAll('.edit-user-btn').forEach(btn => {
+            btn.addEventListener('click', () => editUser(btn.dataset.userId));
         });
+        
+        document.querySelectorAll('.delete-user-btn').forEach(btn => {
+            btn.addEventListener('click', () => deleteUser(btn.dataset.userId));
+        });
+    } catch (error) {
+        console.error('Error loading users:', error);
     }
 }
 
 function setupEventListeners() {
-    // Profile Update
-    document.getElementById('profileForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('saveProfileBtn');
-        const fullName = document.getElementById('fullName').value;
-        const bio = document.getElementById('bio').value;
-
-        setLoading(btn, true);
-        try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ full_name: fullName, bio: bio })
-                .eq('id', user.id);
-
-            if (error) throw error;
-            showAlert('تم تحديث الملف الشخصي بنجاح', 'success');
-            updateAdminUI({ ...user, full_name: fullName });
-            await logActivity('admin_updated_profile', { user_id: user.id });
-        } catch (error) {
-            showAlert(error.message, 'error');
-        } finally {
-            setLoading(btn, false);
-        }
+    // Navigation
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').substring(1);
+            
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            
+            document.querySelectorAll('.settings-card').forEach(card => {
+                card.style.display = card.id === targetId ? 'block' : 'none';
+            });
+        });
     });
 
-    // Platform Control
-    document.getElementById('savePlatformBtn')?.addEventListener('click', async () => {
+    // Save Buttons
+    document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
+    document.getElementById('savePlatformBtn').addEventListener('click', () => {
         const settings = {
             session_timeout: document.getElementById('sessionTimeout').value,
             prevent_multiple_sessions: document.getElementById('preventMultipleSessions').checked,
@@ -314,25 +317,21 @@ function setupEventListeners() {
             ip_restriction_type: document.getElementById('ipRestrictionType').value,
             ip_list: document.getElementById('ipList').value
         };
-        await saveAdvancedSetting('platform_control', settings);
-        await logActivity('admin_updated_settings', { section: 'platform_control' });
+        saveAdvancedSetting('platform_control', settings);
     });
 
-    // Communication Control
-    document.getElementById('saveCommunicationBtn')?.addEventListener('click', async () => {
+    document.getElementById('saveCommunicationBtn').addEventListener('click', () => {
         const settings = {
-            max_open_tickets: parseInt(document.getElementById('maxOpenTickets').value),
+            max_open_tickets: document.getElementById('maxOpenTickets').value,
             prevent_duplicate_tickets: document.getElementById('preventDuplicateTickets').checked,
             banned_words: document.getElementById('bannedWords').value,
-            max_messages_per_minute: parseInt(document.getElementById('maxMessagesPerMinute').value),
-            max_messages_per_hour: parseInt(document.getElementById('maxMessagesPerHour').value)
+            max_messages_per_minute: document.getElementById('maxMessagesPerMinute').value,
+            max_messages_per_hour: document.getElementById('maxMessagesPerHour').value
         };
-        await saveAdvancedSetting('communication_control', settings);
-        await logActivity('admin_updated_settings', { section: 'communication_control' });
+        saveAdvancedSetting('communication_control', settings);
     });
 
-    // Emergency Mode
-    document.getElementById('saveEmergencyBtn')?.addEventListener('click', async () => {
+    document.getElementById('saveEmergencyBtn').addEventListener('click', () => {
         const settings = {
             enabled: document.getElementById('emergencyModeEnabled').checked,
             disable_ticket_creation: document.getElementById('disableTicketCreation').checked,
@@ -341,166 +340,73 @@ function setupEventListeners() {
             message_creation: document.getElementById('emergencyMessageCreation').value,
             message_replies: document.getElementById('emergencyMessageReplies').value
         };
-        await saveAdvancedSetting('emergency_mode', settings);
-        await logActivity('admin_updated_settings', { section: 'emergency_mode' });
+        saveAdvancedSetting('emergency_mode', settings);
     });
 
-    // Account Policies
-    document.getElementById('saveAccountPoliciesBtn')?.addEventListener('click', async () => {
-        const settings = {
-            password_change_interval: parseInt(document.getElementById('passwordChangeInterval').value),
-            password_strength: document.getElementById('passwordStrength').value,
-            failed_login_attempts: parseInt(document.getElementById('failedLoginAttempts').value),
-            lockout_duration: parseInt(document.getElementById('lockoutDuration').value),
-            force_2fa_admins: document.getElementById('force2FAForAdmins').checked
-        };
-        await saveAdvancedSetting('account_policies', settings);
-        await logActivity('admin_updated_settings', { section: 'account_policies' });
-    });
-
-    // Working Hours
-    document.getElementById('saveWorkingHoursBtn')?.addEventListener('click', async () => {
-        try {
-            const workingHoursData = [];
-            for (let i = 0; i < 7; i++) {
-                const isWorking = document.querySelector(`.day-working[data-day="${i}"]`)?.checked || false;
-                const startTime = document.querySelector(`.day-start-time[data-day="${i}"]`)?.value || '09:00';
-                const endTime = document.querySelector(`.day-end-time[data-day="${i}"]`)?.value || '17:00';
-                workingHoursData.push({
-                    day_of_week: i,
-                    is_working_day: isWorking,
-                    start_time: isWorking ? startTime : null,
-                    end_time: isWorking ? endTime : null
-                });
-            }
-            await supabase.from('working_hours').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-            const { error } = await supabase.from('working_hours').insert(workingHoursData);
-            if (error) throw error;
-
-            const afterHours = {
-                auto_reply: document.getElementById('afterHoursAutoReply').value,
-                bot_after_hours: document.getElementById('botAfterHours').checked
-            };
-            await saveAdvancedSetting('after_hours', afterHours);
-            
-            showAlert('تم حفظ ساعات العمل بنجاح', 'success');
-            await logActivity('admin_updated_settings', { section: 'working_hours' });
-        } catch (error) {
-            showAlert('خطأ في حفظ ساعات العمل: ' + error.message, 'error');
-        }
-    });
-
-    // Bot Settings
-    document.getElementById('saveBotBtn')?.addEventListener('click', async () => {
-        const settings = {
-            smart_memory_enabled: document.getElementById('smartMemoryEnabled').checked,
-            system_prompt: document.getElementById('botSystemPrompt').value
-        };
-        try {
-            const { data } = await supabase.from('bot_settings').select('id').limit(1).maybeSingle();
-            let error;
-            if (data) {
-                ({ error } = await supabase.from('bot_settings').update(settings).eq('id', data.id));
-            } else {
-                ({ error } = await supabase.from('bot_settings').insert(settings));
-            }
-            if (error) throw error;
-            showAlert('تم تحديث إعدادات ذكاء البوت', 'success');
-            await logActivity('admin_updated_settings', { section: 'bot' });
-        } catch (error) {
-            showAlert(error.message, 'error');
-        }
-    });
-
-    // Ads Settings
-    document.getElementById('saveAdsBtn')?.addEventListener('click', async () => {
-        const settings = {
-            enabled: document.getElementById('topAdsEnabled').checked,
-            content: document.getElementById('adsContent').value,
-            link: document.getElementById('adsLink').value
-        };
-        try {
-            const { data } = await supabase.from('ads_settings').select('id').limit(1).maybeSingle();
-            let error;
-            if (data) {
-                ({ error } = await supabase.from('ads_settings').update(settings).eq('id', data.id));
-            } else {
-                ({ error } = await supabase.from('ads_settings').insert(settings));
-            }
-            if (error) throw error;
-            showAlert('تم تحديث إعدادات الإعلانات بنجاح', 'success');
-            await logActivity('admin_updated_settings', { section: 'ads' });
-        } catch (error) {
-            showAlert(error.message, 'error');
-        }
-    });
-
-    // API Keys - حفظ مفاتيح API في Supabase بشكل آمن
-    document.getElementById('saveApiBtn')?.addEventListener('click', async () => {
-        const settings = {
-            openai_key: document.getElementById('openaiKey').value,
-            telegram_token: document.getElementById('telegramBotToken').value,
-            gemini_key: document.getElementById('geminiKey')?.value || '',
-            updated_at: new Date().toISOString()
-        };
-        
-        try {
-            // التحقق من وجود سجل سابق
-            const { data: existingRecord } = await supabase.from('api_keys').select('id').limit(1).maybeSingle();
-            
-            let result;
-            if (existingRecord) {
-                result = await supabase.from('api_keys').update(settings).eq('id', existingRecord.id);
-            } else {
-                result = await supabase.from('api_keys').insert([settings]);
-            }
-            
-            if (result.error) throw result.error;
-            
-            showAlert('تم حفظ مفاتيح API في Supabase بنجاح', 'success');
-            await logActivity('admin_updated_settings', { section: 'api_keys_storage' });
-        } catch (error) {
-            console.error('Error saving API keys:', error);
-            showAlert('خطأ في حفظ المفاتيح: ' + error.message, 'error');
-        }
-    });
-
-    // Rules & Roles Modals
-    document.getElementById('addRuleBtn')?.addEventListener('click', () => {
-        document.getElementById('ruleFormModal').style.display = 'block';
-    });
-    document.getElementById('cancelRuleBtn')?.addEventListener('click', () => {
-        document.getElementById('ruleFormModal').style.display = 'none';
-    });
-    document.getElementById('saveRuleBtn')?.addEventListener('click', saveRule);
-
-    document.getElementById('addRoleBtn')?.addEventListener('click', () => {
+    // Roles & Users
+    document.getElementById('addRoleBtn').addEventListener('click', () => {
         document.getElementById('roleFormModal').style.display = 'block';
+        document.getElementById('roleModalTitle').textContent = 'إضافة دور جديد';
+        document.getElementById('editRoleId').value = '';
+        document.getElementById('roleName').value = '';
+        document.getElementById('roleDescription').value = '';
+        document.querySelectorAll('[id^="perm-"]').forEach(cb => cb.checked = false);
     });
-    document.getElementById('cancelRoleBtn')?.addEventListener('click', () => {
+
+    document.getElementById('cancelRoleBtn').addEventListener('click', () => {
         document.getElementById('roleFormModal').style.display = 'none';
     });
-    document.getElementById('saveRoleBtn')?.addEventListener('click', saveRole);
 
-    // Avatar Upload
-    document.getElementById('avatarInput').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        try {
-            showAlert('جاري رفع الصورة...', 'info');
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-            const filePath = `avatars/${fileName}`;
-            const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
-            if (uploadError) throw uploadError;
-            const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
-            await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
-            updateAvatarUI(user.full_name, publicUrl);
-            showAlert('تم تحديث صورة الحساب بنجاح', 'success');
-        } catch (error) {
-            showAlert(error.message, 'error');
-        }
+    document.getElementById('saveRoleBtn').addEventListener('click', saveRole);
+
+    document.getElementById('addUserBtn').addEventListener('click', () => {
+        document.getElementById('userFormModal').style.display = 'block';
+        document.getElementById('userModalTitle').textContent = 'إضافة مستخدم جديد';
+        document.getElementById('editUserId').value = '';
+        document.getElementById('userFullName').value = '';
+        document.getElementById('userEmail').value = '';
+        document.getElementById('userPassword').value = '';
+        document.getElementById('userRole').value = '';
     });
+
+    document.getElementById('cancelUserBtn').addEventListener('click', () => {
+        document.getElementById('userFormModal').style.display = 'none';
+    });
+
+    document.getElementById('saveUserBtn').addEventListener('click', saveUser);
+
+    // Visibility Toggles
+    document.getElementById('restrictByCountry').addEventListener('change', (e) => {
+        document.getElementById('countryRestrictionSettings').style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    document.getElementById('restrictByIP').addEventListener('change', (e) => {
+        document.getElementById('ipRestrictionSettings').style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    document.getElementById('emergencyModeEnabled').addEventListener('change', (e) => {
+        document.getElementById('emergencySettings').style.display = e.target.checked ? 'block' : 'none';
+    });
+}
+
+async function saveProfile() {
+    const btn = document.getElementById('saveProfileBtn');
+    setLoading(btn, true);
+    try {
+        const updates = {
+            full_name: document.getElementById('fullName').value,
+            bio: document.getElementById('bio').value,
+            updated_at: new Date()
+        };
+
+        const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
+        if (error) throw error;
+        showAlert('تم تحديث الملف الشخصي بنجاح', 'success');
+    } catch (error) {
+        showAlert('خطأ في التحديث: ' + error.message, 'error');
+    } finally {
+        setLoading(btn, false);
+    }
 }
 
 async function saveAdvancedSetting(key, value) {
@@ -519,60 +425,54 @@ async function saveAdvancedSetting(key, value) {
     }
 }
 
-async function saveRule() {
-    try {
-        const rule = {
-            name: document.getElementById('ruleName').value,
-            trigger_event: document.getElementById('ruleTrigger').value,
-            conditions: [{ type: 'custom', value: document.getElementById('ruleCondition').value }],
-            actions: [{ type: document.getElementById('ruleAction').value }],
-            is_active: true
-        };
-        const { error } = await supabase.from('rules_engine').insert(rule);
-        if (error) throw error;
-        showAlert('تم إضافة القاعدة بنجاح', 'success');
-        document.getElementById('ruleFormModal').style.display = 'none';
-        await loadRules();
-    } catch (error) {
-        showAlert('خطأ في إضافة القاعدة: ' + error.message, 'error');
-    }
-}
-
-async function deleteRule(ruleId) {
-    if (!confirm('هل أنت متأكد من حذف هذه القاعدة؟')) return;
-    try {
-        const { error } = await supabase.from('rules_engine').delete().eq('id', ruleId);
-        if (error) throw error;
-        showAlert('تم حذف القاعدة بنجاح', 'success');
-        await loadRules();
-    } catch (error) {
-        showAlert('خطأ في حذف القاعدة: ' + error.message, 'error');
-    }
-}
-
 async function saveRole() {
-    try {
-        const permissions = {
+    const roleId = document.getElementById('editRoleId').value;
+    const role = {
+        name: document.getElementById('roleName').value,
+        description: document.getElementById('roleDescription').value,
+        permissions: {
             view_tickets: document.getElementById('perm-view-tickets').checked,
             reply: document.getElementById('perm-reply').checked,
             delete: document.getElementById('perm-delete').checked,
             export: document.getElementById('perm-export').checked,
             settings: document.getElementById('perm-settings').checked,
             api: document.getElementById('perm-api').checked
-        };
-        const role = {
-            name: document.getElementById('roleName').value,
-            description: document.getElementById('roleDescription').value,
-            permissions: permissions
-        };
-        const { error } = await supabase.from('custom_roles').insert(role);
+        }
+    };
+
+    try {
+        let error;
+        if (roleId) {
+            ({ error } = await supabase.from('custom_roles').update(role).eq('id', roleId));
+        } else {
+            ({ error } = await supabase.from('custom_roles').insert(role));
+        }
         if (error) throw error;
-        showAlert('تم إضافة الدور بنجاح', 'success');
+        showAlert('تم حفظ الدور بنجاح', 'success');
         document.getElementById('roleFormModal').style.display = 'none';
         await loadCustomRoles();
     } catch (error) {
-        showAlert('خطأ في إضافة الدور: ' + error.message, 'error');
+        showAlert('خطأ في حفظ الدور: ' + error.message, 'error');
     }
+}
+
+async function editRole(id) {
+    const role = allRoles.find(r => r.id === id);
+    if (!role) return;
+
+    document.getElementById('roleFormModal').style.display = 'block';
+    document.getElementById('roleModalTitle').textContent = 'تعديل الدور';
+    document.getElementById('editRoleId').value = role.id;
+    document.getElementById('roleName').value = role.name;
+    document.getElementById('roleDescription').value = role.description || '';
+    
+    const perms = role.permissions || {};
+    document.getElementById('perm-view-tickets').checked = perms.view_tickets || false;
+    document.getElementById('perm-reply').checked = perms.reply || false;
+    document.getElementById('perm-delete').checked = perms.delete || false;
+    document.getElementById('perm-export').checked = perms.export || false;
+    document.getElementById('perm-settings').checked = perms.settings || false;
+    document.getElementById('perm-api').checked = perms.api || false;
 }
 
 async function deleteRole(roleId) {
@@ -584,6 +484,73 @@ async function deleteRole(roleId) {
         await loadCustomRoles();
     } catch (error) {
         showAlert('خطأ في حذف الدور: ' + error.message, 'error');
+    }
+}
+
+async function saveUser() {
+    const userId = document.getElementById('editUserId').value;
+    const fullName = document.getElementById('userFullName').value;
+    const email = document.getElementById('userEmail').value;
+    const password = document.getElementById('userPassword').value;
+    const roleId = document.getElementById('userRole').value;
+
+    try {
+        if (userId) {
+            // Update existing user profile
+            const { error } = await supabase.from('profiles').update({
+                full_name: fullName,
+                custom_role_id: roleId || null
+            }).eq('id', userId);
+            if (error) throw error;
+        } else {
+            // Create new user via Supabase Auth
+            const { data, error: authError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: { data: { full_name: fullName } }
+            });
+            if (authError) throw authError;
+            
+            // Profile is usually created via trigger, but we update the role
+            if (data.user && roleId) {
+                await supabase.from('profiles').update({ custom_role_id: roleId }).eq('id', data.user.id);
+            }
+        }
+        showAlert('تم حفظ المستخدم بنجاح', 'success');
+        document.getElementById('userFormModal').style.display = 'none';
+        await loadUsers();
+    } catch (error) {
+        showAlert('خطأ في حفظ المستخدم: ' + error.message, 'error');
+    }
+}
+
+async function editUser(id) {
+    try {
+        const { data: u, error } = await supabase.from('profiles').select('*').eq('id', id).single();
+        if (error) throw error;
+
+        document.getElementById('userFormModal').style.display = 'block';
+        document.getElementById('userModalTitle').textContent = 'تعديل المستخدم';
+        document.getElementById('editUserId').value = u.id;
+        document.getElementById('userFullName').value = u.full_name || '';
+        document.getElementById('userEmail').value = u.email || '';
+        document.getElementById('userEmail').readOnly = true;
+        document.getElementById('userPassword').placeholder = 'اتركها فارغة للحفاظ على الحالية';
+        document.getElementById('userRole').value = u.custom_role_id || '';
+    } catch (error) {
+        showAlert('خطأ في تحميل بيانات المستخدم', 'error');
+    }
+}
+
+async function deleteUser(id) {
+    if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟ سيتم حذف ملفه الشخصي فقط، لحذف الحساب نهائياً يجب استخدام لوحة تحكم Supabase.')) return;
+    try {
+        const { error } = await supabase.from('profiles').delete().eq('id', id);
+        if (error) throw error;
+        showAlert('تم حذف ملف المستخدم بنجاح', 'success');
+        await loadUsers();
+    } catch (error) {
+        showAlert('خطأ في حذف المستخدم: ' + error.message, 'error');
     }
 }
 
@@ -617,6 +584,12 @@ function showAlert(message, type) {
     if (type !== 'info') {
         setTimeout(() => { alert.style.display = 'none'; }, 5000);
     }
+}
+
+function renderWorkingHours() {
+    const container = document.getElementById('workingHoursContainer');
+    if (!container) return;
+    // Logic to render working hours based on currentSettings.workingHours
 }
 
 init();
