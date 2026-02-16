@@ -343,6 +343,10 @@ function setupEventListeners() {
         saveAdvancedSetting('emergency_mode', settings);
     });
 
+    document.getElementById('saveBotBtn').addEventListener('click', saveBotSettings);
+    document.getElementById('saveAdsBtn').addEventListener('click', saveAdsSettings);
+    document.getElementById('saveApiKeysBtn').addEventListener('click', saveApiKeys);
+
     // Roles & Users
     document.getElementById('addRoleBtn').addEventListener('click', () => {
         document.getElementById('roleFormModal').style.display = 'block';
@@ -422,6 +426,82 @@ async function saveAdvancedSetting(key, value) {
         showAlert('تم حفظ الإعدادات بنجاح', 'success');
     } catch (error) {
         showAlert('خطأ في الحفظ: ' + error.message, 'error');
+    }
+}
+
+async function saveBotSettings() {
+    const btn = document.getElementById('saveBotBtn');
+    setLoading(btn, true);
+    try {
+        const updates = {
+            smart_memory_enabled: document.getElementById('smartMemoryEnabled').checked,
+            system_prompt: document.getElementById('botSystemPrompt').value,
+            updated_at: new Date()
+        };
+        const { data: existing } = await supabase.from('bot_settings').select('id').limit(1).maybeSingle();
+        let error;
+        if (existing) {
+            ({ error } = await supabase.from('bot_settings').update(updates).eq('id', existing.id));
+        } else {
+            ({ error } = await supabase.from('bot_settings').insert(updates));
+        }
+        if (error) throw error;
+        showAlert('تم حفظ إعدادات البوت بنجاح', 'success');
+    } catch (error) {
+        showAlert('خطأ في الحفظ: ' + error.message, 'error');
+    } finally {
+        setLoading(btn, false);
+    }
+}
+
+async function saveAdsSettings() {
+    const btn = document.getElementById('saveAdsBtn');
+    setLoading(btn, true);
+    try {
+        const updates = {
+            enabled: document.getElementById('topAdsEnabled').checked,
+            content: document.getElementById('adsContent').value,
+            link: document.getElementById('adsLink').value,
+            updated_at: new Date()
+        };
+        const { data: existing } = await supabase.from('ads_settings').select('id').limit(1).maybeSingle();
+        let error;
+        if (existing) {
+            ({ error } = await supabase.from('ads_settings').update(updates).eq('id', existing.id));
+        } else {
+            ({ error } = await supabase.from('ads_settings').insert(updates));
+        }
+        if (error) throw error;
+        showAlert('تم حفظ إعدادات الإعلانات بنجاح', 'success');
+    } catch (error) {
+        showAlert('خطأ في الحفظ: ' + error.message, 'error');
+    } finally {
+        setLoading(btn, false);
+    }
+}
+
+async function saveApiKeys() {
+    const btn = document.getElementById('saveApiKeysBtn');
+    setLoading(btn, true);
+    try {
+        const updates = {
+            openai_key: document.getElementById('openaiKey').value,
+            telegram_token: document.getElementById('telegramBotToken').value,
+            updated_at: new Date()
+        };
+        const { data: existing } = await supabase.from('api_keys').select('id').limit(1).maybeSingle();
+        let error;
+        if (existing) {
+            ({ error } = await supabase.from('api_keys').update(updates).eq('id', existing.id));
+        } else {
+            ({ error } = await supabase.from('api_keys').insert(updates));
+        }
+        if (error) throw error;
+        showAlert('تم حفظ مفاتيح API بنجاح', 'success');
+    } catch (error) {
+        showAlert('خطأ في الحفظ: ' + error.message, 'error');
+    } finally {
+        setLoading(btn, false);
     }
 }
 
