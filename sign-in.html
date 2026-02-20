@@ -148,14 +148,15 @@
         </form>
 
         <p class="auth-footer-text">
-            لا تملك حساباً؟ <a href="sign-up.html">أنشئ حساباً جديداً</a>
+            لا تملك حساباً؟ <a href="sign-up-new.html">أنشئ حساباً جديداً</a>
         </p>
     </section>
 </main>
 
-<script type="module">
+    <script type="module">
 import { supabase } from './api-config.js';
 import { signIn, signInAsGuest, getCurrentUser, autoRedirect, onAuthStateChange } from './auth-client.js';
+import { signInWithUserType } from './auth-user-types.js';
 
 // مراقبة حالة المصادقة لحظياً للتوجيه الفوري
 onAuthStateChange((event, session) => {
