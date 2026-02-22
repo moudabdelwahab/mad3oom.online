@@ -32,7 +32,15 @@ async function renderUsers() {
         .select('*')
         .order('created_at', { ascending: false });
 
-    body.innerHTML = users?.map(u => `
+    // Fetch wallet status for freezing info
+    const { data: wallets } = await supabase.from('user_wallets').select('user_id, is_frozen');
+    const walletMap = new Map(wallets?.map(w => [w.user_id, w.is_frozen]) || []);
+
+    body.innerHTML = users?.map(u => {
+        const isFrozen = walletMap.get(u.id) || false;
+        const isSupport = user?.email === 'support@mad3oom.online';
+        
+        return `
         <tr>
             <td>${u.full_name || 'بدون اسم'}</td>
             <td>${u.email}</td>
@@ -43,10 +51,11 @@ async function renderUsers() {
                     <button class="btn btn-primary btn-sm impersonate-btn" data-user-id="${u.id}">عرض</button>
                     <button class="btn btn-danger btn-sm ban-btn" data-user-id="${u.id}" ${u.status === 'banned' ? 'disabled' : ''}>${u.status === 'banned' ? 'محظور' : 'حظر'}</button>
                     <button class="btn btn-warning btn-sm points-btn" data-user-id="${u.id}" data-user-name="${u.full_name || u.email}">النقاط</button>
+                    ${isSupport ? `<button class="btn btn-sm freeze-btn ${isFrozen ? 'btn-info' : 'btn-secondary'}" data-user-id="${u.id}" data-user-email="${u.email}" data-frozen="${isFrozen}">${isFrozen ? 'إلغاء التجميد' : 'تجميد'}</button>` : ''}
                 </div>
             </td>
         </tr>
-    `).join('') || '<tr><td colspan="5">لا يوجد مستخدمين</td></tr>';
+    `}).join('') || '<tr><td colspan="5">لا يوجد مستخدمين</td></tr>';
 
     // ربط أزرار العرض
     document.querySelectorAll('.impersonate-btn').forEach(btn => {
@@ -87,6 +96,31 @@ async function renderUsers() {
                     // تحديث المحفظة أيضاً لضمان التزامن
                     await supabase.from('user_wallets').update({ total_points: points, available_points: points }).eq('user_id', userId);
                     alert('تم تحديث النقاط بنجاح');
+                    renderUsers();
+                }
+            }
+        });
+    });
+
+    // ربط أزرار التجميد
+    document.querySelectorAll('.freeze-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const userId = btn.getAttribute('data-user-id');
+            const userEmail = btn.getAttribute('data-user-email');
+            const isFrozen = btn.getAttribute('data-frozen') === 'true';
+            const action = isFrozen ? 'unfreeze' : 'freeze';
+            const actionLabel = isFrozen ? 'إلغاء تجميد' : 'تجميد';
+
+            if (confirm(`هل أنت متأكد من ${actionLabel} رصيد هذا المستخدم؟`)) {
+                const { data, error } = await supabase.rpc('manage_user_points', {
+                    target_user_email: userEmail,
+                    amount_change: 0,
+                    action_type: action
+                });
+
+                if (error) alert('خطأ: ' + error.message);
+                else {
+                    alert(data.message);
                     renderUsers();
                 }
             }
