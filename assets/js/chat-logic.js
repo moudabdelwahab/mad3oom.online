@@ -88,14 +88,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ===== LOAD ALL CHATS =====
     async function loadAllChats() {
-        const { data: sessions, error } = await supabase
+        // Try to load with profiles first
+        let { data: sessions, error } = await supabase
             .from('chat_sessions')
             .select('*, profiles(full_name, email), chat_messages(message_text, created_at, sender_id)')
             .order('updated_at', { ascending: false });
 
+        // Fallback if profiles join fails
         if (error) {
-            console.error('Error loading chats:', error);
-            return;
+            console.warn('Profiles join failed, falling back to basic load:', error);
+            const { data: basicSessions, error: basicError } = await supabase
+                .from('chat_sessions')
+                .select('*, chat_messages(message_text, created_at, sender_id)')
+                .order('updated_at', { ascending: false });
+            
+            if (basicError) {
+                console.error('Error loading chats:', basicError);
+                return;
+            }
+            sessions = basicSessions;
         }
 
         allSessions = sessions || [];
