@@ -24,9 +24,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     const exportModal = document.getElementById('exportModal');
     const exportExcel = document.getElementById('exportExcel');
+    const exportPDF = document.getElementById('exportPDF');
     const archiveChats = document.getElementById('archiveChats');
     const closeExportModal = document.getElementById('closeExportModal');
     const cancelExport = document.getElementById('cancelExport');
+
+    const exportSingleModal = document.getElementById('exportSingleModal');
+    const exportSingleExcel = document.getElementById('exportSingleExcel');
+    const exportSinglePDF = document.getElementById('exportSinglePDF');
+    const closeExportSingleModal = document.getElementById('closeExportSingleModal');
+    const cancelExportSingle = document.getElementById('cancelExportSingle');
+    const exportSingleChatBtn = document.getElementById('exportSingleChatBtn');
+
+    const searchInChatBtn = document.getElementById('searchInChatBtn');
+    const searchChatBar = document.getElementById('searchChatBar');
+    const searchChatInput = document.getElementById('searchChatInput');
+    const closeSearchChat = document.getElementById('closeSearchChat');
+
+    const imageUploadBtn = document.getElementById('imageUploadBtn');
+    const imageInput = document.getElementById('imageInput');
+    const voiceRecordBtn = document.getElementById('voiceRecordBtn');
+    
+    let mediaRecorder = null;
+    let audioChunks = [];
 
     // State
     let currentUser = null;
@@ -70,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function loadAllChats() {
         const { data: sessions, error } = await supabase
             .from('chat_sessions')
-            .select('*, chat_messages(message_text, created_at, sender_id)')
+            .select('*, profiles(full_name, email), chat_messages(message_text, created_at, sender_id)')
             .order('updated_at', { ascending: false });
 
         if (error) {
@@ -93,19 +113,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             const lastMsg = session.chat_messages?.[session.chat_messages.length - 1];
             const lastMsgText = lastMsg?.message_text?.substring(0, 50) || 'لا توجد رسائل';
             const lastMsgTime = lastMsg ? formatTime(new Date(lastMsg.created_at)) : '';
-            const initials = session.user_id?.substring(0, 2).toUpperCase() || 'ع';
-            const statusIcon = session.status === 'closed' ? '✓' : '●';
-            const statusColor = session.status === 'closed' ? '#999' : '#25D366';
+            
+            const customerName = session.profiles?.full_name || `عميل ${session.id.substring(0, 4)}`;
+            const initials = customerName.substring(0, 1).toUpperCase();
+            
+            const statusClass = session.status === 'closed' ? 'status-closed' : 'status-open';
+            const statusText = session.status === 'closed' ? 'مغلقة' : 'مفتوحة';
+            const statusColor = session.status === 'closed' ? '#FF3B30' : '#25D366';
 
             return `
-                <div class="chat-item" onclick="selectChat('${session.id}')">
+                <div class="chat-item" onclick="selectChat('${session.id}')" data-id="${session.id}">
                     <div class="chat-avatar" style="position: relative;">
                         ${initials}
                         <span style="position: absolute; bottom: 0; right: 0; width: 14px; height: 14px; background: ${statusColor}; border-radius: 50%; border: 2px solid white;"></span>
                     </div>
                     <div class="chat-info">
                         <div class="chat-header-text">
-                            <span class="chat-name">جلسة ${session.id.substring(0, 8)}</span>
+                            <span class="chat-name">
+                                ${customerName}
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </span>
                             <span class="chat-time">${lastMsgTime}</span>
                         </div>
                         <div class="chat-preview">${lastMsgText}</div>
@@ -131,9 +158,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         inputArea.style.display = 'flex';
 
         // Update header
-        document.getElementById('headerName').textContent = `جلسة ${sessionId.substring(0, 8)}`;
+        const customerName = currentSession.profiles?.full_name || `عميل ${sessionId.substring(0, 4)}`;
+        document.getElementById('headerName').textContent = customerName;
         document.getElementById('headerStatus').textContent = currentSession.status === 'closed' ? 'مغلقة' : 'نشطة';
-        document.getElementById('headerAvatar').textContent = sessionId.substring(0, 2).toUpperCase();
+        document.getElementById('headerAvatar').textContent = customerName.substring(0, 1).toUpperCase();
 
         // Load messages
         await loadMessages(sessionId);
@@ -175,13 +203,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         const isOwn = msg.sender_id === currentUser.id || msg.is_admin_reply;
         const time = formatTime(new Date(msg.created_at));
         const text = msg.content || msg.message_text || '';
+        const imageUrl = msg.image_url;
+        const audioUrl = msg.audio_url;
 
         const messageGroup = document.createElement('div');
         messageGroup.className = `message-group ${isOwn ? 'sent' : 'received'}`;
+        
+        let contentHtml = '';
+        if (imageUrl) {
+            contentHtml = `<img src="${imageUrl}" style="max-width: 100%; border-radius: 8px; cursor: pointer;" onclick="window.open('${imageUrl}')">`;
+        } else if (audioUrl) {
+            contentHtml = `<audio controls src="${audioUrl}" style="max-width: 100%;"></audio>`;
+        } else {
+            contentHtml = escapeHtml(text);
+        }
+
         messageGroup.innerHTML = `
             <div>
                 <div class="message-bubble ${isOwn ? 'sent' : 'received'}">
-                    ${escapeHtml(text)}
+                    ${contentHtml}
                 </div>
                 <div class="message-time">${time}</div>
             </div>
@@ -287,11 +327,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             exportModal.style.display = 'none';
         });
 
-        // Export Excel
+        // Export Excel (All Chats)
         exportExcel.addEventListener('click', async () => {
             const { data: sessions } = await supabase
                 .from('chat_sessions')
-                .select('*, chat_messages(message_text, created_at)')
+                .select('*, profiles(full_name), chat_messages(message_text, created_at)')
                 .order('updated_at', { ascending: false });
 
             if (!sessions || sessions.length === 0) {
@@ -299,16 +339,205 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            let csvContent = 'معرف الجلسة,الحالة,تاريخ الإنشاء,عدد الرسائل\n';
+            let csvContent = '\uFEFF'; // UTF-8 BOM for Excel Arabic support
+            csvContent += 'اسم العميل,معرف الجلسة,الحالة,تاريخ الإنشاء,عدد الرسائل\n';
             
             sessions.forEach(session => {
-                const createdAt = new Date(session.created_at).toLocaleDateString('ar-SA');
+                const customerName = session.profiles?.full_name || 'عميل غير معروف';
+                const createdAt = new Date(session.created_at).toLocaleString('ar-SA');
                 const messageCount = session.chat_messages?.length || 0;
-                csvContent += `"${session.id}","${session.status}","${createdAt}",${messageCount}\n`;
+                const status = session.status === 'closed' ? 'مغلقة' : 'مفتوحة';
+                csvContent += `"${customerName}","${session.id}","${status}","${createdAt}",${messageCount}\n`;
             });
 
-            downloadFile(csvContent, `محادثات_${new Date().toLocaleDateString('ar-SA')}.csv`, 'text/csv');
+            downloadFile(csvContent, `محادثات_مدعوم_${new Date().toLocaleDateString('ar-SA')}.csv`, 'text/csv');
             exportModal.style.display = 'none';
+        });
+
+        // Export PDF (All Chats - Basic implementation using window.print or simple layout)
+        exportPDF.addEventListener('click', () => {
+            alert('سيتم فتح نافذة الطباعة لحفظ المحادثات كـ PDF');
+            window.print();
+            exportModal.style.display = 'none';
+        });
+
+        // Single Chat Export
+        exportSingleChatBtn.addEventListener('click', () => {
+            if (!currentSessionId) return;
+            exportSingleModal.style.display = 'flex';
+        });
+
+        closeExportSingleModal.addEventListener('click', () => exportSingleModal.style.display = 'none');
+        cancelExportSingle.addEventListener('click', () => exportSingleModal.style.display = 'none');
+
+        exportSingleExcel.addEventListener('click', async () => {
+            const { data: messages } = await supabase
+                .from('chat_messages')
+                .select('*')
+                .eq('session_id', currentSessionId)
+                .order('created_at', { ascending: true });
+
+            if (!messages || messages.length === 0) {
+                alert('لا توجد رسائل لتصديرها');
+                return;
+            }
+
+            let csvContent = '\uFEFF'; // UTF-8 BOM
+            csvContent += 'المرسل,الرسالة,التوقيت\n';
+            
+            messages.forEach(msg => {
+                const sender = msg.is_admin_reply ? 'الأدمن' : 'العميل';
+                const time = new Date(msg.created_at).toLocaleString('ar-SA');
+                const text = (msg.message_text || '').replace(/"/g, '""');
+                csvContent += `"${sender}","${text}","${time}"\n`;
+            });
+
+            const customerName = currentSession.profiles?.full_name || 'عميل';
+            downloadFile(csvContent, `محادثة_${customerName}_${new Date().toLocaleDateString('ar-SA')}.csv`, 'text/csv');
+            exportSingleModal.style.display = 'none';
+        });
+
+        exportSinglePDF.addEventListener('click', () => {
+            const customerName = currentSession.profiles?.full_name || 'عميل';
+            const printWindow = window.open('', '_blank');
+            const messagesHtml = messagesContainer.innerHTML;
+            
+            printWindow.document.write(`
+                <html dir="rtl">
+                <head>
+                    <title>محادثة ${customerName}</title>
+                    <style>
+                        body { font-family: 'Cairo', sans-serif; padding: 20px; }
+                        .message-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+                        .sent { align-items: flex-start; }
+                        .received { align-items: flex-end; }
+                        .message-bubble { padding: 10px; border-radius: 8px; max-width: 80%; }
+                        .sent .message-bubble { background: #e5e5ea; }
+                        .received .message-bubble { background: #003366; color: white; }
+                        .message-time { font-size: 0.8rem; color: #666; margin-top: 5px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>محادثة العميل: ${customerName}</h1>
+                    <hr>
+                    ${messagesHtml}
+                    <script>setTimeout(() => { window.print(); window.close(); }, 500);</script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            exportSingleModal.style.display = 'none';
+        });
+
+        // Image Upload
+        imageUploadBtn.addEventListener('click', () => imageInput.click());
+        
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || !currentSessionId) return;
+
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random()}.${fileExt}`;
+            const filePath = `chat-media/${fileName}`;
+
+            const { data, error } = await supabase.storage
+                .from('chat-attachments')
+                .upload(filePath, file);
+
+            if (error) {
+                alert('خطأ في رفع الصورة');
+                return;
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('chat-attachments')
+                .getPublicUrl(filePath);
+
+            await supabase.from('chat_messages').insert({
+                session_id: currentSessionId,
+                sender_id: currentUser.id,
+                image_url: publicUrl,
+                is_admin_reply: true
+            });
+            
+            imageInput.value = '';
+        });
+
+        // Voice Recording
+        voiceRecordBtn.addEventListener('click', async () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                voiceRecordBtn.style.color = 'var(--primary-color)';
+                voiceRecordBtn.classList.remove('recording-pulse');
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const fileName = `${Math.random()}.webm`;
+                    const filePath = `chat-media/${fileName}`;
+
+                    const { data, error } = await supabase.storage
+                        .from('chat-attachments')
+                        .upload(filePath, audioBlob);
+
+                    if (!error) {
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('chat-attachments')
+                            .getPublicUrl(filePath);
+
+                        await supabase.from('chat_messages').insert({
+                            session_id: currentSessionId,
+                            sender_id: currentUser.id,
+                            audio_url: publicUrl,
+                            is_admin_reply: true
+                        });
+                    }
+                };
+
+                mediaRecorder.start();
+                voiceRecordBtn.style.color = 'red';
+                voiceRecordBtn.classList.add('recording-pulse');
+            } catch (err) {
+                alert('لا يمكن الوصول للميكروفون');
+            }
+        });
+
+        // Search in Chat
+        searchInChatBtn.addEventListener('click', () => {
+            searchChatBar.style.display = 'flex';
+            searchChatInput.focus();
+        });
+
+        closeSearchChat.addEventListener('click', () => {
+            searchChatBar.style.display = 'none';
+            searchChatInput.value = '';
+            // Reset highlight
+            loadMessages(currentSessionId);
+        });
+
+        searchChatInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const bubbles = messagesContainer.querySelectorAll('.message-bubble');
+            
+            bubbles.forEach(bubble => {
+                const text = bubble.textContent.toLowerCase();
+                if (query && text.includes(query)) {
+                    bubble.style.backgroundColor = '#fff3cd';
+                    bubble.style.border = '2px solid #ffc107';
+                } else {
+                    // Reset to original style
+                    const isSent = bubble.classList.contains('sent');
+                    bubble.style.backgroundColor = isSent ? 'var(--chat-bubble-user)' : 'var(--chat-bubble-other)';
+                    bubble.style.border = 'none';
+                }
+            });
         });
 
         // Archive chats
