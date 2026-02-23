@@ -445,41 +445,83 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         imageInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (!file || !currentSessionId) return;
-
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
-            const filePath = `chat-media/${fileName}`;
-
-            const { data, error } = await supabase.storage
-                .from('chat-attachments')
-                .upload(filePath, file);
-
-            if (error) {
-                alert('خطأ في رفع الصورة');
+            if (!file || !currentSessionId) {
+                alert('اختر صورة أولاً');
                 return;
             }
 
-            const { data: { publicUrl } } = supabase.storage
-                .from('chat-attachments')
-                .getPublicUrl(filePath);
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('يجب اختيار صورة فقط');
+                return;
+            }
 
-            await supabase.from('chat_messages').insert({
-                session_id: currentSessionId,
-                sender_id: currentUser.id,
-                image_url: publicUrl,
-                is_admin_reply: true
-            });
-            
-            imageInput.value = '';
+            // Show loading state
+            imageUploadBtn.disabled = true;
+            imageUploadBtn.style.opacity = '0.5';
+
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+                const filePath = `chat-media/${fileName}`;
+
+                const { data, error } = await supabase.storage
+                    .from('chat-attachments')
+                    .upload(filePath, file, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (error) {
+                    console.error('خطأ في رفع الصورة:', error);
+                    alert('فشل في تحميل الصورة. تأكد من اتصال الإنترنت');
+                    return;
+                }
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('chat-attachments')
+                    .getPublicUrl(filePath);
+
+                const { error: insertError } = await supabase.from('chat_messages').insert({
+                    session_id: currentSessionId,
+                    sender_id: currentUser.id,
+                    image_url: publicUrl,
+                    message_text: null,
+                    is_admin_reply: true
+                });
+
+                if (insertError) {
+                    console.error('خطأ في حفظ الرسالة:', insertError);
+                    alert('فشل في إرسال الصورة');
+                }
+            } catch (err) {
+                console.error('خطأ غير متوقع:', err);
+                alert('حدث خطأ غير متوقع');
+            } finally {
+                imageUploadBtn.disabled = false;
+                imageUploadBtn.style.opacity = '1';
+                imageInput.value = '';
+            }
         });
 
-        // Voice Recording
+        // Voice Recording with Timer
+        let recordingStartTime = null;
+        let recordingTimer = null;
+        const voiceRecordBtnSvg = voiceRecordBtn.innerHTML;
+        
         voiceRecordBtn.addEventListener('click', async () => {
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
                 voiceRecordBtn.style.color = 'var(--primary-color)';
                 voiceRecordBtn.classList.remove('recording-pulse');
+                voiceRecordBtn.innerHTML = voiceRecordBtnSvg;
+                
+                if (recordingTimer) clearInterval(recordingTimer);
+                return;
+            }
+
+            if (!currentSessionId) {
+                alert('اختر محادثة أولاً');
                 return;
             }
 
@@ -490,33 +532,66 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
                 mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const fileName = `${Math.random()}.webm`;
-                    const filePath = `chat-media/${fileName}`;
+                    voiceRecordBtn.disabled = true;
+                    voiceRecordBtn.style.opacity = '0.5';
+                    
+                    try {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.webm`;
+                        const filePath = `chat-media/${fileName}`;
 
-                    const { data, error } = await supabase.storage
-                        .from('chat-attachments')
-                        .upload(filePath, audioBlob);
+                        const { data, error } = await supabase.storage
+                            .from('chat-attachments')
+                            .upload(filePath, audioBlob, {
+                                cacheControl: '3600',
+                                upsert: false
+                            });
 
-                    if (!error) {
+                        if (error) {
+                            console.error('خطأ في رفع الصوت:', error);
+                            alert('فشل في تحميل التسجيل الصوتي');
+                            return;
+                        }
+
                         const { data: { publicUrl } } = supabase.storage
                             .from('chat-attachments')
                             .getPublicUrl(filePath);
 
-                        await supabase.from('chat_messages').insert({
+                        const { error: insertError } = await supabase.from('chat_messages').insert({
                             session_id: currentSessionId,
                             sender_id: currentUser.id,
                             audio_url: publicUrl,
+                            message_text: null,
                             is_admin_reply: true
                         });
+
+                        if (insertError) {
+                            console.error('خطأ في حفظ الرسالة:', insertError);
+                            alert('فشل في إرسال التسجيل الصوتي');
+                        }
+                    } finally {
+                        voiceRecordBtn.disabled = false;
+                        voiceRecordBtn.style.opacity = '1';
                     }
                 };
 
                 mediaRecorder.start();
-                voiceRecordBtn.style.color = 'red';
+                recordingStartTime = Date.now();
+                voiceRecordBtn.style.color = '#FF3B30';
                 voiceRecordBtn.classList.add('recording-pulse');
+                
+                // Start timer
+                recordingTimer = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    voiceRecordBtn.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    voiceRecordBtn.style.fontSize = '0.7rem';
+                    voiceRecordBtn.style.fontWeight = 'bold';
+                }, 100);
             } catch (err) {
-                alert('لا يمكن الوصول للميكروفون');
+                console.error('خطأ في الوصول للميكروفون:', err);
+                alert('لا يمكن الوصول للميكروفون. تأكد من منح الصلاحيات');
             }
         });
 
@@ -551,27 +626,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
-        // Archive chats
-        archiveChats.addEventListener('click', async () => {
-            const { data: closedSessions } = await supabase
-                .from('chat_sessions')
-                .select('*')
-                .eq('status', 'closed');
-
-            if (!closedSessions || closedSessions.length === 0) {
-                alert('لا توجد محادثات مغلقة للأرشفة');
-                return;
-            }
-
-            alert(`تم أرشفة ${closedSessions.length} محادثة بنجاح!`);
-            exportModal.style.display = 'none';
-            await loadAllChats();
-        });
-
         // Close modal on outside click
         document.addEventListener('click', (e) => {
             if (e.target === settingsModal) settingsModal.style.display = 'none';
             if (e.target === exportModal) exportModal.style.display = 'none';
+            if (e.target === exportSingleModal) exportSingleModal.style.display = 'none';
         });
     }
 
