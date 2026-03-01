@@ -132,6 +132,59 @@ function setupSidebarLogic() {
     if (sidebarClose) sidebarClose.addEventListener('click', toggleSidebar);
     if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
 
+    // Language Toggle Logic
+    const adminLanguageToggleBtn = document.getElementById('adminLanguageToggleBtn');
+    const adminLanguageMenu = document.getElementById('adminLanguageMenu');
+    const adminLangArabic = document.getElementById('adminLangArabic');
+    const adminLangEnglish = document.getElementById('adminLangEnglish');
+
+    if (adminLanguageToggleBtn && adminLanguageMenu) {
+        adminLanguageToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = adminLanguageMenu.style.display === 'block';
+            adminLanguageMenu.style.display = isVisible ? 'none' : 'block';
+            updateAdminLanguageCheckmarks();
+        });
+
+        adminLangArabic?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            changeAdminLanguage('ar');
+            adminLanguageMenu.style.display = 'none';
+        });
+
+        adminLangEnglish?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            changeAdminLanguage('en');
+            adminLanguageMenu.style.display = 'none';
+        });
+    }
+
+    function updateAdminLanguageCheckmarks() {
+        const currentLang = localStorage.getItem('mad3oom-language') || 'ar';
+        const arabicChecks = document.querySelectorAll('.admin-lang-check');
+        arabicChecks.forEach((check, idx) => {
+            check.style.display = (idx === 0 && currentLang === 'ar') || (idx === 1 && currentLang === 'en') ? 'none' : 'none';
+        });
+        const arabicCheck = adminLangArabic?.querySelector('.admin-lang-check');
+        const englishCheck = adminLangEnglish?.querySelector('.admin-lang-check');
+        
+        if (arabicCheck) arabicCheck.style.display = currentLang === 'ar' ? 'inline' : 'none';
+        if (englishCheck) englishCheck.style.display = currentLang === 'en' ? 'inline' : 'none';
+    }
+
+    function changeAdminLanguage(lang) {
+        localStorage.setItem('mad3oom-language', lang);
+        const html = document.documentElement;
+        html.lang = lang;
+        html.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.body.style.direction = lang === 'ar' ? 'rtl' : 'ltr';
+        
+        // Reload page to apply language changes
+        window.location.reload();
+    }
+
     // Avatar Menu Logic
     if (adminAvatarBtn && adminAvatarMenu) {
         adminAvatarBtn.addEventListener('click', (e) => {
@@ -143,8 +196,54 @@ function setupSidebarLogic() {
         document.addEventListener('click', () => {
             if (adminAvatarMenu) adminAvatarMenu.style.display = 'none';
             if (notificationMenu) notificationMenu.style.display = 'none';
+            if (adminLanguageMenu) adminLanguageMenu.style.display = 'none';
         });
     }
+
+    // Handle menu item clicks
+    const adminProfile = document.getElementById('adminProfile');
+    const adminAccountSettings = document.getElementById('adminAccountSettings');
+    const adminSecuritySettings = document.getElementById('adminSecuritySettings');
+    const adminHelpSupport = document.getElementById('adminHelpSupport');
+
+    if (adminProfile) {
+        adminProfile.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Navigate to profile page
+            window.location.href = '#profile';
+            adminAvatarMenu.style.display = 'none';
+        });
+    }
+
+    if (adminAccountSettings) {
+        adminAccountSettings.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Navigate to account settings
+            window.location.href = '/admin/settings.html';
+            adminAvatarMenu.style.display = 'none';
+        });
+    }
+
+    if (adminSecuritySettings) {
+        adminSecuritySettings.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Navigate to security settings
+            window.location.href = '/admin-security-settings.html';
+            adminAvatarMenu.style.display = 'none';
+        });
+    }
+
+    if (adminHelpSupport) {
+        adminHelpSupport.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Navigate to help/support
+            window.location.href = '/knowledge-base.html';
+            adminAvatarMenu.style.display = 'none';
+        });
+    }
+
+    // Initialize language checkmarks on load
+    updateAdminLanguageCheckmarks();
 
     // Handle logout
     const adminSignOut = document.getElementById('adminSignOut');
@@ -158,6 +257,9 @@ function setupSidebarLogic() {
 
     if (adminSignOut) adminSignOut.addEventListener('click', onLogout);
     if (sidebarSignOut) sidebarSignOut.addEventListener('click', onLogout);
+
+    // Initialize language checkmarks on load
+    updateAdminLanguageCheckmarks();
 }
 
 async function checkAdminForErrorTracker() {
