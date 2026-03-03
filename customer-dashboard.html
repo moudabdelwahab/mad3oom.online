@@ -21,6 +21,7 @@
     <script src="theme-manager.js" defer></script>
     <script src="/error-tracker.js"></script>
     <link rel="stylesheet" href="robot.css">
+    <link rel="stylesheet" href="chat-widget.css">
     <style>
         .profile-section { background: var(--color-surface); padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-sm); margin-top: 2rem; border: 1px solid var(--color-border); }
         .nav-tabs { display: none; }
@@ -105,6 +106,45 @@
     </style>
 </head>
 <body>
+    <!-- Floating Chat Widget -->
+    <div class="floating-chat-widget" id="floatingChatWidget">
+        <button class="chat-bubble-btn" id="chatBubbleBtn" title="فتح الدردشة">
+            <div class="chat-bubble-icon">💬</div>
+        </button>
+
+        <div class="chat-widget-panel" id="chatWidgetPanel">
+            <div class="chat-widget-header">
+                <div class="chat-widget-header-title">
+                    <div class="chat-widget-header-icon">🤖</div>
+                    <div>
+                        <h3>مدعوم</h3>
+                        <p>هنا لمساعدتك في أي وقت</p>
+                    </div>
+                </div>
+                <button class="chat-widget-close" id="chatWidgetClose">✕</button>
+            </div>
+
+            <div class="chat-widget-body" id="chatWidgetBody">
+                <div class="chat-widget-message bot">
+                    <div class="chat-widget-bubble">
+                        مرحباً! 👋 كيف يمكننا مساعدتك اليوم؟
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-widget-footer">
+                <a href="https://wa.me/201274000741?text=مرحباً%20بي%20أتواصل%20مع%20منصة%20مدعوم" target="_blank" class="chat-widget-option">
+                    <span class="chat-widget-option-icon">💬</span>
+                    <span class="chat-widget-option-text">الاستمرار على واتساب</span>
+                </a>
+                <a href="/chat-customer.html" class="chat-widget-option">
+                    <span class="chat-widget-option-icon">💻</span>
+                    <span class="chat-widget-option-text">الدردشة المباشرة</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <div id="sidebar-container"></div>
 
     <!-- Ticket Detail Modal for Customer -->
@@ -414,5 +454,29 @@
     <!-- The functional modal is defined at the top of the body with id="ticketDetailModal" -->
 
     <script type="module" src="customer-dashboard.js"></script>
+    <script>
+        // Floating Chat Widget Logic
+        const chatBubbleBtn = document.getElementById('chatBubbleBtn');
+        const chatWidgetPanel = document.getElementById('chatWidgetPanel');
+        const chatWidgetClose = document.getElementById('chatWidgetClose');
+
+        if (chatBubbleBtn && chatWidgetPanel && chatWidgetClose) {
+            chatBubbleBtn.addEventListener('click', () => {
+                chatWidgetPanel.classList.toggle('active');
+            });
+
+            chatWidgetClose.addEventListener('click', () => {
+                chatWidgetPanel.classList.remove('active');
+            });
+
+            // Close widget when clicking outside
+            document.addEventListener('click', (e) => {
+                const widget = document.getElementById('floatingChatWidget');
+                if (widget && !widget.contains(e.target)) {
+                    chatWidgetPanel.classList.remove('active');
+                }
+            });
+        }
+    </script>
 </body>
 </html>

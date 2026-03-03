@@ -119,6 +119,22 @@ import {
             const el = document.getElementById(id);
             if (el) el.textContent = val ?? 0;
         }
+
+        // Update ticket count badge on the tickets tab
+        const ticketsTab = document.querySelector('.nav-tab[data-tab="tickets"]');
+        if (ticketsTab && stats.inProgress > 0) {
+            let badge = ticketsTab.querySelector('.ticket-count-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'ticket-count-badge';
+                badge.style.cssText = 'display: inline-flex; align-items: center; justify-content: center; background: #D9534F; color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 0.75rem; font-weight: 700; margin-right: 0.5rem;';
+                ticketsTab.appendChild(badge);
+            }
+            badge.textContent = stats.inProgress;
+        } else if (ticketsTab) {
+            const badge = ticketsTab.querySelector('.ticket-count-badge');
+            if (badge) badge.remove();
+        }
     }
 
     async function renderTickets(filters = {}) {

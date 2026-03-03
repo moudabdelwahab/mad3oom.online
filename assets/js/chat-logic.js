@@ -68,14 +68,175 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser = user;
         isAdmin = user.email.includes('admin') || user.user_metadata?.role === 'admin';
 
+        // إذا كان العميل (وليس أدمن)، قم بتحميل دردشة العميل بدلاً من دردشة الأدمن
         if (!isAdmin) {
-            window.location.href = '/customer-dashboard.html';
+            // تحميل دردشة العميل
+            await loadCustomerChat();
+            setupCustomerChatEventListeners();
             return;
         }
 
+        // إذا كان أدمن، قم بتحميل دردشة الأدمن
         await loadBotSettings();
         await loadAllChats();
         setupEventListeners();
+    }
+
+    // ===== LOAD CUSTOMER CHAT =====
+    async function loadCustomerChat() {
+        // جلب أو إنشاء جلسة دردشة للعميل الحالي
+        let { data: session, error } = await supabase
+            .from('chat_sessions')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .eq('status', 'open')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        // إذا لم توجد جلسة مفتوحة، قم بإنشاء واحدة جديدة
+        if (error || !session) {
+            const { data: newSession, error: createError } = await supabase
+                .from('chat_sessions')
+                .insert({
+                    user_id: currentUser.id,
+                    status: 'open'
+                })
+                .select()
+                .single();
+
+            if (createError) {
+                console.error('خطأ في إنشاء جلسة دردشة:', createError);
+                return;
+            }
+            session = newSession;
+        }
+
+        currentSessionId = session.id;
+        currentSession = session;
+
+        // تحميل الرسائل
+        await loadCustomerMessages(session.id);
+
+        // الاشتراك في الرسائل الجديدة
+        if (messageChannel) supabase.removeChannel(messageChannel);
+        messageChannel = supabase.channel(`chat:${session.id}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'chat_messages',
+                filter: `session_id=eq.${session.id}`
+            }, payload => {
+                appendCustomerMessage(payload.new);
+            })
+            .subscribe();
+    }
+
+    // ===== LOAD CUSTOMER MESSAGES =====
+    async function loadCustomerMessages(sessionId) {
+        const { data: messages, error } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .eq('session_id', sessionId)
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('خطأ في جلب الرسائل:', error);
+            return;
+        }
+
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+            chatMessages.innerHTML = '';
+            (messages || []).forEach(msg => appendCustomerMessage(msg));
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    }
+
+    // ===== APPEND CUSTOMER MESSAGE =====
+    function appendCustomerMessage(msg) {
+        const chatMessages = document.getElementById('chatMessages');
+        if (!chatMessages) return;
+
+        const isOwn = msg.sender_id === currentUser.id;
+        const time = new Date(msg.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        const text = msg.message_text || '';
+
+        const messageEl = document.createElement('div');
+        messageEl.className = `msg ${isOwn ? 'sent' : 'received'}`;
+        messageEl.innerHTML = `
+            <span>${text}</span>
+            <div style="font-size: 0.75rem; margin-top: 0.25rem; opacity: 0.7;">${time}</div>
+        `;
+
+        chatMessages.appendChild(messageEl);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // ===== SETUP CUSTOMER CHAT EVENT LISTENERS =====
+    function setupCustomerChatEventListeners() {
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const endChatBtn = document.getElementById('endChatBtn');
+
+        if (sendBtn) {
+            sendBtn.addEventListener('click', sendCustomerMessage);
+        }
+
+        if (chatInput) {
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendCustomerMessage();
+                }
+            });
+        }
+
+        if (endChatBtn) {
+            endChatBtn.addEventListener('click', endCustomerChat);
+        }
+    }
+
+    // ===== SEND CUSTOMER MESSAGE =====
+    async function sendCustomerMessage() {
+        const chatInput = document.getElementById('chatInput');
+        const text = chatInput.value.trim();
+
+        if (!text || !currentSessionId) return;
+
+        chatInput.value = '';
+
+        const { error } = await supabase.from('chat_messages').insert({
+            session_id: currentSessionId,
+            sender_id: currentUser.id,
+            message_text: text,
+            is_admin_reply: false
+        });
+
+        if (error) {
+            console.error('خطأ في إرسال الرسالة:', error);
+            alert('فشل في إرسال الرسالة');
+        }
+    }
+
+    // ===== END CUSTOMER CHAT =====
+    async function endCustomerChat() {
+        if (!confirm('هل تريد إنهاء المحادثة؟')) return;
+
+        const { error } = await supabase
+            .from('chat_sessions')
+            .update({ status: 'closed' })
+            .eq('id', currentSessionId);
+
+        if (error) {
+            console.error('خطأ في إنهاء المحادثة:', error);
+            return;
+        }
+
+        // إظهار نافذة التقييم
+        const ratingModal = document.getElementById('ratingModal');
+        if (ratingModal) {
+            ratingModal.style.display = 'flex';
+        }
     }
 
     // ===== LOAD BOT SETTINGS =====
