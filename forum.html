@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منتدى مدعوم - منصة مدعوم</title>
+    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link rel="stylesheet" href="forum-styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+
+    <main class="admin-main">
+        <div class="forum-container">
+            <!-- Forum Header -->
+            <div class="forum-header">
+                <div class="header-content">
+                    <h1>منتدى النقاش</h1>
+                    <p>المكان الأمثل لتبادل الخبرات وحل المشكلات التقنية</p>
+                </div>
+                <div class="header-actions">
+                    <button id="createNewThread" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        موضوع جديد
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div class="forum-toolbar">
+                <div class="search-wrapper">
+                    <input type="text" id="forumSearch" placeholder="ابحث في المنتدى..." class="form-control">
+                    <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <div class="filter-wrapper">
+                    <select id="forumFilter" class="form-control">
+                        <option value="latest">الأحدث</option>
+                        <option value="popular">الأكثر مشاهدة</option>
+                        <option value="unanswered">بدون رد</option>
+                        <option value="activity">آخر نشاط</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Forum Content -->
+            <div id="forumContent" class="forum-content">
+                <!-- Categories and Subforums will be loaded here -->
+                <div class="loading-spinner">جاري تحميل المنتدى...</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Create Thread Modal -->
+    <div id="threadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>إنشاء موضوع جديد</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="threadForm">
+                <div class="form-group">
+                    <label>عنوان الموضوع</label>
+                    <input type="text" id="threadTitle" class="form-control" required placeholder="عنوان واضح ومختصر">
+                </div>
+                <div class="form-group">
+                    <label>القسم</label>
+                    <select id="threadSubforum" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <label>المحتوى</label>
+                    <div id="editor-toolbar" class="editor-toolbar">
+                        <button type="button" data-cmd="bold"><b>B</b></button>
+                        <button type="button" data-cmd="italic"><i>I</i></button>
+                        <button type="button" data-cmd="insertUnorderedList">List</button>
+                        <button type="button" data-cmd="createLink">Link</button>
+                        <button type="button" id="insertCode">Code</button>
+                        <button type="button" id="uploadImg">Image</button>
+                    </div>
+                    <div id="threadContent" contenteditable="true" class="rich-editor" required></div>
+                </div>
+                <div class="form-group">
+                    <label>الوسوم (Tags)</label>
+                    <input type="text" id="threadTags" class="form-control" placeholder="وسوم مفصولة بفاصلة">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">نشر الموضوع</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="forum.js"></script>
+</body>
+</html>

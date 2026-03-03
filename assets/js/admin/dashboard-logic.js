@@ -26,7 +26,8 @@ async function loadAllStats() {
         loadUsersStats(),
         loadBannedStats(),
         loadActivityStats(),
-        loadStatsStats()
+        loadStatsStats(),
+        loadForumStats()
     ]);
 }
 
@@ -218,6 +219,32 @@ async function loadActivityStats() {
     }
 }
 
+// إحصائيات المنتدى
+async function loadForumStats() {
+    try {
+        const { count: threadsCount, error: threadsError } = await supabase
+            .from('forum_threads')
+            .select('*', { count: 'exact', head: true });
+        
+        if (!threadsError) {
+            updateElement('forumThreadsCount', threadsCount || 0);
+        }
+
+        const { count: reportsCount, error: reportsError } = await supabase
+            .from('forum_reports')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pending');
+        
+        if (!reportsError) {
+            updateElement('forumReportsCount', reportsCount || 0);
+        }
+    } catch (err) {
+        console.error('Error loading forum stats:', err);
+        updateElement('forumThreadsCount', '0');
+        updateElement('forumReportsCount', '0');
+    }
+}
+
 // إحصائيات الزيارات والاستجابة
 async function loadStatsStats() {
     try {
@@ -312,6 +339,33 @@ function setupRealtimeSubscriptions() {
         .subscribe();
     
     subscriptions.push(activitySubscription);
+
+    // الاشتراك في تحديثات المنتدى
+    const forumThreadsSubscription = supabase
+        .channel('forum-threads-changes')
+        .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'forum_threads' }, 
+            () => {
+                console.log('Forum threads updated - reloading stats');
+                loadForumStats();
+            }
+        )
+        .subscribe();
+    
+    subscriptions.push(forumThreadsSubscription);
+
+    const forumReportsSubscription = supabase
+        .channel('forum-reports-changes')
+        .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'forum_reports' }, 
+            () => {
+                console.log('Forum reports updated - reloading stats');
+                loadForumStats();
+            }
+        )
+        .subscribe();
+    
+    subscriptions.push(forumReportsSubscription);
     
     console.log('Realtime subscriptions setup complete');
 }
