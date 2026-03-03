@@ -10,6 +10,37 @@
     <link rel="stylesheet" href="forum-styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* إصلاح ظهور المودال وتنسيقات إضافية */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: var(--color-surface);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            width: 100%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--color-border);
+        }
+    </style>
 </head>
 <body>
     <div id="sidebar-container"></div>
@@ -23,9 +54,9 @@
                     <p>المكان الأمثل لتبادل الخبرات وحل المشكلات التقنية</p>
                 </div>
                 <div class="header-actions">
-                    <button id="createNewThread" class="btn btn-primary">
+                    <button id="createNewThread" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.5rem;">
                         <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        موضوع جديد
+                        <span>موضوع جديد</span>
                     </button>
                 </div>
             </div>
