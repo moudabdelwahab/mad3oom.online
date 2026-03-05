@@ -192,11 +192,15 @@ function setupSidebarLogic(onTabChange) {
     }
 
     function changeLanguage(lang) {
-        localStorage.setItem('mad3oom-language', lang);
-        const html = document.documentElement;
-        html.lang = lang;
-        html.dir = lang === 'ar' ? 'rtl' : 'ltr';
-        document.body.style.direction = lang === 'ar' ? 'rtl' : 'ltr';
+        if (window.languageManager) {
+            window.languageManager.setLanguage(lang);
+        } else {
+            localStorage.setItem('mad3oom-language', lang);
+            const html = document.documentElement;
+            html.lang = lang;
+            html.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.body.style.direction = lang === 'ar' ? 'rtl' : 'ltr';
+        }
         
         // Reload page to apply language changes
         window.location.reload();

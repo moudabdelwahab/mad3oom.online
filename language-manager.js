@@ -94,6 +94,14 @@ class LanguageManager {
     constructor() {
         this.currentLanguage = this.loadLanguage();
         this.listeners = [];
+        this.init();
+    }
+
+    /**
+     * تهيئة اللغة عند التحميل
+     */
+    init() {
+        this.updatePageLanguage(this.currentLanguage);
     }
 
     /**
@@ -101,8 +109,10 @@ class LanguageManager {
      */
     loadLanguage() {
         const saved = localStorage.getItem('mad3oom-language');
+        if (saved === 'ar' || saved === 'en') return saved;
+        
         const browserLang = navigator.language.startsWith('ar') ? 'ar' : 'en';
-        return saved || browserLang;
+        return browserLang;
     }
 
     /**
@@ -182,6 +192,10 @@ class LanguageManager {
 const languageManager = new LanguageManager();
 
 // تصدير للاستخدام في الملفات الأخرى
+if (typeof window !== 'undefined') {
+    window.languageManager = languageManager;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = languageManager;
 }
