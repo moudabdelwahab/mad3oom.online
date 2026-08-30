@@ -73,6 +73,16 @@ async function accounting(
   });
 }
 
+/**
+ * كتابة لا تُرجع جسماً (Prefer: return=minimal): لا بد من فحص نجاحها
+ * صراحةً، وإلا مضى التنفيذ كأنها نجحت. جسم الرد يُسجَّل ولا يُرفع.
+ */
+async function assertOk(res: Response, label: string): Promise<void> {
+  if (res.ok) return;
+  console.error(`[accounting-sync] ${label} HTTP ${res.status}:`, (await res.text()).slice(0, 500));
+  throw new Error(`${label}: HTTP ${res.status}`);
+}
+
 async function readJson(res: Response, label: string): Promise<Json[]> {
   if (!res.ok) {
     // جسم الرد قد يحمل تفاصيل داخلية، فيُسجَّل ولا يُرفع مع الاستثناء
@@ -246,23 +256,38 @@ Deno.serve(async (req) => {
         );
         if (recErr) throw new Error(recErr.message);
 
-        // الرابط العام يعود للمحاسبة ليُطبع كرمز QR على الفاتورة
-        await accounting(`invoices?id=eq.${payload.invoice_id}`, {
-          ...acct,
-          method: "PATCH",
-          headers: { Prefer: "return=minimal" },
-          body: JSON.stringify({
-            public_url: recorded.public_url,
-            public_token: recorded.public_token,
-          }),
-        });
+        if (!recorded?.public_url || !recorded?.public_token) {
+          throw new Error("لم تُرجع record_accounting_invoice رابطاً عاماً");
+        }
 
-        await accounting(`integration_outbox?id=eq.${event.id}`, {
-          ...acct,
-          method: "PATCH",
-          headers: { Prefer: "return=minimal" },
-          body: JSON.stringify({ status: "sent", sent_at: new Date().toISOString() }),
-        });
+        // الرابط العام يعود للمحاسبة ليُطبع كرمز QR على الفاتورة.
+        // فشل هذه الكتابة يعني فاتورة بلا QR، فلا يجوز اعتبار الحدث
+        // مسلَّماً بعدها — يبقى معلّقاً ليُعاد.
+        await assertOk(
+          await accounting(`invoices?id=eq.${payload.invoice_id}`, {
+            ...acct,
+            method: "PATCH",
+            headers: { Prefer: "return=minimal" },
+            body: JSON.stringify({
+              public_url: recorded.public_url,
+              public_token: recorded.public_token,
+            }),
+          }),
+          `كتابة الرابط العام للفاتورة ${payload.invoice_id}`,
+        );
+
+        // آخر خطوة عمداً: لا يُعلَّم الحدث sent إلا بعد نجاح ما قبله.
+        // إعادة المحاولة مأمونة: record_accounting_invoice تُرجع
+        // already_recorded بالرمز نفسه، وكتابة الرابط تُعيد القيمة نفسها.
+        await assertOk(
+          await accounting(`integration_outbox?id=eq.${event.id}`, {
+            ...acct,
+            method: "PATCH",
+            headers: { Prefer: "return=minimal" },
+            body: JSON.stringify({ status: "sent", sent_at: new Date().toISOString() }),
+          }),
+          `تعليم الحدث ${event.id} مسلَّماً`,
+        );
 
         report.outbox_delivered++;
       } catch (err) {
