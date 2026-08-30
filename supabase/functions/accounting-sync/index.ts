@@ -38,6 +38,19 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+/**
+ * تفاصيل الخطأ تخص المشغّل لا المتصل: تُكتب في سجل الدالة، ويعود
+ * للمتصل وصف عام مع requestId يربط الرد بالسجل. الرد لا يحمل رسائل
+ * قواعد البيانات ولا أجسام ردود الخدمات الخارجية.
+ */
+function describe(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function logFailure(requestId: string, scope: string, err: unknown): void {
+  console.error(`[accounting-sync ${requestId}] ${scope}:`, err);
+}
+
 /** الاشتراكات التي تستحق فاتورة. المرفوضة لا تُفوتر. */
 const BILLABLE_STATUSES = ["active", "expired"];
 
@@ -62,7 +75,9 @@ async function accounting(
 
 async function readJson(res: Response, label: string): Promise<Json[]> {
   if (!res.ok) {
-    throw new Error(`${label}: HTTP ${res.status} — ${(await res.text()).slice(0, 300)}`);
+    // جسم الرد قد يحمل تفاصيل داخلية، فيُسجَّل ولا يُرفع مع الاستثناء
+    console.error(`[accounting-sync] ${label} HTTP ${res.status}:`, (await res.text()).slice(0, 500));
+    throw new Error(`${label}: HTTP ${res.status}`);
   }
   const text = await res.text();
   return text ? JSON.parse(text) : [];
@@ -89,12 +104,17 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
+  const requestId = crypto.randomUUID();
+
   const report = {
     customers_synced: 0,
     invoices_created: 0,
     invoices_skipped: 0,
     outbox_delivered: 0,
-    errors: [] as string[],
+    /** أحداث فشل تسليمها — المعرّفات فقط؛ السبب في سجل الدالة. */
+    failed_event_ids: [] as string[],
+    /** باقات في الاشتراكات بلا مقابل في كتالوج المحاسبة. */
+    unknown_plans: [] as string[],
   };
 
   try {
@@ -158,7 +178,10 @@ Deno.serve(async (req) => {
 
       if (!customerId || !plan) {
         report.invoices_skipped++;
-        if (!plan) report.errors.push(`لا توجد باقة بالكتالوج: ${sub.plan}/${sub.billing_cycle}`);
+        if (!plan) {
+          const key = `${sub.plan}/${sub.billing_cycle}`;
+          if (!report.unknown_plans.includes(key)) report.unknown_plans.push(key);
+        }
         continue;
       }
 
@@ -243,22 +266,32 @@ Deno.serve(async (req) => {
 
         report.outbox_delivered++;
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        report.errors.push(`الحدث ${event.id}: ${message}`);
+        logFailure(requestId, `تسليم الحدث ${event.id}`, err);
+        report.failed_event_ids.push(String(event.id));
 
-        // الحدث يبقى معلّقاً ليُعاد في التشغيل التالي
+        // الحدث يبقى معلّقاً ليُعاد في التشغيل التالي. السبب يُحفظ في
+        // قاعدة المحاسبة للمشغّل، ولا يعود في رد HTTP.
         await accounting(`integration_outbox?id=eq.${event.id}`, {
           ...acct,
           method: "PATCH",
           headers: { Prefer: "return=minimal" },
-          body: JSON.stringify({ last_error: message.slice(0, 500) }),
+          body: JSON.stringify({ last_error: describe(err).slice(0, 500) }),
         });
       }
     }
 
-    return jsonResponse({ ok: report.errors.length === 0, ...report });
+    return jsonResponse({
+      ok: report.failed_event_ids.length === 0,
+      request_id: requestId,
+      ...report,
+    });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return jsonResponse({ ok: false, ...report, error: message }, 500);
+    logFailure(requestId, "تشغيل المزامنة", err);
+    return jsonResponse({
+      ok: false,
+      request_id: requestId,
+      ...report,
+      error: "تعذّر إكمال المزامنة. راجع سجل الدالة بمعرّف الطلب.",
+    }, 500);
   }
 });
