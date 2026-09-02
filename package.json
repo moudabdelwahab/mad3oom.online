@@ -1,5 +1,10 @@
 {
   "dependencies": {
     "xlsx": "^0.18.5"
+  },
+  "scripts": {
+    "test": "npm run test:node && npm run test:sql",
+    "test:node": "node --test tests/*.test.mjs",
+    "test:sql": "bash tests/run-sql-tests.sh"
   }
 }

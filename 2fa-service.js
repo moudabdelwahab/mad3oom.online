@@ -64,24 +64,31 @@ export async function enable2FA(userId, secretBase32, recoveryCodes) {
 }
 
 /**
- * Disable 2FA for user
+ * Disable 2FA for user.
+ *
+ * Goes through the disable-2fa Edge Function rather than updating `profiles`
+ * directly. Turning 2FA off now costs a current authenticator code (or a
+ * recovery code), because a valid session alone is not proof: at the login
+ * 2FA prompt the browser already holds one.
+ *
+ * @param {string} userId  kept for call-site compatibility; the function
+ *                         derives the account from the caller's own session.
+ * @param {{code?: string, recoveryCode?: string}} proof
  */
-export async function disable2FA(userId) {
-    const { data, error } = await supabase
-        .from('profiles')
-        .update({
-            two_factor_enabled: false,
-            two_factor_secret: null,
-            recovery_codes: null
-        })
-        .eq('id', userId);
+export async function disable2FA(userId, proof = {}) {
+    const { data, error } = await supabase.functions.invoke('disable-2fa', {
+        body: { code: proof.code, recoveryCode: proof.recoveryCode }
+    });
 
-    if (error) {
-        console.error('Disable 2FA Error:', error);
-        throw error;
+    if (error || !data?.disabled) {
+        const reason = data?.error === 'too_many_attempts'
+            ? 'تم تجاوز عدد المحاولات المسموح بها، حاول بعد قليل'
+            : 'الرمز الذي أدخلته غير صحيح';
+        console.error('Disable 2FA Error:', error || data);
+        return { error: new Error(reason) };
     }
 
-    return data;
+    return { data };
 }
 
 /* ======================================================

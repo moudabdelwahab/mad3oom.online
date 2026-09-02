@@ -641,9 +641,13 @@
     if (!rowId) return false;
     for (let i=0; i<maxAttempts; i++) {
       try {
+        // check-dns-status صار يتطلب مصادقة (أدمن أو صاحب النطاق)،
+        // فلازم نبعت نفس التوكن المستخدم مع باقي دوال النطاقات.
+        const dnsToken = await getAccessToken();
+        if (!dnsToken) throw new Error('NO_SESSION');
         const res  = await fetch(CHECK_DNS_FN_URL, {
           method: 'POST',
-          headers: { 'Content-Type':'application/json' },
+          headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${dnsToken}` },
           body: JSON.stringify({ id: rowId }),
         });
         const data = await res.json();

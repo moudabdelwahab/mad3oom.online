@@ -457,17 +457,26 @@ async function setupSecuritySettings() {
                 return;
             }
 
-            try {
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({
-                        two_factor_enabled: false,
-                        two_factor_secret: null,
-                        recovery_codes: null
-                    })
-                    .eq('id', currentUser.id);
+            // إيقاف التحقق بخطوتين بقى محتاج إثبات امتلاك العامل الثاني:
+            // الجلسة وحدها مش دليل، لأن المهاجم اللي معاه كلمة السر بيبقى
+            // معاه جلسة صالحة وهو واقف عند شاشة إدخال الرمز.
+            const proofCode = prompt('لتعطيل التحقق بخطوتين، أدخل الرمز الحالي من تطبيق المصادقة (أو أحد رموز الاستعادة):');
+            if (!proofCode) return;
+            const trimmedProof = proofCode.trim();
+            const proof = /^\d{6}$/.test(trimmedProof)
+                ? { code: trimmedProof }
+                : { recoveryCode: trimmedProof };
 
-                if (error) throw error;
+            try {
+                const { data: disableResult, error } = await supabase.functions.invoke('disable-2fa', {
+                    body: proof
+                });
+
+                if (error || !disableResult?.disabled) {
+                    throw new Error(disableResult?.error === 'too_many_attempts'
+                        ? 'تم تجاوز عدد المحاولات المسموح بها، حاول بعد قليل'
+                        : 'الرمز الذي أدخلته غير صحيح');
+                }
 
                 await load2FAStatus();
                 showAlert('تم تعطيل التحقق بخطوتين', 'success');
