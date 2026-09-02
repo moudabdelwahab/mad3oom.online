@@ -193,7 +193,8 @@ async function autoRegisterWebhook(stages: Record<string, unknown>): Promise<voi
                 .eq('key', 'telegram_autoregister');
         }
     } catch (err) {
-        stages.autoregister = `failed: ${err instanceof Error ? err.message : String(err)}`;
+        logger.error('autoregister threw', { error: err instanceof Error ? err.message : String(err) });
+        stages.autoregister = 'failed: see function logs';
     }
 }
 
@@ -204,7 +205,11 @@ async function autoRegisterWebhook(stages: Record<string, unknown>): Promise<voi
  * can fail silently, and from outside they all look identical: no reply.
  * This runs each one, so a single URL answers "where does it stop".
  *
- * Reports only whether each secret is PRESENT, never a value.
+ * Reports only whether each secret is PRESENT, never a value — and never an
+ * exception message either. CodeQL flagged the self-check response as
+ * "information exposure through a stack trace": caught errors were being
+ * interpolated straight into the JSON body. The stage still reports WHICH step
+ * failed, which is the whole diagnostic value; the detail goes to the logs.
  */
 async function selfCheck(): Promise<Record<string, unknown>> {
     const stages: Record<string, unknown> = {
@@ -226,7 +231,8 @@ async function selfCheck(): Promise<Record<string, unknown>> {
         stages.catalog_ok = scenarios.length > 0;
     } catch (err) {
         stages.engine_loaded = false;
-        stages.engine_error = err instanceof Error ? err.message : String(err);
+        logger.error('engine load threw', { error: err instanceof Error ? err.message : String(err) });
+        stages.engine_error = 'see function logs';
     }
 
     // Can we read the linking table? Without it every chat looks unlinked.
@@ -237,10 +243,14 @@ async function selfCheck(): Promise<Record<string, unknown>> {
             .eq('channel', 'telegram');
         stages.identity_table = !error;
         stages.linked_telegram_chats = error ? null : count;
-        if (error) stages.identity_error = error.message;
+        if (error) {
+            logger.error('identity table read failed', { error: error.message });
+            stages.identity_error = 'see function logs';
+        }
     } catch (err) {
         stages.identity_table = false;
-        stages.identity_error = err instanceof Error ? err.message : String(err);
+        logger.error('identity table threw', { error: err instanceof Error ? err.message : String(err) });
+        stages.identity_error = 'see function logs';
     }
 
     // Is the webhook registered, and did Telegram's last call succeed?
@@ -260,7 +270,8 @@ async function selfCheck(): Promise<Record<string, unknown>> {
             stages.bot_username = me?.result?.username ?? null;
         } catch (err) {
             stages.webhook_registered = null;
-            stages.webhook_error = err instanceof Error ? err.message : String(err);
+            logger.error('getWebhookInfo threw', { error: err instanceof Error ? err.message : String(err) });
+            stages.webhook_error = 'see function logs';
         }
     }
 

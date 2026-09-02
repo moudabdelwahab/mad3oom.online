@@ -109,3 +109,17 @@ Evidence gathered during remediation, beyond the original audit:
   verbatim in subdomains/manage-subdomains.html and request-subdomain.html. Answer to
   the earlier question: option 3, genuinely broken. Both now use the same public anon
   key (role=anon, verified by decoding) already committed in create-subdomain.html.
+
+### Fidelity note update (PR #46, CodeQL finding)
+`sie-channel-telegram/index.ts` now carries a SECOND intentional divergence from
+the deployed source, on top of the GET admin gate: caught exception messages are
+no longer interpolated into the self-check JSON body. CodeQL flagged the response
+at the `stages` return as "information exposure through a stack trace" and it was
+correct — `stages.autoregister`, `.engine_error`, `.identity_error` and
+`.webhook_error` all carried `err.message`. Each now logs the detail and reports
+'see function logs'; the stage still names WHICH step failed. Log-only call sites
+(readSecret, isAdminCaller, the POST catch) were left untouched.
+
+So the earlier claim "mirror == deployed + the GET-gate edits ONLY" is superseded:
+it is now deployed + GET gate + this exposure fix. Both are deliberate and both
+are documented here.
