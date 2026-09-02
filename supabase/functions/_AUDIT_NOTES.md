@@ -79,3 +79,33 @@ Evidence gathered during remediation, beyond the original audit:
   redirect hosts are chatgpt.com / claude.ai / example.com, 2 unrevoked refresh
   tokens BOTH EXPIRING 2026-09-07, 0 unused authorization codes.
 - **Tenant subdomains**: teha.mad3oom.online, admins.mad3oom.online (2 more deleted).
+
+## Corrective pass (commit follows 318d216) — 2026-09-02
+
+- **Source fidelity PROVEN by exact diff** for all 7 mirrored/modified functions:
+  oauth-discovery, oauth-protected-resource, oauth-authorize (+_shared/rate-limit.ts),
+  mcp-oauth-callback (+_shared/mcp-crypto.ts), sie-channel-telegram. The two _shared
+  files are byte-identical to production; every other hunk is exactly the documented
+  origin-indirection or GET-gate change. Method: deployed source written to disk and
+  compared with `diff -u`; for sie the committed mirror was reverse-reconstructed and
+  matched the deployed bytes exactly.
+- **sie-channel-telegram entrypoint** renamed index.remote.ts -> index.ts to match the
+  deployed filename. Exactly one .ts entrypoint now exists.
+- **2FA bypass root cause**: profiles_update_policy is
+  `USING ((auth.uid() = id) OR is_main_admin() OR (super_user_id = auth.uid()))` with
+  NO WITH CHECK, and login.html signs in BEFORE challenging for the TOTP code. A
+  password-only attacker therefore held a valid session and could PATCH
+  two_factor_enabled=false directly. Closed by migrations/006 (trigger) +
+  supabase/functions/disable-2fa. NOT APPLIED / NOT DEPLOYED — the bypass is open
+  in production until both land. See docs/DEPLOYMENT-ORDER.md unit 1.
+- **2FA writers traced before touching RLS** — the only writers were browser-side:
+  customer-settings-modal.js (enable + disable), 2fa-service.js enable2FA/disable2FA
+  (used by customer-security-settings.html and admin-security-settings.html). No
+  server-side writer existed. Both security pages hide the setup button while 2FA is
+  on, so enrollment never runs from the guarded state; the trigger guards only the
+  enabled->changed direction and leaves enrollment alone.
+- **Placeholder anon key**: `vercel.json` holds only rewrites, the sole workflow is
+  CodeQL, and there is no build step, so REPLACE_WITH_YOUR_SUPABASE_ANON_KEY shipped
+  verbatim in subdomains/manage-subdomains.html and request-subdomain.html. Answer to
+  the earlier question: option 3, genuinely broken. Both now use the same public anon
+  key (role=anon, verified by decoding) already committed in create-subdomain.html.

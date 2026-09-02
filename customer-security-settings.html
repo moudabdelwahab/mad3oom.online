@@ -651,7 +651,11 @@
         document.getElementById('disableTwoFaBtn').onclick = async () => {
             if (!confirm('هل أنت متأكد من تعطيل التحقق بخطوتين؟ سيقلل هذا من أمان حسابك.')) return;
             
-            const { error } = await disable2FA(currentUser.id);
+            const proofCode = prompt('لتعطيل التحقق بخطوتين، أدخل الرمز الحالي من تطبيق المصادقة (أو أحد رموز الاستعادة):');
+            if (!proofCode) return;
+            const trimmedProof = proofCode.trim();
+            const proof = /^\d{6}$/.test(trimmedProof) ? { code: trimmedProof } : { recoveryCode: trimmedProof };
+            const { error } = await disable2FA(currentUser.id, proof);
             if (error) {
                 showAlert('فشل تعطيل التحقق بخطوتين', 'error');
             } else {

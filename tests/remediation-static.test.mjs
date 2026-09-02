@@ -88,9 +88,51 @@ test('both check-dns-status callers send an Authorization header', () => {
   }
 });
 
+test('check-dns-status and its callers form one atomic deployment unit', () => {
+  // The function requires a session; the callers must send one. If either side
+  // ships alone, DNS propagation polling breaks. This test fails if they drift.
+  const fnRequiresAuth = /supabase\.auth\.getUser\(jwt\)/.test(dns) && /غير مصرح/.test(dns);
+  assert.ok(fnRequiresAuth, 'the function requires authentication');
+
+  for (const page of ['subdomains/create-subdomain.html', 'subdomains/manage-subdomains.html']) {
+    const src = read(page);
+    const idx = src.indexOf('fetch(CHECK_DNS_FN_URL');
+    assert.ok(idx !== -1, `${page} still calls check-dns-status`);
+    const block = src.slice(idx, src.indexOf('});', idx) + 3);
+    assert.match(block, /Authorization.*Bearer/s, `${page} must send a bearer token`);
+    // …and the token must come from a real session, not a hard-coded value.
+    const before = src.slice(Math.max(0, idx - 400), idx);
+    assert.match(before, /await getAccessToken\(\)/, `${page} must take the token from the session`);
+  }
+});
+
+test('every page that calls check-dns-status can actually obtain a session', () => {
+  for (const page of ['subdomains/create-subdomain.html', 'subdomains/manage-subdomains.html']) {
+    const src = read(page);
+    const key = /SUPABASE_ANON_KEY\s*=\s*"([^"]+)"/.exec(src);
+    assert.ok(key, `${page} defines a Supabase key`);
+    assert.doesNotMatch(key[1], /^REPLACE_WITH/,
+      `${page} ships a placeholder key, so getSession() can never work`);
+    const [, payload] = key[1].split('.');
+    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString());
+    assert.equal(claims.role, 'anon', `${page} must use the public anon key, never a privileged one`);
+  }
+});
+
+test('no page anywhere still ships a placeholder Supabase key', () => {
+  assert.deepEqual(grepRepo('REPLACE_WITH_YOUR_SUPABASE_ANON_KEY'), []);
+});
+
 // ── Phase E: sie-channel-telegram GET authorization ─────────────────────────
 
-const sie = read('supabase/functions/sie-channel-telegram/index.remote.ts');
+const SIE_DIR = 'supabase/functions/sie-channel-telegram';
+const sie = read(`${SIE_DIR}/index.ts`);
+
+test('sie-channel-telegram has exactly one entrypoint, named as deployed', () => {
+  const files = readdirSync(path.join(ROOT, SIE_DIR)).filter((f) => f.endsWith('.ts'));
+  assert.deepEqual(files, ['index.ts'],
+    'the deployed function entrypoint is index.ts; a stray index.remote.ts would not deploy');
+});
 
 test('sie-channel-telegram GET is admin-gated', () => {
   assert.match(sie, /if \(req\.method === 'GET'\) \{\s*\n\s*if \(!await isAdminCaller\(req\)\)/,
@@ -140,11 +182,20 @@ test('verify-2fa scopes the secret lookup to the authenticated user', () => {
 
 // ── Phase B: the legacy plaintext WhatsApp path is untouched, on purpose ────
 
-test('whatsapp-graph-request legacy plaintext fallback is still present (Phase B is blocked)', () => {
-  const p = 'supabase/functions/whatsapp-graph-request/index.ts';
-  if (!existsSync(path.join(ROOT, p))) return; // not mirrored locally
-  assert.match(read(p), /TODO\(token-migration\)/,
-    'Phase B was deliberately not executed; removing this needs the usage evidence first');
+test('whatsapp-graph-request is mirrored so this assertion can actually run', () => {
+  assert.ok(existsSync(path.join(ROOT, 'supabase/functions/whatsapp-graph-request/index.ts')),
+    'a missing file must fail this test, not silently skip it');
+});
+
+test('the legacy plaintext token fallback is still present (Phase B stays blocked)', () => {
+  const src = read('supabase/functions/whatsapp-graph-request/index.ts');
+  assert.match(src, /TODO\(token-migration\)/);
+  // The behaviour itself, not just the comment: encrypted is preferred, and the
+  // plaintext column is still the fallback when it is absent.
+  assert.match(src, /if \(integration\.encrypted_access_token\) \{/);
+  assert.match(src, /accessToken = integration\.access_token;/);
+  assert.match(src, /usedLegacyPlaintextToken = true;/);
+  assert.match(src, /legacy_plaintext_token_used/);
 });
 
 // ── Phase F: domain migration readiness ─────────────────────────────────────
@@ -204,20 +255,106 @@ test('the operational migration checklist is committed alongside the code', () =
 
 // ── Deferred items must remain untouched ────────────────────────────────────
 
-test('explicitly deferred functions were not modified', () => {
-  const deferred = [
-    'supabase/functions/check-subdomain-status/index.ts',
-    'supabase/functions/send-ticket-email/index.ts',
-    'supabase/functions/landing-contact/index.ts',
-  ];
-  const changed = execFileSync('git', ['diff', '--name-only', 'HEAD'], { cwd: ROOT, encoding: 'utf8' })
-    .trim().split('\n').filter(Boolean);
-  for (const f of deferred) {
-    assert.ok(!changed.includes(f), `${f} is on the deferred list and must not change`);
+// The branch point. Everything this work added sits between BASE and HEAD, so
+// diffing that range is what actually proves a deferred file was left alone.
+// `git diff HEAD` compares the worktree to the last commit and is empty the
+// moment anything is committed — it proves nothing, which is what the previous
+// version of this test did.
+const BASE = (() => {
+  for (const ref of ['origin/main', 'main']) {
+    try {
+      return execFileSync('git', ['merge-base', 'HEAD', ref], { cwd: ROOT, encoding: 'utf8' }).trim();
+    } catch { /* try the next ref */ }
   }
+  throw new Error('cannot resolve the branch base; the deferred-files test cannot run');
+})();
+
+function changedSince(base, head = 'HEAD') {
+  return execFileSync('git', ['diff', '--name-only', `${base}..${head}`], { cwd: ROOT, encoding: 'utf8' })
+    .trim().split('\n').filter(Boolean);
+}
+
+const DEFERRED = [
+  'supabase/functions/check-subdomain-status/index.ts',
+  'supabase/functions/send-ticket-email/index.ts',
+  'supabase/functions/landing-contact/index.ts',
+];
+
+// The deferred files were ADDED by the audit commit as verbatim mirrors of what
+// production runs. The invariant to protect is therefore "unchanged since the
+// commit that mirrored it" — a range diff from the branch base would flag the
+// original addition and prove nothing about later edits.
+function addedIn(file) {
+  const commits = execFileSync('git', ['log', '--diff-filter=A', '--format=%H', '--', file],
+    { cwd: ROOT, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+  assert.ok(commits.length > 0, `${file} has an add commit`);
+  return commits[0]; // most recent add
+}
+
+test('the deferred files are byte-unchanged since they were mirrored', () => {
+  assert.ok(changedSince(BASE).length > 0, 'sanity: the branch must actually contain changes');
+  for (const f of DEFERRED) {
+    const changed = changedSince(addedIn(f));
+    assert.ok(!changed.includes(f),
+      `${f} is on the deferred list and has been edited since it was mirrored`);
+  }
+});
+
+test('that check would actually catch a modification to a deferred file', () => {
+  // Negative control. Pick a commit range that DOES touch a deferred file and
+  // confirm the same predicate rejects it, so a green result means something.
+  const anyDeferredEverTouched = execFileSync(
+    'git', ['log', '--format=%H', '--follow', '--', DEFERRED[0]],
+    { cwd: ROOT, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+  assert.ok(anyDeferredEverTouched.length > 0, 'the deferred file exists in history');
+  const introducing = anyDeferredEverTouched[anyDeferredEverTouched.length - 1];
+  const changed = changedSince(`${introducing}^`, introducing);
+  assert.ok(changed.includes(DEFERRED[0]),
+    'the predicate flags a range that really does touch the deferred file');
 });
 
 test('admin-fix-webhook-subscription is still not mirrored (its token stays out of git)', () => {
   assert.equal(existsSync(path.join(ROOT, 'supabase/functions/admin-fix-webhook-subscription')), false);
   assert.deepEqual(grepRepo('mad3oom-wa-fix'), []);
+});
+
+
+// ── 2FA bypass closure (behaviour proven by tests/sql/2fa-trigger.test.sql
+//    and tests/disable-2fa.test.mjs; these pin the wiring) ──────────────────
+
+test('the 2FA trigger migration exists and is scoped to the three columns', () => {
+  const sql = read('migrations/006_2fa_change_requires_challenge.sql');
+  assert.match(sql, /IF auth\.uid\(\) IS NULL THEN\s*\n\s*RETURN NEW;/,
+    'service_role and pg_cron must stay exempt');
+  assert.match(sql, /COALESCE\(OLD\.two_factor_enabled, false\) = false/,
+    'enrollment must stay unguarded');
+  for (const col of ['two_factor_enabled', 'two_factor_secret', 'recovery_codes']) {
+    assert.match(sql, new RegExp(`NEW\\.${col}\\s+IS DISTINCT FROM OLD\\.${col}`), col);
+  }
+  assert.match(sql, /BEFORE UPDATE ON public\.profiles/);
+});
+
+test('no browser code writes the 2FA columns directly any more', () => {
+  for (const f of ['2fa-service.js', 'customer-settings-modal.js',
+                   'customer-security-settings.html', 'admin-security-settings.html']) {
+    const src = read(f);
+    assert.doesNotMatch(src, /two_factor_enabled:\s*false/, `${f} still disables 2FA directly`);
+    assert.doesNotMatch(src, /two_factor_secret:\s*null/, `${f} still clears the secret directly`);
+  }
+});
+
+test('every disable path goes through the disable-2fa function with proof', () => {
+  assert.match(read('2fa-service.js'), /functions\.invoke\('disable-2fa'/);
+  assert.match(read('customer-settings-modal.js'), /functions\.invoke\('disable-2fa'/);
+  for (const page of ['customer-security-settings.html', 'admin-security-settings.html']) {
+    assert.match(read(page), /disable2FA\(currentUser\.id, proof\)/, `${page} must pass proof`);
+  }
+});
+
+test('disable-2fa refuses to act without a code and writes as the service role', () => {
+  const src = read('supabase/functions/disable-2fa/index.ts');
+  assert.match(src, /if \(!code && !recoveryCode\)/);
+  assert.match(src, /auth\/v1\/user/, 'identity must come from GoTrue');
+  assert.match(src, /Authorization: `Bearer \$\{SERVICE_ROLE_KEY\}`/);
+  assert.match(src, /two_factor_enabled: false, two_factor_secret: null, recovery_codes: null/);
 });
