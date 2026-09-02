@@ -8,6 +8,14 @@ const RESERVED = new Set([
 
 const NAME_REGEX = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
+// ── Root domain ──────────────────────────────────────────────────────────────
+// Migrating mad3oom.online → mad3oom.com. Default is the CURRENT value, so
+// deploying this file changes nothing until SUBDOMAIN_ROOT_DOMAIN is set.
+// Flipping it only affects NEW subdomains — every existing tenant subdomain
+// still needs its own Cloudflare record and Vercel domain on the new zone.
+// See docs/DOMAIN-MIGRATION.md.
+const ROOT_DOMAIN = Deno.env.get("SUBDOMAIN_ROOT_DOMAIN") ?? "mad3oom.online";
+
 function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
@@ -81,7 +89,7 @@ Deno.serve(async (req: Request) => {
 
   if (existingPending) {
     return jsonResponse({
-      error: `لديك طلب قيد المراجعة بالفعل (${existingPending.requested_name}.mad3oom.online). يرجى انتظار مراجعته قبل إرسال طلب جديد.`,
+      error: `لديك طلب قيد المراجعة بالفعل (${existingPending.requested_name}.${ROOT_DOMAIN}). يرجى انتظار مراجعته قبل إرسال طلب جديد.`,
     }, 409);
   }
 
@@ -127,7 +135,7 @@ Deno.serve(async (req: Request) => {
   await supabase.from("notifications").insert({
     user_id: userId,
     title: "تم استلام طلب النطاق الفرعي",
-    message: `تم استلام طلبك لإنشاء النطاق الفرعي ${rawName}.mad3oom.online، وسيتم مراجعته من الإدارة قريبًا.`,
+    message: `تم استلام طلبك لإنشاء النطاق الفرعي ${rawName}.${ROOT_DOMAIN}، وسيتم مراجعته من الإدارة قريبًا.`,
     type: "subdomain",
     link: null,
   }).then(() => {}).catch(() => {});
@@ -135,6 +143,6 @@ Deno.serve(async (req: Request) => {
   return jsonResponse({
     success: true,
     id: row.id,
-    message: `تم تسجيل طلبك لإنشاء النطاق الفرعي ${rawName}.mad3oom.online، وسيتم مراجعته قريبًا`,
+    message: `تم تسجيل طلبك لإنشاء النطاق الفرعي ${rawName}.${ROOT_DOMAIN}، وسيتم مراجعته قريبًا`,
   });
 });

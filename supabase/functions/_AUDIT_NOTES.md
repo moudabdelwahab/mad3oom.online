@@ -46,3 +46,36 @@ Format: slug | verify_jwt | own authz | tenancy | .online dep | finding
 - test-integration-connection | true | JWT, then an RLS-scoped read of external_integrations BEFORE the service_role read of the encrypted credentials | CORRECT (same good pattern as regenerate-api-token-secret) | none | Credentials AES-GCM with INTEGRATIONS_ENC_KEY. LOW finding: provider "webhook" POSTs to `creds.url` verbatim — owner-supplied SSRF from the platform's egress (can reach internal endpoints the function can see). Bounded to a URL the owner stored themselves.
 - sie-channel-telegram | false | POST path: Telegram secret_token verified inside the adapter (fails closed if BOT_TOKEN or WEBHOOK_SECRET missing -> 500). **GET path: NO AUTH AT ALL** | service_role, but writes carry an explicit user_id resolved from channel_identities | none | TWO FINDINGS: (1) the unauthenticated GET self-check returns bot_username, the registered webhook URL, Telegram's last error, pending count, and `linked_telegram_chats` (a live customer count) — anonymous operational info disclosure; (2) that same anonymous GET calls autoRegisterWebhook(), which re-points the Telegram webhook whenever channel_secrets.telegram_autoregister='true' — anyone who can GET the URL can trigger it during that window. Also a SUPPLY-CHAIN dependency: the engine is imported at deploy time from cdn.jsdelivr.net/gh/moudabdelwahab/sie pinned to commit 8252e577 (SHA-pinned = immutable, which is the right call).
 - test-mcp-server | true | JWT + `is_admin()` RPC; the connection row is `.eq("owner_id", userData.user.id)` (auto-created if absent) | admin-only; the mcp_servers row itself is read by id with NO owner filter, acceptable because the gate is admin | none | SAFE. 20 source files mirrored locally. Shares the legacy-bridge / mcp-arch tree with mcp-invoke-tool.
+
+---
+
+## Remediation pass (branch claude/mad3oom-tenancy-audit-erywvm) — 2026-09-02
+
+Evidence gathered during remediation, beyond the original audit:
+
+- **gemini-proxy**: 0 references anywhere in the repository (html/js/ts/sql/config).
+  Deleted from the repo; the production function still exists and must be removed
+  from the Supabase dashboard — that step is NOT done (no deploy in this pass).
+- **whatsapp-session**: 0 repository references. ALSO structurally stale — it inserts
+  `sent_via_api`, `api_key_id`, `session_message_type`, `within_24h_window` into
+  `public.messages`, and NONE of those four columns exist in the live schema, so its
+  logging insert always fails (caught). PHASE B NOT EXECUTED — see the report; the
+  missing evidence is invocation history beyond the 24h the logs API exposes.
+- **Edge function invocations, last 24h** (function_edge_logs, all sources):
+  mcp=192, oauth-token=12, resend-inbound-webhook=2, whatsapp-webhook=1. Nothing else.
+  -> resolves the earlier duplicate-webhook question: `resend-inbound-webhook` is the
+     LIVE handler; `inbound-email-webhook` received nothing.
+- **check-dns-status callers**: subdomains/create-subdomain.html and
+  subdomains/manage-subdomains.html, both sending NO Authorization header. Both were
+  updated in this pass to send the session token they already hold.
+- **sie-channel-telegram**: 0 repository references -> no frontend consumes the GET
+  self-check, so gating it admin-only breaks no caller.
+- **2FA flow**: enrollment (customer-settings-modal.js, 2fa-service.js) holds the new
+  secret client-side and stores it only AFTER verification; login (login.html:1385,
+  2fa-verify.html:178) passes the ALREADY-STORED profiles.two_factor_secret. So the
+  server can read the stored secret itself with no frontend change. 1 profile has
+  two_factor_enabled = true.
+- **OAuth live state**: 18 clients (all active), 0 with a .online redirect URI,
+  redirect hosts are chatgpt.com / claude.ai / example.com, 2 unrevoked refresh
+  tokens BOTH EXPIRING 2026-09-07, 0 unused authorization codes.
+- **Tenant subdomains**: teha.mad3oom.online, admins.mad3oom.online (2 more deleted).

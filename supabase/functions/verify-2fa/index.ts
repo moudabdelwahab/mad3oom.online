@@ -56,18 +56,51 @@ async function generateTOTP(secretBytes: Uint8Array, counter: number): Promise<s
   return (binCode % 1000000).toString().padStart(6, "0");
 }
 
-function getUserIdFromJWT(authHeader: string | null): string | null {
+/**
+ * Resolves the caller's id by asking GoTrue to validate the bearer token,
+ * instead of decoding the unverified `sub` claim out of the token. The
+ * gateway already enforces verify_jwt, so this is defence in depth — but the
+ * id now selects which stored TOTP secret we verify against, so it has to be
+ * the authenticated identity and not merely a well-formed one.
+ * Same shape as get-attachment-url; deliberately no supabase-js import, since
+ * this function has always been dependency-free.
+ */
+async function getAuthenticatedUserId(authHeader: string | null): Promise<string | null> {
   if (!authHeader) return null;
-  const token = authHeader.replace(/^Bearer\s+/i, "");
-  const parts = token.split(".");
-  if (parts.length !== 3) return null;
   try {
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(atob(base64));
-    return payload.sub || null;
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SERVICE_ROLE_KEY, Authorization: authHeader },
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    return user?.id || null;
   } catch {
     return null;
   }
+}
+
+/**
+ * The enrolled TOTP secret for this user, or null when 2FA is not yet set up.
+ *
+ * When this returns a secret it is the ONLY secret we will accept, and the
+ * caller-supplied `tempSecret` is ignored entirely. That is the fix: before,
+ * a user with 2FA enabled could hand us any secret plus a matching code and
+ * always get {verified:true}.
+ */
+async function getStoredTotpSecret(userId: string): Promise<string | null> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=two_factor_secret,two_factor_enabled`,
+    {
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    }
+  );
+  if (!res.ok) throw new Error("profile_lookup_failed");
+  const rows = await res.json();
+  const secret = rows?.[0]?.two_factor_secret;
+  return typeof secret === "string" && secret.length > 0 ? secret : null;
 }
 
 async function getRateLimit(userId: string) {
@@ -104,7 +137,7 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization");
-    const userId = getUserIdFromJWT(authHeader);
+    const userId = await getAuthenticatedUserId(authHeader);
 
     if (!userId) {
       return new Response(
@@ -115,7 +148,37 @@ Deno.serve(async (req) => {
 
     const { code, tempSecret } = await req.json();
 
-    if (!code || !tempSecret) {
+    if (!code) {
+      return new Response(
+        JSON.stringify({ verified: false, error: "Missing code" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ══════════ Which secret do we verify against? ══════════
+    // Enrolled user  -> the secret stored on their profile. The body is ignored.
+    // Not yet enrolled -> the enrollment secret they are holding client-side.
+    //
+    // The enrollment branch is safe because it grants nothing: the caller is
+    // proving possession of a secret that they are about to store on their own
+    // profile anyway (customer-settings-modal.js writes two_factor_secret right
+    // after this returns). Every path that gates *access* on {verified:true} —
+    // login.html and 2fa-verify.html — reaches the stored branch, because those
+    // users have two_factor_enabled = true by definition.
+    let storedSecret: string | null;
+    try {
+      storedSecret = await getStoredTotpSecret(userId);
+    } catch {
+      return new Response(
+        JSON.stringify({ verified: false, error: "Internal Server Error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const isEnrollment = storedSecret === null;
+    const secretToVerify = storedSecret ?? tempSecret;
+
+    if (!secretToVerify) {
       return new Response(
         JSON.stringify({ verified: false, error: "Missing code or secret" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -150,7 +213,7 @@ Deno.serve(async (req) => {
     }
 
     // ══════════ التحقق من الكود ══════════
-    const secretBytes = base32Decode(tempSecret);
+    const secretBytes = base32Decode(secretToVerify);
     const period = 30;
     const currentCounter = Math.floor(now / 1000 / period);
 
@@ -182,7 +245,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ verified }),
+      JSON.stringify({ verified, enrollment: isEnrollment || undefined }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

@@ -1,7 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const ROOT_DOMAIN = "mad3oom.online";
+// ── Root domain ──────────────────────────────────────────────────────────────
+// Migrating mad3oom.online → mad3oom.com. Default is the CURRENT value, so
+// deploying this file changes nothing until SUBDOMAIN_ROOT_DOMAIN is set.
+// Flipping it only affects NEW subdomains — every existing tenant subdomain
+// still needs its own Cloudflare record and Vercel domain on the new zone.
+// See docs/DOMAIN-MIGRATION.md.
+const ROOT_DOMAIN = Deno.env.get("SUBDOMAIN_ROOT_DOMAIN") ?? "mad3oom.online";
 const VERCEL_CNAME_TARGET = "cname.vercel-dns.com";
 
 const RESERVED = new Set([
