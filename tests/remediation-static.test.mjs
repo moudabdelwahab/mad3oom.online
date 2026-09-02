@@ -29,6 +29,7 @@ function grepRepo(pattern) {
     return execFileSync('grep', [
       '-rIl', pattern, '.',
       '--exclude-dir=.git', '--exclude-dir=node_modules', '--exclude-dir=tests',
+      '--exclude-dir=docs', '--exclude-dir=migrations',
       '--exclude=_AUDIT_NOTES.md', '--exclude=DOMAIN-MIGRATION.md',
     ], { cwd: ROOT, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
   } catch {

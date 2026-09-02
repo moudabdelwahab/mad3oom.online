@@ -125,3 +125,29 @@ UPDATE public.profiles SET whatsapp_enabled = false WHERE two_factor_enabled = f
 \echo 'PASS A6: cron-style bulk update allowed'
 \echo ''
 \echo 'ALL 2FA TRIGGER TESTS PASSED'
+
+\echo ''
+\echo '=== A6 / A7 guards (migrations 007 + 008) ==='
+-- 007/008 call these; the base model above does not define them.
+CREATE OR REPLACE FUNCTION public.is_main_admin() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
+CREATE TABLE IF NOT EXISTS public.user_reports (id uuid primary key, user_id uuid, status text, estimated_points int, actual_points int, approved_at timestamptz);
+CREATE TABLE IF NOT EXISTS public.user_wallets (user_id uuid primary key, total_points int, available_points int, pending_points int, is_pro boolean, membership_level text, pro_badge_earned_at timestamptz, updated_at timestamptz);
+CREATE TABLE IF NOT EXISTS public.reward_activity_logs (id serial primary key, user_id uuid, activity_type text, details jsonb);
+CREATE OR REPLACE FUNCTION public.calc_membership_level(p int) RETURNS text LANGUAGE sql IMMUTABLE AS $$ SELECT 'bronze'::text $$;
+\i migrations/007_guard_profile_role_change.sql
+\i migrations/008_guard_profile_points_change.sql
+DO $$ BEGIN
+  PERFORM set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111', true);
+  BEGIN
+    UPDATE public.profiles SET role='admin' WHERE id='11111111-1111-4111-8111-111111111111';
+    RAISE EXCEPTION 'FAIL: self role escalation still works';
+  EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'PASS A6: self role change blocked';
+  END;
+  BEGIN
+    UPDATE public.profiles SET points=999999 WHERE id='11111111-1111-4111-8111-111111111111';
+    RAISE EXCEPTION 'FAIL: self points manipulation still works';
+  EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'PASS A7: self points change blocked';
+  END;
+  PERFORM set_config('request.jwt.claim.sub','', true);
+END $$;
+\echo 'A6/A7 GUARDS VERIFIED'
