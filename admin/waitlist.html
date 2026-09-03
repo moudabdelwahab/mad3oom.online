@@ -82,6 +82,25 @@
             margin-top: 1.5rem;
             flex-wrap: wrap;
         }
+
+        .waitlist-credentials-value {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            direction: ltr;
+            unicode-bidi: isolate;
+            user-select: all;
+            word-break: break-all;
+        }
+
+        .waitlist-credentials-note {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.6rem;
+            background: rgba(234, 179, 8, 0.12);
+            border: 1px solid rgba(234, 179, 8, 0.35);
+            font-size: 0.85rem;
+            line-height: 1.7;
+            color: var(--color-text);
+        }
     </style>
 </head>
 <body>
@@ -144,6 +163,26 @@
                 <button type="button" class="btn btn-secondary btn-sm" id="detailCloseBtn">إغلاق</button>
                 <button type="button" class="btn btn-danger btn-sm" id="detailRejectBtn">رفض</button>
                 <button type="button" class="btn btn-success btn-sm" id="detailApproveBtn">موافقة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Created-account credentials (shown once, never stored) -->
+    <div class="waitlist-detail-modal" id="waitlistCredentialsModal">
+        <div class="waitlist-detail-content">
+            <div class="waitlist-detail-header">تم إنشاء الحساب</div>
+            <div class="waitlist-detail-row">
+                <span>البريد الإلكتروني</span>
+                <span class="waitlist-credentials-value" id="credEmail"></span>
+            </div>
+            <div class="waitlist-detail-row" id="credPasswordRow">
+                <span>كلمة المرور المؤقتة</span>
+                <span class="waitlist-credentials-value" id="credPassword"></span>
+            </div>
+            <div class="waitlist-credentials-note" id="credNote"></div>
+            <div class="waitlist-detail-footer">
+                <button type="button" class="btn btn-secondary btn-sm" id="credCopyBtn">نسخ البيانات</button>
+                <button type="button" class="btn btn-success btn-sm" id="credCloseBtn">تم</button>
             </div>
         </div>
     </div>

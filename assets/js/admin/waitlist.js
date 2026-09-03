@@ -115,27 +115,111 @@ function closeDetailModal() {
     activeEntryId = null;
 }
 
-async function updateEntryStatus(newStatus) {
+// الموافقة تُنشئ حسابًا حقيقيًا (auth user + profile) عبر edge function
+// تعمل بمفتاح service role، لأن العميل لا يملك صلاحية إنشاء الحسابات.
+// الرفض مجرد تحديث حالة، فيتم مباشرةً عبر RLS.
+async function approveEntry() {
     if (!activeEntryId) return;
+
+    const entryId = activeEntryId;
+    const approveBtn = document.getElementById('detailApproveBtn');
+    const originalLabel = approveBtn.textContent;
+    approveBtn.disabled = true;
+    approveBtn.textContent = 'جاري إنشاء الحساب...';
+
+    try {
+        const { data, error } = await supabase.functions.invoke('approve-waitlist-entry', {
+            body: { entry_id: entryId }
+        });
+
+        // أخطاء الـ edge function ترجع الرسالة داخل جسم الاستجابة، مش في error.message.
+        const failure = error ? (await readInvokeError(error)) || error.message : data?.error;
+        if (failure) {
+            showToast(failure || 'حدث خطأ أثناء إنشاء الحساب', 'error');
+            return;
+        }
+
+        logActivity('waitlist_review', `Approved waitlist entry ${entryId} (account ${data.user_id})`);
+        closeDetailModal();
+        await loadEntries();
+        showCredentials(data);
+    } finally {
+        approveBtn.disabled = false;
+        approveBtn.textContent = originalLabel;
+    }
+}
+
+async function readInvokeError(error) {
+    try {
+        const body = await error.context?.json();
+        return body?.error || null;
+    } catch {
+        return null;
+    }
+}
+
+async function rejectEntry() {
+    if (!activeEntryId) return;
+
+    const entryId = activeEntryId;
 
     const { error } = await supabase
         .from('waitlist_entries')
         .update({
-            status: newStatus,
+            status: 'rejected',
             reviewed_at: new Date().toISOString(),
             reviewed_by: user.id
         })
-        .eq('id', activeEntryId);
+        .eq('id', entryId);
 
     if (error) {
         showToast(error.message || 'حدث خطأ أثناء تحديث الحالة', 'error');
         return;
     }
 
-    logActivity('waitlist_review', `${newStatus === 'approved' ? 'Approved' : 'Rejected'} waitlist entry ${activeEntryId}`);
-    showToast(newStatus === 'approved' ? 'تمت الموافقة على الطلب' : 'تم رفض الطلب', 'success');
+    logActivity('waitlist_review', `Rejected waitlist entry ${entryId}`);
+    showToast('تم رفض الطلب', 'success');
     closeDetailModal();
     await loadEntries();
+}
+
+// كلمة المرور المؤقتة تُعرض مرة واحدة فقط ولا تُخزَّن، فلازم الأدمن ينسخها الآن.
+function showCredentials(result) {
+    document.getElementById('credEmail').textContent = result.email;
+
+    const passwordRow = document.getElementById('credPasswordRow');
+    const note = document.getElementById('credNote');
+
+    if (result.temp_password) {
+        passwordRow.style.display = 'flex';
+        document.getElementById('credPassword').textContent = result.temp_password;
+        note.textContent = 'الحساب مفعَّل ومؤكَّد بدون بريد تحقق. كلمة المرور المؤقتة دي بتظهر مرة واحدة بس ومش متخزنة في أي مكان — انسخها وابعتها للعميل ونبّهه يغيّرها بعد أول تسجيل دخول.';
+    } else {
+        passwordRow.style.display = 'none';
+        document.getElementById('credPassword').textContent = '';
+        note.textContent = result.already_approved
+            ? 'الطلب ده متوافق عليه قبل كده والحساب موجود بالفعل. لو العميل نسي كلمة المرور، استخدم "نسيت كلمة المرور".'
+            : 'البريد ده كان له حساب بالفعل، فتم ربط الطلب بالحساب القائم بدون تغيير كلمة مروره.';
+    }
+
+    document.getElementById('waitlistCredentialsModal').style.display = 'block';
+}
+
+function closeCredentialsModal() {
+    document.getElementById('waitlistCredentialsModal').style.display = 'none';
+}
+
+async function copyCredentials() {
+    const email = document.getElementById('credEmail').textContent;
+    const password = document.getElementById('credPassword').textContent;
+    const text = password ? `${email}\n${password}` : email;
+
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast('تم نسخ البيانات', 'success');
+    } catch {
+        showToast('تعذر النسخ، انسخ البيانات يدويًا', 'error');
+    }
 }
 
 function setupEventListeners() {
@@ -143,8 +227,14 @@ function setupEventListeners() {
     document.getElementById('waitlistStatusFilter').addEventListener('change', renderEntries);
 
     document.getElementById('detailCloseBtn').addEventListener('click', closeDetailModal);
-    document.getElementById('detailApproveBtn').addEventListener('click', () => updateEntryStatus('approved'));
-    document.getElementById('detailRejectBtn').addEventListener('click', () => updateEntryStatus('rejected'));
+    document.getElementById('detailApproveBtn').addEventListener('click', approveEntry);
+    document.getElementById('detailRejectBtn').addEventListener('click', rejectEntry);
+
+    document.getElementById('credCloseBtn').addEventListener('click', closeCredentialsModal);
+    document.getElementById('credCopyBtn').addEventListener('click', copyCredentials);
+    document.getElementById('waitlistCredentialsModal').addEventListener('click', (e) => {
+        if (e.target.id === 'waitlistCredentialsModal') closeCredentialsModal();
+    });
 
     document.getElementById('waitlistDetailModal').addEventListener('click', (e) => {
         if (e.target.id === 'waitlistDetailModal') closeDetailModal();
