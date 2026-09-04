@@ -10,7 +10,6 @@
         <!-- Settings Tabs Navigation -->
         <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--color-border); overflow-x: auto;">
             <button class="settings-tab-btn active" data-tab="general" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--color-text); border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">عام</button>
-            <button class="settings-tab-btn" data-tab="account" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--color-text); border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">الحساب</button>
             <button class="settings-tab-btn" data-tab="chatbot" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--color-text); border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">الشات بوت</button>
             <button class="settings-tab-btn" data-tab="security" style="padding: 0.75rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--color-text); border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;">الأمان</button>
         </div>
@@ -46,53 +45,10 @@
         </div>
 
         <!-- TAB 2: Account Settings -->
-        <div class="settings-tab-content" data-tab="account" style="display: none;">
-            <!-- Profile Section -->
-            <div style="margin-bottom: 2rem;">
-                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--color-text);">بيانات الحساب</h3>
-                
-                <!-- Full Name -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--color-text);">الاسم الكامل</label>
-                    <input type="text" id="fullNameInput" placeholder="أدخل اسمك الكامل" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; background: var(--color-background); color: var(--color-text); font-size: 1rem;">
-                </div>
-
-                <!-- Email (Read-only) -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--color-text);">البريد الإلكتروني</label>
-                    <input type="email" id="emailInput" readonly style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; background: var(--color-muted); color: var(--color-text-secondary); font-size: 1rem; cursor: not-allowed;">
-                </div>
-
-                <!-- Bio -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--color-text);">السيرة الذاتية</label>
-                    <textarea id="bioInput" placeholder="أخبرنا عن نفسك..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; background: var(--color-background); color: var(--color-text); font-size: 1rem; resize: vertical; min-height: 100px;"></textarea>
-                </div>
-
-                <!-- Save Profile Button -->
-                <button id="saveProfileBtn" style="width: 100%; padding: 0.75rem; background: var(--color-accent); color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">حفظ التغييرات</button>
-            </div>
-
-            <!-- Change Password Section -->
-            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--color-border);">
-                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--color-text);">تغيير كلمة المرور</h3>
-                
-                <!-- New Password -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--color-text);">كلمة المرور الجديدة</label>
-                    <input type="password" id="newPasswordInput" placeholder="أدخل كلمة مرور جديدة" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; background: var(--color-background); color: var(--color-text); font-size: 1rem;">
-                </div>
-
-                <!-- Confirm Password -->
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--color-text);">تأكيد كلمة المرور</label>
-                    <input type="password" id="confirmPasswordInput" placeholder="أعد إدخال كلمة المرور" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; background: var(--color-background); color: var(--color-text); font-size: 1rem;">
-                </div>
-
-                <!-- Change Password Button -->
-                <button id="changePasswordBtn" style="width: 100%; padding: 0.75rem; background: var(--color-accent); color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">تحديث كلمة المرور</button>
-            </div>
-        </div>
+        <!-- ملاحظة: تبويب "الحساب" (الاسم/النبذة/كلمة المرور) اتشال من هنا عمدًا.
+             نفس الحقول موجودة في قسم "الملف الشخصي" داخل لوحة العميل بمنطق
+             تحقق واحد فقط. وجود محرِّرين لنفس البيانات كان تكرارًا للمنطق
+             وارتباكًا للمستخدم عن مكان تعديل بياناته. -->
 
         <!-- TAB: Chatbot Mode Settings -->
         <div class="settings-tab-content" data-tab="chatbot" style="display: none;">

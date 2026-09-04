@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
+    <link rel="stylesheet" href="/assets/css/customer-dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script>
         (function() {
@@ -25,509 +26,479 @@
     <link rel="stylesheet" href="robot.css">
     <link rel="stylesheet" href="onboarding-assistant.css">
     <link rel="stylesheet" href="chat-widget.css">
-    <style>
-        /* ==================== Dark Glass Theme (موحّد مع لوحة الإدارة) ====================
-           نفس هوية الألوان المستخدمة في admin/tickets.html، مطبّقة هنا بغض النظر عن
-           data-theme المحفوظ في localStorage، لتوحيد شكل لوحة العميل بالكامل. */
-        :root,
-        :root[data-theme='light'],
-        :root[data-theme='dark']{
-            --color-primary:#00234A;
-            --color-primary-variant:#0077CC;
-            --color-accent:#0077CC;
-            --color-accent-2:#4DA3FF;
-            --color-background:#060B14;
-            --color-surface:#0D1622;
-            --color-surface-2:#121F30;
-            --color-text:#F3F6FB;
-            --color-text-secondary:#94A6C2;
-            --color-text-3:#5A6A82;
-            --color-muted:#101B2C;
-            --color-success:#22C58B;
-            --color-warning:#F5A623;
-            --color-danger:#FF6B6B;
-            --color-border:rgba(255,255,255,.09);
-            --color-nav-text:#FFFFFF;
-            --color-nav-border:rgba(255,255,255,.1);
-            --color-accent-hover:#0066AA;
-            --color-accent-dark:#0066AA;
-            --color-sidebar-bg:#050912;
-            --color-sidebar-active:#0077CC;
-            --input-bg:#0F1A2A;
-            --input-text:var(--color-text);
-            --modal-overlay:rgba(3,7,15,.75);
-            --shadow:0 30px 80px -25px rgba(0,8,25,.7);
-            --shadow-sm:0 10px 24px -12px rgba(0,8,25,.6);
-            --shadow-lg:0 25px 60px -20px rgba(0,8,25,.75);
-            --shadow-glow:0 0 50px -12px rgba(0,119,204,.5);
-        }
-        body{ position:relative; }
-        body::before{
-            content:"";position:fixed;inset:0;z-index:-2;
-            background:
-                radial-gradient(60rem 40rem at 90% -10%, rgba(0,119,204,.20), transparent 60%),
-                radial-gradient(50rem 35rem at -10% 30%, rgba(77,163,255,.10), transparent 55%),
-                var(--color-background);
-        }
-        body::after{
-            content:"";position:fixed;inset:0;z-index:-1;
-            background-image:radial-gradient(rgba(255,255,255,.045) 1px, transparent 1px);
-            background-size:32px 32px;
-            mask-image:radial-gradient(60rem 60rem at 70% 0%, black, transparent 70%);
-            opacity:.6;
-        }
-        .gradient-text{background:linear-gradient(90deg,#8FC7FF,#4DA3FF,#B9DCFF);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
-        .eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.75rem;font-weight:700;color:#8FC7FF;background:rgba(0,119,204,.14);border:1px solid rgba(77,163,255,.25);padding:.3rem .85rem;border-radius:99px;margin-bottom:.6rem;}
-        .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--color-accent-2);box-shadow:0 0 8px var(--color-accent-2);}
-        .glass-card{background:rgba(255,255,255,.04);border:1px solid var(--color-border);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:1.1rem;}
-
-        /* ==================== Pills / Badges (موحّدة مع لوحة الإدارة) ==================== */
-        .pill{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:99px;font-size:.68rem;font-weight:700;white-space:nowrap;}
-        .pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
-        .status-open{background:rgba(77,163,255,.14);color:#6EB4FF;}
-        .status-in-progress{background:rgba(245,166,35,.16);color:#F5A623;}
-        .status-resolved{background:rgba(34,197,139,.16);color:#22C58B;}
-        .status-confirmed{background:rgba(34,197,139,.16);color:#22C58B;}
-        .status-rejected{background:rgba(255,107,107,.16);color:#FF6B6B;}
-        .priority-high{background:rgba(255,107,107,.14);color:#FF6B6B;}
-        .priority-medium{background:rgba(245,166,35,.14);color:#F5A623;}
-        .priority-low{background:rgba(148,166,194,.14);color:#94A6C2;}
-        .cat-whatsapp{background:rgba(37,211,102,.14);color:#25D366;}
-        .cat-tickets{background:rgba(77,163,255,.14);color:#4DA3FF;}
-        .cat-subscription{background:rgba(180,95,224,.14);color:#B45FE0;}
-        .cat-login{background:rgba(255,107,107,.14);color:#FF6B6B;}
-        .cat-other{background:rgba(148,166,194,.14);color:#94A6C2;}
-        .tag-chip{display:inline-flex;align-items:center;gap:.25rem;padding:.12rem .5rem;border-radius:99px;font-size:.65rem;font-weight:700;}
-        .sla-ok{background:rgba(34,197,139,.14);color:#22C58B;}
-        .sla-warn{background:rgba(245,166,35,.16);color:#F5A623;}
-        .sla-info{background:rgba(77,163,255,.14);color:#8FC7FF;}
-        .profile-section { background: var(--color-surface); padding: 2rem; border-radius: 1rem; box-shadow: var(--shadow-sm); margin-top: 2rem; border: 1px solid var(--color-border); }
-        .nav-tabs { display: none; }
-        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem; }
-        .modal.active { display: flex; }
-        .modal-content { background: var(--color-surface); padding: 2.5rem; border-radius: 1.25rem; width: 100%; max-width: 90%; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: var(--shadow); border: 1px solid var(--color-border); color: var(--color-text); }
-        .confirm-modal-content { max-width: 60%; text-align: center; padding: 2rem; }
-        .confirm-modal-icon { font-size: 3.5rem; color: #EF4444; margin-bottom: 1rem; }
-        .confirm-modal-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--color-text); }
-        .confirm-modal-text { color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 2rem; }
-        .confirm-modal-actions { display: flex; gap: 1rem; justify-content: center; }
-        .btn-danger { background: #EF4444; color: white; border: none; }
-        .btn-danger:hover { background: #DC2626; }
-        .wallet-info { position: relative; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--color-muted); border-radius: 2rem; cursor: pointer; }
-        .wallet-tooltip { display: none; position: absolute; top: 100%; right: 0; background: var(--color-surface); color: var(--color-text); padding: 0.75rem 1rem; border-radius: 0.5rem; box-shadow: var(--shadow); border: 1px solid var(--color-border); margin-top: 0.5rem; white-space: nowrap; z-index: 100; }
-        .wallet-info:hover .wallet-tooltip { display: block; }
-        .reply-item { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; background: var(--color-muted); }
-        .reply-admin { border-right: 4px solid var(--color-accent); }
-        .reply-user { border-right: 4px solid var(--color-success); }
-        .avatar-upload { position: relative; width: 100px; height: 100px; margin: 0 auto 2rem; }
-        .avatar-preview { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-accent); }
-        .avatar-edit-btn { position: absolute; bottom: 0; right: 0; background: var(--color-accent); color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--color-surface); }
-        .ticket-card {
-            position: relative;
-            cursor: pointer;
-            transition: all 0.18s ease;
-            padding: 1rem 1.1rem;
-            margin-bottom: 0.5rem;
-            border-radius: 0.85rem;
-            border: 1px solid transparent;
-            background: rgba(255,255,255,.025);
-        }
-        .ticket-card:hover {
-            background: rgba(255,255,255,.05);
-            border-color: rgba(77,163,255,.25);
-        }
-        .ticket-card.selected {
-            background: rgba(0,119,204,.12);
-            border-color: var(--color-accent-2);
-            box-shadow: 0 0 0 1px rgba(77,163,255,.25) inset;
-        }
-        .ticket-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; gap: .5rem; }
-        .ticket-num { color: var(--color-text-secondary); font-size: .74rem; font-weight: 700; }
-        .ticket-title { font-size: .93rem; font-weight: 700; line-height: 1.35; margin-bottom: .5rem; color: var(--color-text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .ticket-badges-row { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .4rem; }
-        .ticket-footer-row { display: flex; justify-content: space-between; align-items: center; font-size: .72rem; color: var(--color-text-secondary); }
-        .ticket-sla-hint { font-size: .72rem; color: #8FC7FF; margin-top: .35rem; display: flex; align-items: center; gap: .3rem; }
-        .view-ticket-btn { margin-top: 1rem; width: 100%; }
-        .menu-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; color: var(--color-text); text-decoration: none; transition: all 0.2s; font-size: 0.9rem; font-weight: 600; }
-        .menu-item:hover { background: var(--hover-bg); color: var(--color-accent); }
-
-        /* ==================== Badges ==================== */
-        .badge-card { padding: 1.75rem 1.25rem; text-align: center; position: relative; transition: transform .2s ease, box-shadow .2s ease; }
-        .badge-card.locked { opacity: 0.45; filter: grayscale(1); }
-        .badge-card.earned { border-color: rgba(34,197,139,.35); box-shadow: 0 0 0 1px rgba(34,197,139,.15) inset; }
-        .badge-card.earned:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.25), 0 0 0 1px rgba(34,197,139,.2) inset; }
-        .badge-card .badge-icon { font-size: 2.75rem; margin-bottom: .85rem; line-height: 1; }
-        .badge-card h3 { margin-bottom: .4rem; font-size: 1rem; }
-        .badge-card p { font-size: .82rem; color: var(--color-text-secondary); line-height: 1.5; }
-        .badge-card .badge-earned-date { margin-top: .7rem; font-size: .72rem; color: #22C58B; font-weight: 700; }
-        .badge-card .badge-locked-tag { position: absolute; top: .7rem; left: .7rem; font-size: .7rem; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; position: relative; }
-        .status-dot::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; animation: statusPulse 2s infinite; }
-        .status-online { background-color: #22c55e; }
-        .status-online::after { background-color: #22c55e; }
-        @keyframes statusPulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
-
-        /* ==================== Tickets Toolbar (بحث + فلترة) ==================== */
-        .tickets-toolbar { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; padding: .85rem 1rem; margin-bottom: 1rem; }
-        .tickets-toolbar .filter-select, .tickets-toolbar .search-input {
-            padding: .55rem .9rem; border: 1px solid var(--color-border); border-radius: .65rem;
-            background: var(--input-bg); color: var(--color-text); font-family: inherit; font-size: .85rem;
-        }
-        .tickets-toolbar .search-input { min-width: 200px; flex: 1; }
-        .tickets-toolbar .filter-select:focus, .tickets-toolbar .search-input:focus { outline: 2px solid rgba(77,163,255,.4); border-color: var(--color-accent-2); }
-
-        /* ==================== Attachments / Tags / Activity Timeline ==================== */
-        .attachments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .6rem; }
-        .attachment-item { border: 1px solid var(--color-border); border-radius: .6rem; overflow: hidden; background: rgba(255,255,255,.03); display: flex; flex-direction: column; text-decoration: none; color: var(--color-text); transition: border-color .15s ease; }
-        .attachment-item:hover { border-color: rgba(77,163,255,.35); }
-        .attachment-item img { width: 100%; height: 90px; object-fit: cover; display: block; background: rgba(255,255,255,.04); }
-        .attachment-item .att-file-icon { width: 100%; height: 90px; display: flex; align-items: center; justify-content: center; color: #8FC7FF; }
-        .attachment-item .att-name { font-size: .68rem; padding: .4rem .5rem; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .activity-timeline { display: flex; flex-direction: column; gap: 0; }
-        .activity-item { display: flex; gap: .6rem; padding: .55rem 0; font-size: .8rem; border-bottom: 1px solid var(--color-border); }
-        .activity-item:last-child { border-bottom: none; }
-        .activity-icon { width: 26px; height: 26px; min-width: 26px; border-radius: 50%; background: rgba(77,163,255,.14); color: #8FC7FF; display: flex; align-items: center; justify-content: center; }
-        .activity-text { color: var(--color-text); line-height: 1.5; }
-        .activity-time { color: var(--color-text-3); font-size: .72rem; margin-top: .1rem; }
-
-        /* ==================== Rating Widget ==================== */
-        .rating-widget .star-rating { display: flex; gap: .3rem; font-size: 1.6rem; color: var(--color-text-3); cursor: pointer; }
-        .rating-widget .star-rating .star { transition: color .15s ease, transform .1s ease; }
-        .rating-widget .star-rating .star:hover, .rating-widget .star-rating .star.active { color: #F5A623; transform: scale(1.08); }
-        .rating-widget textarea { width: 100%; margin-top: .75rem; padding: .7rem .85rem; border-radius: .6rem; border: 1px solid var(--color-border); background: var(--input-bg); color: var(--color-text); font-family: inherit; min-height: 60px; resize: vertical; }
-        .rating-submitted { display: flex; align-items: center; gap: .5rem; color: #22C58B; font-weight: 700; font-size: .88rem; }
-
-        /* ==================== Tickets Layout (Responsive) ====================
-           تحويل القياسات الثابتة بالبكسل لوحدات نسبية تتجاوب مع حجم الشاشة:
-           - grid-template-columns: من "400px 1fr" إلى "34% 1fr"
-           - height: من "600px" إلى "75vh"
-           هذا هو نفس السبب الذي كان يجعل الصفحة تظهر بعرض زائد (وتحتاج
-           scroll أفقي) حتى مع تكبير المتصفح على 100%. */
-        .tickets-layout {
-            display: grid;
-            grid-template-columns: 34% 1fr;
-            gap: 1.5rem;
-            height: 75vh;
-        }
-        @media (max-width: 768px) {
-            #mobileMenuToggle { display: flex !important; }
-            .tickets-layout {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-            .tickets-toolbar { flex-direction: column; align-items: stretch; }
-        }
-        /* Tooltip hover styles for wallet info in sidebar */
-        #walletInfo:hover #pointsTooltip { display: block !important; }
-
-        /* Notification Styles */
-        #notificationMenu {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            animation: slideDown 0.2s ease-out;
-        }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .notification-item {
-            border-bottom: 1px solid var(--color-border);
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .notification-item:hover {
-            background: var(--hover-bg);
-        }
-        .notification-item.unread {
-            background: rgba(0, 119, 204, 0.05);
-        }
-        .notification-item.unread::before {
-            content: '';
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: var(--color-accent);
-            border-radius: 50%;
-            margin-left: 8px;
-        }
-    </style>
 </head>
-<body>
+<body class="customer-shell">
     <!-- Floating Chat Widget - يتم إنشاؤه ديناميكياً بواسطة chat-widget.js -->
 
     <div id="sidebar-container"></div>
 
-    <main class="admin-main">
-        <header class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div>
-                <h1 id="welcomeUser" style="font-weight: 800; font-size: 1.75rem; margin: 0;">مرحباً بك</h1>
-                <p style="color: var(--color-text-secondary); margin-top: 0.5rem;">لوحة تحكم العميل</p>
+    <main class="admin-main" id="customerMain">
+
+        <!-- ============================ نظرة عامة ============================ -->
+        <section id="overviewTabContent" class="tab-content active" aria-labelledby="overviewHeading">
+            <div class="page-topbar">
+                <div>
+                    <span class="eyebrow"><span class="dot"></span>لوحة العميل</span>
+                    <h1 id="overviewHeading">مرحباً بك</h1>
+                    <p class="page-subtitle" id="overviewWelcomeMessage">جاري تحميل بيانات حسابك…</p>
+                </div>
+                <div class="page-topbar-actions">
+                    <button type="button" class="btn btn-secondary" id="overviewRefreshBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                        تحديث
+                    </button>
+                    <button type="button" class="btn btn-primary" data-action="open-create-ticket">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        تذكرة جديدة
+                    </button>
+                </div>
             </div>
-            <button class="menu-toggle" id="mobileMenuToggle" style="display: none; background: var(--color-primary); color: white; border: none; padding: 0.5rem; border-radius: 0.5rem; cursor: pointer;">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-            </button>
-        </header>
 
-        <div class="nav-tabs">
-            <div class="nav-tab active" data-tab="tickets">تذاكري</div>
-            <div class="nav-tab" data-tab="rewards">المكافآت والنقاط</div>
-            <div class="nav-tab" data-tab="badges">الشارات</div>
-            <div class="nav-tab" data-tab="profile" id="profileTab">الملف الشخصي</div>
-            <div class="nav-tab" onclick="window.location.href='/chat-customer.html'">المحادثة الفورية</div>
-        </div>
+            <!-- مؤشرات سريعة -->
+            <div class="kpi-grid" id="overviewKpis" aria-live="polite">
+                <div class="kpi"><div class="skeleton skeleton-line" style="width:55%"></div><div class="skeleton skeleton-line" style="height:1.8rem;width:35%"></div></div>
+                <div class="kpi"><div class="skeleton skeleton-line" style="width:55%"></div><div class="skeleton skeleton-line" style="height:1.8rem;width:35%"></div></div>
+                <div class="kpi"><div class="skeleton skeleton-line" style="width:55%"></div><div class="skeleton skeleton-line" style="height:1.8rem;width:35%"></div></div>
+                <div class="kpi"><div class="skeleton skeleton-line" style="width:55%"></div><div class="skeleton skeleton-line" style="height:1.8rem;width:35%"></div></div>
+            </div>
 
-        <!-- Tickets Tab -->
-        <div id="ticketsTabContent" class="tab-content active">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <!-- ما يحتاج انتباهك -->
+            <section class="panel" id="overviewAlertsPanel" hidden>
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            يحتاج انتباهك
+                        </h2>
+                        <p class="panel-subtitle">أشياء مهمة في حسابك الآن — كل بند هنا مبني على حالة حسابك الفعلية</p>
+                    </div>
+                </div>
+                <div class="alert-list" id="overviewAlertsList"></div>
+            </section>
+
+            <div class="split-grid" style="margin-bottom: var(--sp-5);">
+                <!-- حالة الحساب والخدمات -->
+                <section class="panel" aria-labelledby="accountStatusHeading">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title" id="accountStatusHeading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                حالة الحساب والخدمات
+                            </h2>
+                            <p class="panel-subtitle">ما يفعّله فريق الإدارة لحسابك يظهر هنا مباشرة</p>
+                        </div>
+                    </div>
+                    <div id="accountStatusBody">
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line"></div>
+                    </div>
+                </section>
+
+                <!-- توفّر الدعم -->
+                <section class="panel" aria-labelledby="supportPanelHeading">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title" id="supportPanelHeading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                توفّر فريق الدعم
+                            </h2>
+                            <p class="panel-subtitle">ساعات العمل وأهداف زمن الرد كما حددها فريق الإدارة</p>
+                        </div>
+                    </div>
+                    <div id="supportAvailabilityBody">
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line"></div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="split-grid">
+                <!-- حالة النظام -->
+                <section class="panel" aria-labelledby="systemStatusHeading">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title" id="systemStatusHeading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                                حالة النظام
+                            </h2>
+                            <p class="panel-subtitle">قبل ما تفتح تذكرة، اطّلع على حالة الخدمات الحالية</p>
+                        </div>
+                    </div>
+                    <div id="systemStatusBody">
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line"></div>
+                    </div>
+                </section>
+
+                <!-- آخر النشاط -->
+                <section class="panel" aria-labelledby="recentActivityHeading">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title" id="recentActivityHeading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                                آخر النشاط على حسابك
+                            </h2>
+                            <p class="panel-subtitle">سجل عملياتك — يساعدك تكتشف أي نشاط غير متوقع</p>
+                        </div>
+                    </div>
+                    <div id="recentActivityBody">
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line"></div>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <!-- ============================ التذاكر ============================ -->
+        <section id="ticketsTabContent" class="tab-content" aria-labelledby="ticketsHeading">
+            <div class="page-topbar">
                 <div>
                     <span class="eyebrow"><span class="dot"></span>Support Tickets</span>
-                    <h1 style="margin: 0;">تذاكري</h1>
+                    <h1 id="ticketsHeading">تذاكري</h1>
+                    <p class="page-subtitle" id="ticketsLimitHint"></p>
                 </div>
-                <button id="openCreateTicket" class="btn btn-primary">إنشاء تذكرة جديدة</button>
-            </div>
-            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="stat-card glass-card" style="padding: 1.15rem 1.25rem; text-align: center;">
-                    <p style="color: var(--color-text-secondary); margin-bottom: 0.4rem; font-size: .82rem; font-weight: 600;">إجمالي التذاكر</p>
-                    <p id="userTotalTickets" style="font-size: 1.8rem; font-weight: 800; color: #8FC7FF;">0</p>
-                </div>
-                <div class="stat-card glass-card" style="padding: 1.15rem 1.25rem; text-align: center;">
-                    <p style="color: var(--color-text-secondary); margin-bottom: 0.4rem; font-size: .82rem; font-weight: 600;">المفتوحة</p>
-                    <p id="userOpenTickets" style="font-size: 1.8rem; font-weight: 800; color: #6EB4FF;">0</p>
-                </div>
-                <div class="stat-card glass-card" style="padding: 1.15rem 1.25rem; text-align: center;">
-                    <p style="color: var(--color-text-secondary); margin-bottom: 0.4rem; font-size: .82rem; font-weight: 600;">قيد المعالجة</p>
-                    <p id="userInProgressTickets" style="font-size: 1.8rem; font-weight: 800; color: var(--color-warning);">0</p>
-                </div>
-                <div class="stat-card glass-card" style="padding: 1.15rem 1.25rem; text-align: center;">
-                    <p style="color: var(--color-text-secondary); margin-bottom: 0.4rem; font-size: .82rem; font-weight: 600;">المحلولة</p>
-                    <p id="userResolvedTickets" style="font-size: 1.8rem; font-weight: 800; color: var(--color-success);">0</p>
+                <div class="page-topbar-actions">
+                    <button type="button" id="openCreateTicket" class="btn btn-primary" data-action="open-create-ticket">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        إنشاء تذكرة جديدة
+                    </button>
                 </div>
             </div>
 
-            <!-- Search & Filter Toolbar -->
-            <div class="tickets-toolbar glass-card">
-                <select id="ticketFilterStatus" class="filter-select">
-                    <option value="all">كل الحالات</option>
-                    <option value="open">مفتوحة</option>
-                    <option value="in-progress">قيد المعالجة</option>
-                    <option value="resolved">محلولة</option>
-                </select>
-                <input type="text" id="ticketSearchInput" class="search-input" placeholder="ابحث بعنوان التذكرة أو رقمها...">
+            <div class="kpi-grid" id="ticketKpis">
+                <button type="button" class="kpi is-clickable kpi--accent" data-ticket-filter="all">
+                    <span class="kpi-label">إجمالي التذاكر</span>
+                    <span class="kpi-value" id="userTotalTickets">—</span>
+                </button>
+                <button type="button" class="kpi is-clickable kpi--info" data-ticket-filter="open">
+                    <span class="kpi-label">المفتوحة</span>
+                    <span class="kpi-value" id="userOpenTickets">—</span>
+                </button>
+                <button type="button" class="kpi is-clickable kpi--warning" data-ticket-filter="in-progress">
+                    <span class="kpi-label">قيد المعالجة</span>
+                    <span class="kpi-value" id="userInProgressTickets">—</span>
+                </button>
+                <button type="button" class="kpi is-clickable kpi--success" data-ticket-filter="resolved">
+                    <span class="kpi-label">تم حلها</span>
+                    <span class="kpi-value" id="userResolvedTickets">—</span>
+                </button>
             </div>
 
-            <!-- Tickets Layout: Vertical List + Details Panel (نسب متجاوبة، التعريف في .tickets-layout أعلى) -->
             <div class="tickets-layout">
-                <!-- Tickets List (Right Side) -->
-                <div class="glass-card" style="overflow: hidden; display: flex; flex-direction: column;">
-                    <div style="padding: 1rem; border-bottom: 1px solid var(--color-border); background: rgba(255,255,255,.02);">
-                        <h3 style="margin: 0; font-size: 1rem;">قائمة التذاكر</h3>
-                    </div>
-                    <div id="userTicketsList" style="overflow-y: auto; flex: 1; padding: 0.5rem;">
-                        <!-- Tickets will be loaded here -->
-                    </div>
-                </div>
-                
-                <!-- Ticket Details Panel (Left Side) -->
-                <div id="ticketDetailsPanel" class="glass-card" style="overflow: hidden; display: flex; flex-direction: column;">
-                    <div id="ticketDetailsContent" style="flex: 1; overflow-y: auto; padding: 2rem; display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary);">
-                        <div style="text-align: center;">
-                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 1rem; opacity: .5;">
-                                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                            <p style="font-size: 1.1rem; font-weight: 600; color: var(--color-text);">اختر تذكرة لعرض التفاصيل</p>
-                            <p style="font-size: 0.9rem; margin-top: 0.5rem;">انقر على أي تذكرة من القائمة</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Rewards Tab -->
-        <div id="rewardsTabContent" class="tab-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <h1 style="margin: 0;">المكافآت والنقاط</h1>
-                <div id="proBadgeInfo" style="display: none; align-items: center; gap: 0.5rem; background: linear-gradient(45deg, #f59e0b, #ef4444); color: white; padding: 0.5rem 1rem; border-radius: 2rem; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
-                    <span>PRO MEMBER</span>
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                </div>
-            </div>
-
-            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                <div class="stat-card glass-card" style="padding: 1.5rem; text-align: center;">
-                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">إجمالي النقاط</p>
-                    <p id="rewardsTotalPoints" style="font-size: 2rem; font-weight: 800; color: #fbbf24;">0</p>
-                </div>
-                <div class="stat-card glass-card" style="padding: 1.5rem; text-align: center;">
-                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">النقاط المتاحة</p>
-                    <p id="rewardsAvailablePoints" style="font-size: 2rem; font-weight: 800; color: var(--color-success);">0</p>
-                </div>
-                <div class="stat-card glass-card" style="padding: 1.5rem; text-align: center;">
-                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">نقاط قيد المراجعة</p>
-                    <p id="rewardsPendingPoints" style="font-size: 2rem; font-weight: 800; color: var(--color-accent);">0</p>
-                </div>
-                <div class="stat-card glass-card" style="padding: 1.5rem; text-align: center;">
-                    <p style="color: var(--color-text-secondary); margin-bottom: 0.5rem;">مستوى العضوية</p>
-                    <p id="rewardsMemberLevel" style="font-size: 1.5rem; font-weight: 800; margin-top: 0.5rem;">عضو جديد</p>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-top: 2rem;">
-                <!-- New Report Form -->
-                <div class="glass-card" style="padding: 2rem;">
-                    <h2 style="margin-bottom: 1.5rem;">تقديم بلاغ عن مشكلة</h2>
-                    <form id="newReportForm">
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem;">نوع المشكلة</label>
-                            <select id="reportProblemType" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--color-border); background: var(--color-muted); color: var(--color-text);">
-                                <option value="bug">خطأ برمجى (Bug)</option>
-                                <option value="security">ثغرة أمنية</option>
-                                <option value="suggestion">اقتراح تحسين</option>
-                                <option value="other">أخرى</option>
+                <div class="tickets-list-panel">
+                    <div class="tickets-list-head">
+                        <div class="toolbar">
+                            <label class="visually-hidden" for="ticketSearchInput">بحث في التذاكر</label>
+                            <input type="search" id="ticketSearchInput" class="search-input" placeholder="ابحث بالعنوان أو رقم التذكرة…">
+                            <label class="visually-hidden" for="ticketFilterStatus">تصفية حسب الحالة</label>
+                            <select id="ticketFilterStatus" class="filter-select">
+                                <option value="all">كل الحالات</option>
+                                <option value="open">مفتوحة</option>
+                                <option value="in-progress">قيد المعالجة</option>
+                                <option value="resolved">تم الحل</option>
                             </select>
                         </div>
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem;">درجة الخطورة</label>
-                            <select id="reportSeverity" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--color-border); background: var(--color-muted); color: var(--color-text);">
-                                <option value="low">منخفضة (10 نقاط)</option>
-                                <option value="medium">متوسطة (25 نقطة)</option>
-                                <option value="high">عالية (50 نقطة)</option>
-                                <option value="critical">حرجة (100 نقطة)</option>
-                            </select>
-                        </div>
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: block; margin-bottom: 0.5rem;">العنوان</label>
-                            <input type="text" id="reportTitle" placeholder="عنوان مختصر للمشكلة" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--color-border); background: var(--color-muted); color: var(--color-text);">
-                        </div>
-                        <div style="margin-bottom: 1.5rem;">
-                            <label style="display: block; margin-bottom: 0.5rem;">الوصف</label>
-                            <textarea id="reportDescription" rows="4" placeholder="اشرح المشكلة بالتفصيل وكيفية تكرارها..." style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--color-border); background: var(--color-muted); color: var(--color-text); resize: vertical;"></textarea>
-                        </div>
-                        <div style="background: var(--color-muted); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                            <span>النقاط المتوقعة:</span>
-                            <span id="estimatedReportPoints" style="font-weight: 700; color: var(--color-accent);">10 نقاط</span>
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">إرسال البلاغ</button>
-                    </form>
+                        <p class="panel-subtitle" id="ticketsResultCount" aria-live="polite"></p>
+                    </div>
+                    <div id="userTicketsList" class="tickets-list-scroll" role="list"></div>
                 </div>
 
-                <!-- Reports List -->
-                <div class="glass-card" style="padding: 2rem;">
-                    <h2 style="margin-bottom: 1.5rem;">بلاغاتي السابقة</h2>
-                    <div id="reportsListContainer" style="max-height: 70vh; overflow-y: auto; padding-left: 0.5rem;">
-                        <p class="empty-state">جاري تحميل البلاغات...</p>
-                    </div>
+                <div class="ticket-details-panel">
+                    <div id="ticketDetailsContent" class="ticket-details-scroll"></div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Badges Tab -->
-        <div id="badgesTabContent" class="tab-content">
-            <div style="margin-bottom: 2rem; display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+        <!-- ============================ الإشعارات ============================ -->
+        <section id="notificationsTabContent" class="tab-content" aria-labelledby="notificationsHeading">
+            <div class="page-topbar">
                 <div>
-                    <h1>شاراتي</h1>
-                    <p style="color: var(--color-text-secondary);">اجمع الشارات من خلال تفاعلك مع منصة مدعوم</p>
+                    <span class="eyebrow"><span class="dot"></span>Notifications</span>
+                    <h1 id="notificationsHeading">الإشعارات</h1>
+                    <p class="page-subtitle">كل التحديثات على تذاكرك واشتراكاتك وحسابك في مكان واحد</p>
                 </div>
-                <div id="badgesProgressSummary" style="font-size:0.9rem; color: var(--color-text-secondary);"></div>
+                <div class="page-topbar-actions">
+                    <button type="button" class="btn btn-secondary" id="markAllNotificationsBtn">تحديد الكل كمقروء</button>
+                </div>
             </div>
-            <div id="badgesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem;">
-                <p class="empty-state">جاري تحميل الشارات...</p>
-            </div>
-        </div>
 
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="toolbar">
+                        <label class="visually-hidden" for="notificationFilter">تصفية الإشعارات</label>
+                        <select id="notificationFilter" class="filter-select">
+                            <option value="all">كل الإشعارات</option>
+                            <option value="unread">غير المقروءة فقط</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="notificationsList"></div>
+            </section>
+        </section>
 
-        <!-- Profile Tab -->
-        <div id="profileTabContent" class="tab-content">
-            <div class="profile-section">
-                <h2>تعديل الملف الشخصي</h2>
-                <form id="profileForm" style="margin-top: 1.5rem;">
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem;">الاسم الكامل</label>
-                        <input type="text" id="profileFullName" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;">
+        <!-- ============================ المكافآت ============================ -->
+        <section id="rewardsTabContent" class="tab-content" aria-labelledby="rewardsHeading">
+            <div class="page-topbar">
+                <div>
+                    <span class="eyebrow"><span class="dot"></span>Rewards</span>
+                    <h1 id="rewardsHeading">المكافآت والنقاط</h1>
+                    <p class="page-subtitle">اكسب نقاطاً بالإبلاغ عن المشاكل التي تواجهها في المنصة</p>
+                </div>
+                <div class="page-topbar-actions">
+                    <div id="proBadgeInfo" style="display:none; align-items:center; gap:.5rem; background:linear-gradient(45deg,#f59e0b,#ef4444); color:#fff; padding:.5rem 1rem; border-radius:2rem; font-weight:700; font-size:.85rem;">
+                        <span>⭐</span><span>عضو Pro</span>
                     </div>
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem;">رقم الهاتف</label>
-                        <input type="tel" id="profilePhone" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;">
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">حفظ التغييرات</button>
-                </form>
-                <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--color-border);">
-                <h2>الأمان والتحقق بخطوتين (2FA)</h2>
-                <p style="margin: 1rem 0; color: var(--color-text-secondary); font-size: 0.9rem;">قم بتعزيز أمان حسابك من خلال تفعيل التحقق بخطوتين وإدارة الأجهزة الموثوقة.</p>
-                <a href="/customer-security-settings.html" class="btn btn-primary" style="display: inline-block; text-decoration: none; text-align: center; background: #667eea; margin-bottom: 1.5rem; width: 100%;">إعدادات الأمان المتقدمة</a>
-                
-                <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--color-border);">
-                <h2>تغيير كلمة المرور</h2>
-                <form id="changePasswordForm" style="margin-top: 1.5rem;">
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem;">كلمة المرور الجديدة</label>
-                        <input type="password" id="newPassword" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;">
-                    </div>
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem;">تأكيد كلمة المرور</label>
-                        <input type="password" id="confirmPassword" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;">
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">تحديث كلمة المرور</button>
-                </form>
+                </div>
             </div>
-        </div>
+
+            <div class="kpi-grid">
+                <div class="kpi">
+                    <span class="kpi-label">إجمالي النقاط</span>
+                    <span class="kpi-value" id="rewardsTotalPoints" style="color:#fbbf24;">0</span>
+                </div>
+                <div class="kpi kpi--success">
+                    <span class="kpi-label">النقاط المتاحة</span>
+                    <span class="kpi-value" id="rewardsAvailablePoints">0</span>
+                </div>
+                <div class="kpi kpi--info">
+                    <span class="kpi-label">قيد المراجعة</span>
+                    <span class="kpi-value" id="rewardsPendingPoints">0</span>
+                </div>
+                <div class="kpi">
+                    <span class="kpi-label">مستوى العضوية</span>
+                    <span class="kpi-value" id="rewardsMemberLevel" style="font-size:1.35rem;">عضو جديد</span>
+                </div>
+            </div>
+
+            <div class="split-grid">
+                <section class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">إبلاغ عن مشكلة</h2>
+                            <p class="panel-subtitle">كل بلاغ مقبول يضيف نقاطاً لرصيدك بعد مراجعة الفريق</p>
+                        </div>
+                    </div>
+                    <form id="newReportForm" novalidate>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="reportProblemType">نوع المشكلة</label>
+                                <select id="reportProblemType" class="form-control">
+                                    <option value="bug">خطأ برمجي</option>
+                                    <option value="ui">مشكلة في الواجهة</option>
+                                    <option value="performance">بطء في الأداء</option>
+                                    <option value="security">ثغرة أمنية</option>
+                                    <option value="other">أخرى</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="reportSeverity">درجة الخطورة</label>
+                                <select id="reportSeverity" class="form-control">
+                                    <option value="low">منخفضة</option>
+                                    <option value="medium" selected>متوسطة</option>
+                                    <option value="high">عالية</option>
+                                    <option value="critical">حرجة</option>
+                                </select>
+                            </div>
+                            <div class="form-field is-full">
+                                <label for="reportTitle">عنوان المشكلة</label>
+                                <input type="text" id="reportTitle" class="form-control" placeholder="عنوان مختصر وواضح">
+                            </div>
+                            <div class="form-field is-full">
+                                <label for="reportDescription">الوصف وخطوات التكرار</label>
+                                <textarea id="reportDescription" class="form-control" rows="4" placeholder="اشرح المشكلة وكيفية تكرارها خطوة بخطوة…"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions" style="align-items:center; justify-content:space-between;">
+                            <p class="field-hint" style="margin:0;">النقاط المتوقعة: <strong id="estimatedReportPoints" style="color:var(--color-accent-2);">10 نقاط</strong></p>
+                            <button type="submit" class="btn btn-primary">إرسال البلاغ</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">بلاغاتي</h2>
+                            <p class="panel-subtitle">حالة كل بلاغ أرسلته والنقاط الممنوحة عليه</p>
+                        </div>
+                    </div>
+                    <div id="reportsListContainer" style="max-height:32rem; overflow-y:auto;"></div>
+                </section>
+            </div>
+        </section>
+
+        <!-- ============================ الشارات ============================ -->
+        <section id="badgesTabContent" class="tab-content" aria-labelledby="badgesHeading">
+            <div class="page-topbar">
+                <div>
+                    <span class="eyebrow"><span class="dot"></span>Achievements</span>
+                    <h1 id="badgesHeading">الشارات</h1>
+                    <p class="page-subtitle" id="badgesProgressSummary">إنجازاتك على المنصة</p>
+                </div>
+            </div>
+            <div id="badgesGrid" class="badges-grid"></div>
+        </section>
+
+        <!-- ============================ الملف الشخصي ============================ -->
+        <section id="profileTabContent" class="tab-content" aria-labelledby="profileHeading">
+            <div class="page-topbar">
+                <div>
+                    <span class="eyebrow"><span class="dot"></span>Account</span>
+                    <h1 id="profileHeading">الملف الشخصي</h1>
+                    <p class="page-subtitle">بياناتك الشخصية وإعدادات الدخول إلى حسابك</p>
+                </div>
+            </div>
+
+            <div class="split-grid">
+                <section class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">البيانات الشخصية</h2>
+                            <p class="panel-subtitle">تظهر هذه البيانات لفريق الدعم عند التعامل مع تذاكرك</p>
+                        </div>
+                    </div>
+                    <form id="profileForm" novalidate>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="profileFullName">الاسم الكامل</label>
+                                <input type="text" id="profileFullName" class="form-control" autocomplete="name">
+                                <p class="field-error u-hidden" id="profileFullNameError"></p>
+                            </div>
+                            <div class="form-field">
+                                <label for="profilePhone">رقم الهاتف</label>
+                                <input type="tel" id="profilePhone" class="form-control" autocomplete="tel" inputmode="tel">
+                                <p class="field-error u-hidden" id="profilePhoneError"></p>
+                            </div>
+                            <div class="form-field is-full">
+                                <label for="profileEmail">البريد الإلكتروني</label>
+                                <input type="email" id="profileEmail" class="form-control" disabled autocomplete="email">
+                                <p class="field-hint">لتغيير البريد الإلكتروني، افتح تذكرة دعم — التغيير يتم بمراجعة من الفريق حفاظاً على أمان حسابك.</p>
+                            </div>
+                            <div class="form-field is-full">
+                                <label for="profileBio">نبذة عنك</label>
+                                <textarea id="profileBio" class="form-control" rows="3" maxlength="500" placeholder="نبذة مختصرة (اختياري)"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="profileSaveBtn">حفظ التغييرات</button>
+                            <button type="button" class="btn btn-secondary" id="profileResetBtn">تراجع</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">كلمة المرور</h2>
+                            <p class="panel-subtitle">استخدم كلمة مرور قوية لا تستخدمها في مواقع أخرى</p>
+                        </div>
+                    </div>
+                    <form id="changePasswordForm" novalidate>
+                        <div class="form-grid">
+                            <div class="form-field is-full">
+                                <label for="newPassword">كلمة المرور الجديدة</label>
+                                <input type="password" id="newPassword" class="form-control" autocomplete="new-password">
+                                <p class="field-hint">8 أحرف على الأقل، وتحتوي على حرف ورقم.</p>
+                                <p class="field-error u-hidden" id="newPasswordError"></p>
+                            </div>
+                            <div class="form-field is-full">
+                                <label for="confirmPassword">تأكيد كلمة المرور</label>
+                                <input type="password" id="confirmPassword" class="form-control" autocomplete="new-password">
+                                <p class="field-error u-hidden" id="confirmPasswordError"></p>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="passwordSaveBtn">تحديث كلمة المرور</button>
+                        </div>
+                    </form>
+                </section>
+            </div>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">الأمان والوصول</h2>
+                        <p class="panel-subtitle">إعدادات الحماية المفعّلة على حسابك</p>
+                    </div>
+                    <a class="panel-link" href="/customer-security-settings.html">إعدادات الأمان الكاملة</a>
+                </div>
+                <div id="profileSecuritySummary">
+                    <div class="skeleton skeleton-line"></div>
+                    <div class="skeleton skeleton-line"></div>
+                </div>
+            </section>
+        </section>
     </main>
 
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteConfirmModal" class="modal">
-        <div class="modal-content confirm-modal-content">
-            <div class="confirm-modal-icon">⚠️</div>
-            <h2 class="confirm-modal-title">تأكيد الحذف</h2>
-            <p class="confirm-modal-text" id="deleteConfirmText">هل أنت متأكد من رغبتك في حذف هذه التذكرة؟ هذا الإجراء لا يمكن التراجع عنه.</p>
-            <div class="confirm-modal-actions">
-                <button id="cancelDeleteBtn" class="btn btn-secondary close-modal" style="flex: 1;">إلغاء</button>
-                <button id="confirmDeleteBtn" class="btn btn-danger" style="flex: 1;">حذف الآن</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Create Ticket Modal -->
-    <div id="createTicketModal" class="modal">
+    <!-- ============================ نافذة إنشاء تذكرة ============================ -->
+    <div id="createTicketModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="createTicketTitle">
         <div class="modal-content">
-            <h2>إنشاء تذكرة جديدة</h2>
-            <form id="userCreateTicketForm" style="margin-top: 1.5rem;">
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem;">العنوان</label>
-                    <input type="text" id="userTicketTitle" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem;" required>
+            <div class="modal-head">
+                <div>
+                    <h2 id="createTicketTitle">إنشاء تذكرة دعم جديدة</h2>
+                    <p class="panel-subtitle" id="createTicketHint">اشرح مشكلتك بوضوح ليتمكن الفريق من مساعدتك أسرع</p>
                 </div>
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label style="display: block; margin-bottom: 0.5rem;">الوصف</label>
-                    <textarea id="userTicketDescription" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 0.5rem; min-height: 100px;" required></textarea>
+                <button type="button" class="modal-close close-modal" aria-label="إغلاق">&times;</button>
+            </div>
+
+            <div id="createTicketBlockedNotice" class="alert-list u-hidden" style="margin-bottom: var(--sp-4);"></div>
+
+            <form id="userCreateTicketForm" novalidate>
+                <div class="form-grid">
+                    <div class="form-field is-full">
+                        <label for="userTicketTitle">عنوان المشكلة *</label>
+                        <input type="text" id="userTicketTitle" class="form-control" required maxlength="120">
+                        <p class="field-error u-hidden" id="userTicketTitleError"></p>
+                    </div>
+                    <div class="form-field">
+                        <label for="userTicketCategory">تصنيف المشكلة</label>
+                        <select id="userTicketCategory" class="form-control">
+                            <option value="other">أخرى</option>
+                            <option value="tickets">الدعم الفني</option>
+                            <option value="whatsapp">خدمة الواتساب</option>
+                            <option value="subscription">الاشتراكات والفواتير</option>
+                            <option value="login">تسجيل الدخول والحساب</option>
+                        </select>
+                        <p class="field-hint">التصنيف الصحيح يوصل تذكرتك للفريق المختص أسرع.</p>
+                    </div>
+                    <div class="form-field">
+                        <label for="userTicketPriority">الأهمية لديك</label>
+                        <select id="userTicketPriority" class="form-control">
+                            <option value="low">منخفضة</option>
+                            <option value="medium" selected>متوسطة</option>
+                            <option value="high">عالية</option>
+                        </select>
+                        <p class="field-hint">الأولوية النهائية يحددها فريق الدعم بعد المراجعة.</p>
+                    </div>
+                    <div class="form-field is-full">
+                        <label for="userTicketDescription">وصف المشكلة *</label>
+                        <textarea id="userTicketDescription" class="form-control" rows="5" required placeholder="اذكر ما حدث، ومتى، وما الخطوات التي أدّت إليه…"></textarea>
+                        <p class="field-error u-hidden" id="userTicketDescriptionError"></p>
+                    </div>
+                    <div class="form-field is-full" id="ticketAttachmentsField" hidden>
+                        <label for="userTicketAttachments">مرفقات (اختياري)</label>
+                        <label class="file-drop" for="userTicketAttachments">
+                            <span>اضغط لاختيار صور أو ملفات توضّح المشكلة</span>
+                        </label>
+                        <input type="file" id="userTicketAttachments" class="visually-hidden" multiple accept="image/*,.pdf,.txt,.log,.csv">
+                        <div class="file-chip-list" id="ticketAttachmentsChips"></div>
+                        <p class="field-hint">حتى 5 ملفات، بحد أقصى 5 ميجابايت لكل ملف.</p>
+                    </div>
                 </div>
-                <!--
-                    تم إخفاء اختيار الأولوية من واجهة العميل: الأولوية أصبحت تُحدَّد فقط
-                    من قبل الإدارة بعد مراجعة التذكرة (انظر admin/tickets.js + tickets-service.js).
-                    السيليكت اتسابت هنا (مخفي) بقيمة افتراضية "medium" فقط عشان أي كود JS
-                    حالي بيقرأ userTicketPriority.value وقت الإرسال يفضل شغال من غير ما نكسره.
-                    ينفع تتشال العنصر ده نهائياً بعد التأكد إن customer-dashboard.js
-                    مش بيعتمد على وجوده.
-                -->
-                <div class="form-group" style="display: none;">
-                    <label>الأولوية</label>
-                    <select id="userTicketPriority" class="form-control">
-                        <option value="low">منخفضة</option>
-                        <option value="medium" selected>متوسطة</option>
-                        <option value="high">عالية</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 1rem;">
-                    <button type="button" class="btn btn-secondary close-modal" style="flex: 1;">إلغاء</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 2;">إرسال التذكرة</button>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="submitTicketBtn" style="flex:2;">إرسال التذكرة</button>
+                    <button type="button" class="btn btn-secondary close-modal" style="flex:1;">إلغاء</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script src="chat-service.js" defer></script>
-<script type="module" src="robot.js"></script>
-<script type="module" src="chat-widget.js"></script>
+    <script type="module" src="robot.js"></script>
+    <script type="module" src="chat-widget.js"></script>
     <script type="module" src="customer-dashboard.js"></script>
 </body>
 </html>

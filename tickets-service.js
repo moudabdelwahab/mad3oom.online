@@ -84,8 +84,15 @@ export async function fetchUserTickets(filters = {}) {
  * ملاحظة: الأولوية لم تعد تُحدَّد من قبل العميل. يتم تخزينها بقيمة افتراضية
  * ('medium') عند الإنشاء، والإدارة فقط هي من تُحدّد/تُعدّل الأولوية الفعلية
  * لاحقاً عبر updateTicketPriority أدناه (من لوحة الإدارة).
+ *
+ * التصنيف (category) يُرسَل وقت الإنشاء فقط. العميل ممنوع من تعديله بعد كده
+ * على مستوى قاعدة البيانات (trg_enforce_customer_ticket_update)، فمحاولة
+ * تعديله بـUPDATE من واجهة العميل هترفض — الأدمن هو الوحيد اللي يقدر يغيّره
+ * لاحقاً من لوحة الإدارة. القيم هنا نفس قيم فلتر التصنيف في admin/tickets.html.
  */
-export async function createTicket({ title, description, priority, image_url = null }) {
+const TICKET_CATEGORIES = ['whatsapp', 'tickets', 'subscription', 'login', 'other'];
+
+export async function createTicket({ title, description, priority, category = null, image_url = null }) {
     const user = await getCurrentUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -98,6 +105,8 @@ export async function createTicket({ title, description, priority, image_url = n
     const validPriorities = ['low', 'medium', 'high'];
     const finalPriority = validPriorities.includes(priority) ? priority : 'medium';
 
+    const finalCategory = TICKET_CATEGORIES.includes(category) ? category : null;
+
     const { data, error } = await supabase
         .from('tickets')
         .insert({
@@ -105,6 +114,7 @@ export async function createTicket({ title, description, priority, image_url = n
             title: title.trim(),
             description: description.trim(),
             priority: finalPriority,
+            ...(finalCategory ? { category: finalCategory } : {}),
             image_url,
             status: 'open'
         })
