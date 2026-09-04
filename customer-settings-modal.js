@@ -1,5 +1,4 @@
 import { supabase } from './api-config.js';
-import { updateProfile, updatePassword } from './auth-client.js';
 import { renderChatbotModeInto } from './assets/js/chatbot-mode-selector.js';
 
 let currentUser = null;
@@ -54,9 +53,6 @@ async function setupSettingsModalLogic() {
 
     // Setup general settings
     setupGeneralSettings();
-
-    // Setup account settings
-    setupAccountSettings();
 
     // Setup security settings
     await setupSecuritySettings();
@@ -121,15 +117,10 @@ async function loadUserProfile() {
 
         if (error) throw error;
 
-        if (profile) {
-            document.getElementById('fullNameInput').value = profile.full_name || '';
-            document.getElementById('emailInput').value = profile.email || currentUser.email || '';
-            document.getElementById('bioInput').value = profile.bio || '';
-
-            // Update 2FA UI based on profile
-            if (profile.two_factor_enabled) {
-                updateTwoFaUI(true);
-            }
+        // حقول الاسم/النبذة/البريد انتقلت لقسم "الملف الشخصي" في لوحة العميل،
+        // فما بقي هنا هو حالة التحقق بخطوتين فقط.
+        if (profile?.two_factor_enabled) {
+            updateTwoFaUI(true);
         }
     } catch (err) {
         console.error('Error loading profile:', err);
@@ -235,90 +226,6 @@ function setupGeneralSettings() {
 /**
  * Setup account settings (profile and password)
  */
-function setupAccountSettings() {
-    const saveProfileBtn = document.getElementById('saveProfileBtn');
-    const changePasswordBtn = document.getElementById('changePasswordBtn');
-
-    // Save profile handler
-    if (saveProfileBtn) {
-        saveProfileBtn.addEventListener('click', async () => {
-            const fullName = document.getElementById('fullNameInput').value.trim();
-            const bio = document.getElementById('bioInput').value.trim();
-
-            if (!fullName) {
-                showAlert('يرجى إدخال الاسم الكامل', 'error');
-                return;
-            }
-
-            saveProfileBtn.disabled = true;
-            saveProfileBtn.textContent = 'جاري الحفظ...';
-
-            try {
-                const { error } = await updateProfile({
-                    full_name: fullName,
-                    bio: bio
-                });
-
-                if (error) {
-                    throw error;
-                }
-
-                showAlert('تم حفظ البيانات بنجاح', 'success');
-            } catch (err) {
-                console.error('Error saving profile:', err);
-                showAlert(err.message || 'فشل حفظ البيانات', 'error');
-            } finally {
-                saveProfileBtn.disabled = false;
-                saveProfileBtn.textContent = 'حفظ التغييرات';
-            }
-        });
-    }
-
-    // Change password handler
-    if (changePasswordBtn) {
-        changePasswordBtn.addEventListener('click', async () => {
-            const newPassword = document.getElementById('newPasswordInput').value;
-            const confirmPassword = document.getElementById('confirmPasswordInput').value;
-
-            if (!newPassword || !confirmPassword) {
-                showAlert('يرجى إدخال كلمة المرور الجديدة والتأكيد', 'error');
-                return;
-            }
-
-            if (newPassword !== confirmPassword) {
-                showAlert('كلمات المرور غير متطابقة', 'error');
-                return;
-            }
-
-            if (newPassword.length < 8) {
-                showAlert('يجب أن تكون كلمة المرور 8 أحرف على الأقل', 'error');
-                return;
-            }
-
-            changePasswordBtn.disabled = true;
-            changePasswordBtn.textContent = 'جاري التحديث...';
-
-            try {
-                const { error } = await updatePassword(newPassword);
-
-                if (error) {
-                    throw error;
-                }
-
-                document.getElementById('newPasswordInput').value = '';
-                document.getElementById('confirmPasswordInput').value = '';
-                showAlert('تم تحديث كلمة المرور بنجاح', 'success');
-            } catch (err) {
-                console.error('Error changing password:', err);
-                showAlert(err.message || 'فشل تحديث كلمة المرور', 'error');
-            } finally {
-                changePasswordBtn.disabled = false;
-                changePasswordBtn.textContent = 'تحديث كلمة المرور';
-            }
-        });
-    }
-}
-
 /**
  * Setup security settings (2FA and trusted devices)
  */

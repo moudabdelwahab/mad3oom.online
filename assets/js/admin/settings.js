@@ -121,6 +121,7 @@ async function loadAllSettings() {
             document.getElementById('allowTicketAttachments').checked = settings.allow_ticket_attachments !== false;
             document.getElementById('allowTicketRating').checked = settings.allow_ticket_rating !== false;
             document.getElementById('showSupportOnlineStatus').checked = settings.show_support_online_status !== false;
+            document.getElementById('supportWhatsappNumber').value = settings.support_whatsapp || '';
         }
 
         // 6b. Load Registration Mode (Open Registration / Waitlist)
@@ -837,7 +838,9 @@ function setupEventListeners() {
             customer_welcome_message: document.getElementById('customerWelcomeMessage').value,
             allow_ticket_attachments: document.getElementById('allowTicketAttachments').checked,
             allow_ticket_rating: document.getElementById('allowTicketRating').checked,
-            show_support_online_status: document.getElementById('showSupportOnlineStatus').checked
+            show_support_online_status: document.getElementById('showSupportOnlineStatus').checked,
+            // أرقام فقط: لوحة العميل بتبني منها رابط wa.me مباشرة
+            support_whatsapp: (document.getElementById('supportWhatsappNumber').value || '').replace(/[^\d]/g, '')
         };
         saveAdvancedSetting('customer_experience', settings);
     });

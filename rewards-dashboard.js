@@ -7,6 +7,7 @@ import {
     getProProgressInfo,
     SEVERITY_POINTS 
 } from './rewards-service.js';
+import { ui } from './ui-service.js';
 
 export async function initRewardsDashboard(user) {
     if (!user || !user.id) return;
@@ -228,49 +229,10 @@ function getStatusColor(status) {
 }
 
 // ==================== دالة الإشعار ====================
+// تستخدم طبقة التنبيهات المشتركة (ui-service) بدل تنبيه خاص بهذه الوحدة،
+// عشان كل رسائل لوحة العميل يكون شكلها وسلوكها واحد.
 function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    
-    const colors = {
-        success: '#4ade80',
-        error: '#f87171',
-        warning: '#fbbf24',
-        info: '#CFE8FF'
-    };
-    
-    const textColors = {
-        success: '#1C2333',
-        error: '#ffffff',
-        warning: '#1C2333',
-        info: '#1C2333'
-    };
-    
-    const color = colors[type] || colors.info;
-    const textColor = textColors[type] || textColors.info;
-    
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        background: ${color};
-        color: ${textColor};
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        z-index: 10000;
-        animation: slideInNotification 0.3s ease;
-        max-width: 400px;
-        font-weight: 600;
-    `;
-    
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    // إزالة الإشعار بعد 3 ثوان
-    setTimeout(() => {
-        notification.style.animation = 'slideOutNotification 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    ui.showToast(message, type);
 }
 
 export default {

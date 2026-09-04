@@ -1,209 +1,255 @@
 /**
- * UI Service for professional notifications and modals
- * This service provides a way to show toasts and custom modals
+ * UI Service — طبقة موحّدة للتنبيهات والحوارات في لوحة العميل.
+ *
+ * الهدف: مصدر واحد لكل رسائل النجاح/الخطأ/التأكيد بدل alert() المتناثرة،
+ * بحيث تكون كلها بنفس الهوية البصرية وبنفس السلوك (RTL، لوحة مفاتيح، ARIA).
+ *
+ * ملاحظة أمان: كل النصوص الواردة تُحقن عبر textContent وليس innerHTML، لأن
+ * أغلبها بيجي من قاعدة البيانات (عناوين تذاكر، رسائل خطأ من السيرفر).
  */
+
+const PALETTE = {
+    success: { color: '#22C58B', icon: '✓' },
+    error:   { color: '#FF6B6B', icon: '✕' },
+    info:    { color: '#4DA3FF', icon: 'ℹ' },
+    warning: { color: '#F5A623', icon: '!' }
+};
+
+function injectAnimations() {
+    if (document.getElementById('ui-service-animations')) return;
+    const style = document.createElement('style');
+    style.id = 'ui-service-animations';
+    style.textContent = `
+        @keyframes uiToastIn  { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes uiToastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-12px); opacity: 0; } }
+        @keyframes uiDialogIn { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @media (prefers-reduced-motion: reduce) {
+            #ui-toast-container > *, .ui-dialog { animation: none !important; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+/** يبني غلاف الحوار (overlay + بطاقة) مع إدارة التركيز ومفتاح Escape. */
+function buildDialog({ type = 'info', title, message, actions }) {
+    injectAnimations();
+    const { color, icon } = PALETTE[type] || PALETTE.info;
+    const lastFocused = document.activeElement;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'ui-dialog-overlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; z-index: 10000; display: flex;
+        align-items: center; justify-content: center; padding: 1.25rem;
+        background: rgba(3,7,15,.72); backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px); direction: rtl;
+    `;
+
+    const card = document.createElement('div');
+    card.className = 'ui-dialog';
+    card.setAttribute('role', 'alertdialog');
+    card.setAttribute('aria-modal', 'true');
+    card.style.cssText = `
+        background: var(--color-surface, #0D1622); color: var(--color-text, #F3F6FB);
+        width: 100%; max-width: 26rem; border-radius: 1.15rem; overflow: hidden;
+        border: 1px solid var(--color-border, rgba(255,255,255,.09));
+        box-shadow: 0 30px 80px -25px rgba(0,8,25,.75);
+        animation: uiDialogIn .22s cubic-bezier(.34,1.4,.64,1);
+        font-family: inherit;
+    `;
+
+    const accent = document.createElement('div');
+    accent.style.cssText = `height: 4px; background: ${color};`;
+
+    const body = document.createElement('div');
+    body.style.cssText = 'padding: 1.75rem 1.5rem 1.5rem; text-align: center;';
+
+    const iconEl = document.createElement('div');
+    iconEl.setAttribute('aria-hidden', 'true');
+    iconEl.textContent = icon;
+    iconEl.style.cssText = `
+        width: 3.25rem; height: 3.25rem; margin: 0 auto 1rem; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; font-weight: 700; color: ${color};
+        background: ${color}1F; border: 1px solid ${color}3D;
+    `;
+
+    const titleEl = document.createElement('h3');
+    titleEl.textContent = title || '';
+    titleEl.style.cssText = 'margin: 0 0 .5rem; font-size: 1.15rem; font-weight: 800; line-height: 1.4;';
+    card.setAttribute('aria-label', title || '');
+
+    const msgEl = document.createElement('p');
+    msgEl.textContent = message || '';
+    msgEl.style.cssText = `
+        margin: 0 0 1.5rem; line-height: 1.7; font-size: .92rem;
+        color: var(--color-text-secondary, #94A6C2); white-space: pre-wrap;
+    `;
+
+    const actionsEl = document.createElement('div');
+    actionsEl.style.cssText = 'display: flex; gap: .65rem;';
+
+    body.append(iconEl, titleEl, msgEl, actionsEl);
+    card.append(accent, body);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    let closed = false;
+    const close = (result, settle) => {
+        if (closed) return;
+        closed = true;
+        document.removeEventListener('keydown', onKeydown, true);
+        overlay.style.transition = 'opacity .18s ease';
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 180);
+        if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+        settle(result);
+    };
+
+    let onKeydown = () => {};
+
+    const promise = new Promise((resolve) => {
+        actions.forEach((action, index) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = action.label;
+            const isPrimary = action.style === 'primary' || action.style === 'danger';
+            btn.style.cssText = `
+                flex: 1; padding: .7rem 1rem; border-radius: .65rem; cursor: pointer;
+                font-weight: 700; font-size: .9rem; font-family: inherit;
+                transition: filter .15s ease, background .15s ease;
+                border: 1px solid ${isPrimary ? 'transparent' : 'var(--color-border, rgba(255,255,255,.09))'};
+                background: ${action.style === 'danger' ? '#FF6B6B'
+                            : action.style === 'primary' ? 'var(--color-accent, #0077CC)'
+                            : 'var(--color-muted, #101B2C)'};
+                color: ${isPrimary ? '#fff' : 'var(--color-text, #F3F6FB)'};
+            `;
+            btn.addEventListener('mouseenter', () => { btn.style.filter = 'brightness(1.12)'; });
+            btn.addEventListener('mouseleave', () => { btn.style.filter = 'none'; });
+            btn.addEventListener('click', () => close(action.value, resolve));
+            actionsEl.appendChild(btn);
+            if (index === actions.length - 1) setTimeout(() => btn.focus(), 30);
+        });
+
+        // Escape يلغي دائماً بالقيمة الآمنة (أول إجراء = الإلغاء عرفاً هنا)،
+        // وTab محبوس جوه الحوار عشان التركيز ميهربش لخلفية الصفحة.
+        onKeydown = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                close(actions[0].value, resolve);
+            } else if (e.key === 'Tab') {
+                const focusables = Array.from(actionsEl.querySelectorAll('button'));
+                if (!focusables.length) return;
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault(); last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault(); first.focus();
+                }
+            }
+        };
+        document.addEventListener('keydown', onKeydown, true);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) close(actions[0].value, resolve);
+        });
+    });
+
+    return promise;
+}
 
 export const ui = {
     /**
-     * Show a professional toast notification
-     * @param {string} message - The message to display
-     * @param {string} type - 'success', 'error', 'info', 'warning'
-     * @param {number} duration - Duration in ms
+     * تنبيه سريع غير مُعطِّل. يُستخدم لتأكيد نجاح إجراء أو الإبلاغ عن فشله.
+     * @param {string} message
+     * @param {'success'|'error'|'info'|'warning'} type
+     * @param {number} duration بالمللي ثانية
      */
     showToast(message, type = 'info', duration = 4000) {
-        // Create container if it doesn't exist
-        let container = document.getElementById('toast-container');
+        injectAnimations();
+        let container = document.getElementById('ui-toast-container');
         if (!container) {
             container = document.createElement('div');
-            container.id = 'toast-container';
+            container.id = 'ui-toast-container';
+            container.setAttribute('role', 'status');
+            container.setAttribute('aria-live', 'polite');
             container.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 9999;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                pointer-events: none;
-                width: 100%;
-                max-width: 400px;
-                padding: 0 20px;
+                position: fixed; top: 1.25rem; left: 50%; transform: translateX(-50%);
+                z-index: 10001; display: flex; flex-direction: column; gap: .6rem;
+                width: min(26rem, calc(100vw - 2rem)); pointer-events: none; direction: rtl;
             `;
             document.body.appendChild(container);
         }
 
-        // Create toast element
+        const { color, icon } = PALETTE[type] || PALETTE.info;
         const toast = document.createElement('div');
-        const colors = {
-            success: { bg: '#2E8A3A', icon: '✓' },
-            error: { bg: '#D9534F', icon: '✕' },
-            info: { bg: '#0077CC', icon: 'ℹ' },
-            warning: { bg: '#E0A800', icon: '⚠' }
-        };
-        const config = colors[type] || colors.info;
-
         toast.style.cssText = `
-            background: ${config.bg};
-            color: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 500;
-            font-size: 0.95rem;
-            pointer-events: auto;
-            animation: toastSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            direction: rtl;
+            display: flex; align-items: center; gap: .75rem; padding: .8rem 1rem;
+            border-radius: .8rem; pointer-events: auto; font-size: .9rem; font-weight: 600;
+            background: var(--color-surface-2, #121F30); color: var(--color-text, #F3F6FB);
+            border: 1px solid ${color}45; border-right: 3px solid ${color};
+            box-shadow: 0 18px 40px -18px rgba(0,8,25,.8);
+            animation: uiToastIn .3s cubic-bezier(.34,1.3,.64,1) forwards;
         `;
 
-        toast.innerHTML = `
-            <span style="
-                background: rgba(255,255,255,0.2);
-                width: 24px;
-                height: 24px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                font-size: 0.8rem;
-                flex-shrink: 0;
-            ">${config.icon}</span>
-            <span style="flex: 1;">${message}</span>
-            <button style="
-                background: none;
-                border: none;
-                color: white;
-                cursor: pointer;
-                font-size: 1.2rem;
-                padding: 0;
-                line-height: 1;
-                opacity: 0.7;
-            " onclick="this.parentElement.remove()">×</button>
+        const iconEl = document.createElement('span');
+        iconEl.setAttribute('aria-hidden', 'true');
+        iconEl.textContent = icon;
+        iconEl.style.cssText = `
+            flex-shrink: 0; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: ${color}26; color: ${color}; font-size: .78rem; font-weight: 800;
         `;
 
-        // Add animation styles if not present
-        if (!document.getElementById('toast-animations')) {
-            const style = document.createElement('style');
-            style.id = 'toast-animations';
-            style.textContent = `
-                @keyframes toastSlideIn {
-                    from { transform: translateY(-100px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                @keyframes toastSlideOut {
-                    from { transform: translateY(0); opacity: 1; }
-                    to { transform: translateY(-20px); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(style);
-        }
+        const textEl = document.createElement('span');
+        textEl.textContent = message;
+        textEl.style.cssText = 'flex: 1; line-height: 1.5;';
 
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-label', 'إغلاق التنبيه');
+        closeBtn.textContent = '×';
+        closeBtn.style.cssText = `
+            background: none; border: none; cursor: pointer; font-size: 1.25rem;
+            line-height: 1; padding: 0 .15rem; opacity: .55;
+            color: var(--color-text-secondary, #94A6C2);
+        `;
+
+        const dismiss = () => {
+            toast.style.animation = 'uiToastOut .3s ease forwards';
+            setTimeout(() => toast.remove(), 300);
+        };
+        closeBtn.addEventListener('click', dismiss);
+
+        toast.append(iconEl, textEl, closeBtn);
         container.appendChild(toast);
+        setTimeout(dismiss, duration);
+    },
 
-        // Auto remove
-        setTimeout(() => {
-            toast.style.animation = 'toastSlideOut 0.4s ease forwards';
-            setTimeout(() => toast.remove(), 400);
-        }, duration);
+    /** حوار إعلامي بزر واحد. */
+    showAlert(title, message, type = 'info') {
+        return buildDialog({
+            type, title, message,
+            actions: [{ label: 'حسناً', value: true, style: 'primary' }]
+        });
     },
 
     /**
-     * Show a professional alert modal
+     * حوار تأكيد. يرجّع Promise<boolean> — لا يُنفَّذ أي إجراء إلا بعد true.
+     * يُستخدم قبل أي عملية غير قابلة للتراجع.
      */
-    showAlert(title, message, type = 'info') {
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            padding: 20px;
-            direction: rtl;
-        `;
-
-        const modal = document.createElement('div');
-        const colors = {
-            success: '#2E8A3A',
-            error: '#D9534F',
-            info: '#0077CC',
-            warning: '#E0A800'
-        };
-        const color = colors[type] || colors.info;
-
-        modal.style.cssText = `
-            background: var(--color-surface, white);
-            width: 100%;
-            max-width: 450px;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        `;
-
-        modal.innerHTML = `
-            <div style="height: 6px; background: ${color};"></div>
-            <div style="padding: 30px; text-align: center;">
-                <div style="
-                    width: 60px;
-                    height: 60px;
-                    background: ${color}15;
-                    color: ${color};
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 2rem;
-                    margin: 0 auto 20px;
-                ">${type === 'success' ? '✓' : type === 'error' ? '✕' : '!'}</div>
-                <h3 style="margin: 0 0 10px; font-size: 1.5rem; color: var(--color-text, #333);">${title}</h3>
-                <p style="margin: 0 0 25px; color: var(--color-text-secondary, #666); line-height: 1.6;">${message}</p>
-                <button id="modal-close-btn" style="
-                    background: ${color};
-                    color: white;
-                    border: none;
-                    padding: 12px 30px;
-                    border-radius: 10px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    width: 100%;
-                    font-size: 1rem;
-                    transition: opacity 0.2s;
-                ">حسناً</button>
-            </div>
-        `;
-
-        if (!document.getElementById('modal-animations')) {
-            const style = document.createElement('style');
-            style.id = 'modal-animations';
-            style.textContent = `
-                @keyframes modalScaleIn {
-                    from { transform: scale(0.9); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-
-        const close = () => {
-            overlay.style.opacity = '0';
-            overlay.style.transition = 'opacity 0.2s';
-            setTimeout(() => overlay.remove(), 200);
-        };
-
-        modal.querySelector('#modal-close-btn').onclick = close;
-        overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    showConfirm(title, message, {
+        confirmLabel = 'تأكيد',
+        cancelLabel = 'إلغاء',
+        type = 'warning',
+        danger = false
+    } = {}) {
+        return buildDialog({
+            type, title, message,
+            actions: [
+                { label: cancelLabel, value: false, style: 'secondary' },
+                { label: confirmLabel, value: true, style: danger ? 'danger' : 'primary' }
+            ]
+        });
     }
 };
