@@ -1,22 +1,24 @@
 /**
- * customer-sidebar.js — شريط التنقّل المشترك لكل صفحات العميل.
+ * customer-sidebar.js — قشرة بوابة الدعم المشتركة (شريط علوي + قائمة جانبية).
  *
- * الملف ده مستخدم من: customer-dashboard, customer-subscriptions,
- * customer-security-settings, knowledge-base, community, forum, roadmap.
- * علشان كده التوقيع بيقبل الشكلين:
- *   initCustomerSidebar(fn)                     ← الشكل القديم (لسه شغال)
- *   initCustomerSidebar({ onTabChange, onReady })← الشكل الجديد
+ * الملف ده هو نقطة الدخول الوحيدة لكل صفحات بوابة العميل:
+ *   customer-dashboard, knowledge-base, customer-subscriptions,
+ *   customer-security-settings, community, roadmap.
  *
- * لو الصفحة مش لوحة العميل (يعني مفيش onTabChange)، الضغط على عنصر له
- * data-tab بينقل لـ customer-dashboard.html#<tab> بدل ما ميعملش حاجة —
- * ده كان بق قديم: القائمة نفسها بتظهر في كل الصفحات لكن عناصرها ميتة
- * في أي صفحة غير اللوحة.
+ * التوقيع بيقبل الشكلين للتوافق مع النداءات القديمة:
+ *   initCustomerSidebar(fn)                        ← الشكل القديم
+ *   initCustomerSidebar({ onTabChange, onReady })  ← الشكل الجديد
+ *
+ * الصفحات اللي مش لوحة العميل ما بتمرّرش onTabChange، فعناصر الأقسام فيها
+ * بتشتغل كروابط عادية للوحة (href مكتوب في الـHTML أصلاً) بدل ما تكون ميتة.
  */
 
 const DASHBOARD_PATH = '/customer-dashboard.html';
 const COLLAPSE_KEY = 'mad3oom-sidebar-collapsed';
 
 let tabChangeHandler = null;
+/** الصفحة اللي فيها بحث خاص بيها (اللوحة) بتسجّل معالجها هنا. */
+let searchHandler = null;
 
 /** هل المستخدم مفضّل القائمة مطوية؟ (يُقرأ قبل الرسم لتفادي أي قفزة) */
 export function isSidebarCollapsed() {
@@ -28,14 +30,12 @@ export function isSidebarCollapsed() {
 }
 
 /**
- * يطبّق حالة الطي على <body> ويحفظها.
- * الحالة على body مش على القائمة نفسها، لأن المحتوى الرئيسي والمساعد العائم
- * محتاجين يعرفوا العرض الحالي كمان (كلهم بيقروا --sidebar-current).
+ * يطبّق حالة الطي ويحفظها.
+ * العلَم على <html> مش على <body>: السكربت اللي بيشتغل قبل أول رسم في <head>
+ * ما بيقدرش يوصل لـbody، فلو الحالة اتحطت على body هتحصل قفزة في عرض المحتوى
+ * بعد التحميل. الاتنين بيكتبوا نفس السمة هنا.
  */
 export function setSidebarCollapsed(collapsed, { persist = true } = {}) {
-    // العلَم على <html> مش على <body>: السكربت اللي بيشتغل قبل أول رسم في
-    // <head> ما بيقدرش يوصل لـbody، فلو الحالة اتحطت على body هتحصل قفزة
-    // في عرض المحتوى بعد التحميل. الاتنين بيكتبوا نفس السمة هنا.
     document.documentElement.setAttribute('data-sidebar', collapsed ? 'collapsed' : 'expanded');
 
     const btn = document.getElementById('sidebarCollapseBtn');
@@ -52,6 +52,15 @@ export function setSidebarCollapsed(collapsed, { persist = true } = {}) {
     }
 }
 
+/**
+ * تسجيل معالج البحث الشامل. الصفحة اللي عندها نتائج تعرضها (اللوحة) بتسجّل
+ * معالجها؛ وأي صفحة تانية بيتنقل فيها البحث للوحة ومعاه النص — فمنطق البحث
+ * نفسه مكتوب مرة واحدة.
+ */
+export function setPortalSearchHandler(handler) {
+    searchHandler = typeof handler === 'function' ? handler : null;
+}
+
 export function initCustomerSidebar(optionsOrCallback) {
     const options = typeof optionsOrCallback === 'function'
         ? { onTabChange: optionsOrCallback }
@@ -60,19 +69,22 @@ export function initCustomerSidebar(optionsOrCallback) {
     tabChangeHandler = options.onTabChange || null;
 
     const sidebarContainer = document.getElementById('sidebar-container');
-    if (!sidebarContainer) return;
+    if (!sidebarContainer) return Promise.resolve();
 
     // تُطبَّق قبل جلب الـHTML: كده المحتوى الرئيسي بيترسم بعرضه الصحيح من أول
     // لحظة بدل ما يتحرك بعد وصول القائمة.
     setSidebarCollapsed(isSidebarCollapsed(), { persist: false });
 
-    fetch('/assets/components/customer-sidebar.html')
+    return fetch('/assets/components/customer-sidebar.html')
         .then(response => response.text())
         .then(html => {
             sidebarContainer.innerHTML = html;
             setupSidebarLogic(tabChangeHandler);
             setupCollapseToggle();
             syncNavHeight();
+            markActivePage();
+            loadAccountIdentity();
+            if (options.ownsSystemStatus !== true) loadSystemStatusPill();
             if (typeof options.onReady === 'function') options.onReady();
         })
         .catch(err => console.error('Error loading customer sidebar:', err));
@@ -103,9 +115,100 @@ export function setSidebarBadge(tabName, count) {
 
 /** يحدّد العنصر النشط في القائمة (يُستدعى عند تبديل القسم من أي مكان). */
 export function setActiveSidebarTab(tabName) {
-    document.querySelectorAll('.sidebar-item[data-tab]').forEach(item => {
+    document.querySelectorAll('.sidebar-item').forEach(item => {
         item.classList.toggle('active', item.getAttribute('data-tab') === tabName);
     });
+}
+
+/**
+ * على الصفحات المستقلة (مركز المساعدة، الباقات، المجتمع…) العنصر النشط
+ * بيتحدّد من اسم الملف، مش من قسم داخل اللوحة.
+ */
+function markActivePage() {
+    const file = window.location.pathname.split('/').pop().replace(/\.html$/, '');
+    if (!file || file === 'customer-dashboard') return;
+
+    document.querySelectorAll('.sidebar-item[data-page]').forEach(item => {
+        item.classList.toggle('active', item.getAttribute('data-page') === file);
+    });
+}
+
+/**
+ * حالة النظام في الشريط العلوي: كانت نصًا ثابتًا "النظام شغال" مهما كانت
+ * الحالة الحقيقية. دلوقتي بتتقرا من نفس مصدر قسم حالة النظام.
+ */
+export function updateSystemStatusPill(status) {
+    const pill = document.getElementById('portalSystemStatus');
+    const dot = document.getElementById('portalSystemStatusDot');
+    const text = document.getElementById('portalSystemStatusText');
+    if (!pill || !dot || !text) return;
+
+    if (!status || !Array.isArray(status.services) || status.services.length === 0) {
+        pill.hidden = true;
+        return;
+    }
+
+    const down = status.services.filter(s => s.status === 'down' || s.status === 'partial_outage');
+    const degraded = status.services.filter(s => s.status === 'degraded');
+    const maintenance = status.services.filter(s => s.status === 'maintenance');
+
+    let tone = 'online';
+    let label = 'كل الخدمات تعمل';
+    if (down.length) {
+        tone = 'down';
+        label = down.length === 1 ? 'عطل في خدمة' : `عطل في ${down.length} خدمات`;
+    } else if (degraded.length) {
+        tone = 'degraded';
+        label = degraded.length === 1 ? 'خدمة بأداء منخفض' : `${degraded.length} خدمات بأداء منخفض`;
+    } else if (maintenance.length) {
+        tone = 'maintenance';
+        label = 'صيانة مجدولة';
+    }
+
+    dot.className = `status-dot status-${tone}`;
+    text.textContent = label;
+    pill.title = label;
+    pill.hidden = false;
+}
+
+async function loadSystemStatusPill() {
+    try {
+        const { fetchSystemStatus } = await import('/assets/js/customer/customer-data.js');
+        const result = await fetchSystemStatus();
+        if (result.ok) updateSystemStatusPill(result.data);
+    } catch (err) {
+        // فشل جلب الحالة ما يوقفش الصفحة — الشارة تفضل مخفية بدل ما تدّعي حالة
+        console.error('[CustomerSidebar] Error loading system status:', err);
+    }
+}
+
+/** اسم المستخدم وبريده وحالته داخل قائمة الحساب. */
+async function loadAccountIdentity() {
+    try {
+        const { getCurrentUser } = await import('../auth-client.js');
+        const user = await getCurrentUser();
+        if (!user) return;
+
+        const name = user.profile?.full_name || user.email || 'حسابي';
+        const initial = document.getElementById('customerInitial');
+        const menuName = document.getElementById('customerMenuName');
+        const menuEmail = document.getElementById('customerMenuEmail');
+        const menuState = document.getElementById('customerMenuState');
+
+        if (initial) initial.textContent = String(name).trim().charAt(0).toUpperCase() || 'U';
+        if (menuName) menuName.textContent = name;
+        if (menuEmail) menuEmail.textContent = user.email || '';
+
+        // حالة الحساب معلومة يملكها العميل عن نفسه، ومفيدة قبل ما يسأل الدعم.
+        const ban = user.profile?.ban_status;
+        if (menuState && ban && ban !== 'active') {
+            menuState.textContent = ban === 'banned' ? 'الحساب موقوف' : 'الحساب مقيّد';
+            menuState.className = 'badge badge-danger nav-menu-state';
+            menuState.hidden = false;
+        }
+    } catch (err) {
+        console.error('[CustomerSidebar] Error loading account identity:', err);
+    }
 }
 
 function setupCollapseToggle() {
@@ -122,8 +225,8 @@ function setupCollapseToggle() {
 }
 
 /**
- * ارتفاع شريط التنقّل العلوي يتغيّر حسب حجم الشاشة، والقائمة الثابتة على
- * الشاشات الكبيرة لازم تبدأ من تحته بالظبط. بنقيسه فعلياً بدل ما نفترضه.
+ * ارتفاع الشريط العلوي بيتغيّر حسب حجم الشاشة، والقائمة الثابتة والمحتوى
+ * الاتنين بيبدأوا من تحته. بنقيسه فعلياً بدل ما نفترضه.
  */
 function syncNavHeight() {
     const nav = document.querySelector('.admin-nav');
@@ -144,6 +247,20 @@ function syncNavHeight() {
     }
 }
 
+/** فتح/غلق قائمة منسدلة مع ضبط aria وإغلاق باقي القوائم. */
+function toggleMenu(menu, trigger, force) {
+    const open = force !== undefined ? force : menu.hidden;
+    document.querySelectorAll('.nav-menu').forEach(other => {
+        if (other !== menu) {
+            other.hidden = true;
+            const otherTrigger = other.parentElement?.querySelector('[aria-haspopup]');
+            otherTrigger?.setAttribute('aria-expanded', 'false');
+        }
+    });
+    menu.hidden = !open;
+    trigger?.setAttribute('aria-expanded', String(open));
+}
+
 function setupSidebarLogic(onTabChange) {
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
@@ -158,7 +275,7 @@ function setupSidebarLogic(onTabChange) {
 
     // ── الإشعارات ────────────────────────────────────────────────────────────
     // الجرس بينقل لصفحة الإشعارات الكاملة (مش قائمة منسدلة): مصدر واحد لعرض
-    // الإشعارات بدل نسختين من نفس المنطق، وكل إشعار فيه إجراء حقيقي.
+    // الإشعارات بدل نسختين من نفس المنطق.
     if (notificationBtn) {
         notificationBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -172,16 +289,6 @@ function setupSidebarLogic(onTabChange) {
         });
     }
 
-    function escapeHtml(value) {
-        if (value === null || value === undefined) return '';
-        return String(value)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
-
     /** يحدّث شارة العدد على الجرس وفي القائمة الجانبية. */
     async function refreshUnreadBadge() {
         const badge = document.getElementById('notificationBadge');
@@ -190,7 +297,11 @@ function setupSidebarLogic(onTabChange) {
             const unread = await fetchUnreadCount();
             if (badge) {
                 badge.textContent = unread > 99 ? '99+' : String(unread);
-                badge.style.display = unread > 0 ? 'flex' : 'none';
+                badge.hidden = unread <= 0;
+                notificationBtn?.setAttribute(
+                    'aria-label',
+                    unread > 0 ? `الإشعارات — ${unread} غير مقروء` : 'الإشعارات'
+                );
             }
             setSidebarBadge('notifications', unread);
         } catch (err) {
@@ -213,7 +324,7 @@ function setupSidebarLogic(onTabChange) {
                     if ('Notification' in window && Notification.permission === 'granted') {
                         new Notification(newNotification.title, {
                             body: newNotification.message,
-                            icon: '/assets/images/logo.png'
+                            icon: '/logo.png'
                         });
                     }
                 });
@@ -226,45 +337,44 @@ function setupSidebarLogic(onTabChange) {
     refreshUnreadBadge();
     setupNotificationRealtime();
     checkWhatsAppPermission();
-    // إعادة حساب الشارة عند تغيّر حالة القراءة من صفحة الإشعارات
     document.addEventListener('customer:notifications-read', refreshUnreadBadge);
 
-    // ── فتح/غلق الدرج ────────────────────────────────────────────────────────
-    const toggleSidebar = () => {
-        sidebar.classList.toggle('active');
-        sidebarOverlay.classList.toggle('active');
+    // ── الدرج على الشاشات الصغيرة ────────────────────────────────────────────
+    const setDrawer = (open) => {
+        sidebar.classList.toggle('active', open);
+        sidebarOverlay?.classList.toggle('active', open);
+        menuToggle.setAttribute('aria-expanded', String(open));
+        if (open) sidebar.querySelector('.sidebar-item')?.focus({ preventScroll: true });
     };
+    const toggleSidebar = () => setDrawer(!sidebar.classList.contains('active'));
 
-    const menuToggles = [menuToggle, document.getElementById('mobileMenuToggle')].filter(Boolean);
-    menuToggles.forEach(toggle => {
+    [menuToggle, document.getElementById('mobileMenuToggle')].filter(Boolean).forEach(toggle => {
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleSidebar();
         });
     });
 
-    if (sidebarClose) sidebarClose.addEventListener('click', toggleSidebar);
-    if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
+    if (sidebarClose) sidebarClose.addEventListener('click', () => setDrawer(false));
+    if (sidebarOverlay) sidebarOverlay.addEventListener('click', () => setDrawer(false));
 
     // ── التنقّل بين الأقسام ──────────────────────────────────────────────────
     sidebarItems.forEach(item => {
         item.addEventListener('click', (e) => {
-            e.preventDefault();
             const tabName = item.getAttribute('data-tab');
 
-            // خارج لوحة العميل: ننقل للوحة مع تحديد القسم المطلوب
-            if (!onTabChange) {
-                window.location.href = `${DASHBOARD_PATH}#${tabName}`;
-                return;
-            }
+            // خارج لوحة العميل: نسيب الرابط يشتغل عادي (href في الـHTML)
+            if (!onTabChange) return;
 
+            e.preventDefault();
             setActiveSidebarTab(tabName);
             onTabChange(tabName);
-
-            // على الشاشات الصغيرة الدرج بيتقفل بعد الاختيار
-            if (sidebar.classList.contains('active')) toggleSidebar();
+            if (sidebar.classList.contains('active')) setDrawer(false);
         });
     });
+
+    // ── البحث الشامل ─────────────────────────────────────────────────────────
+    setupPortalSearch(onTabChange);
 
     // ── اللغة ────────────────────────────────────────────────────────────────
     const languageToggleBtn = document.getElementById('languageToggleBtn');
@@ -275,8 +385,7 @@ function setupSidebarLogic(onTabChange) {
     if (languageToggleBtn && languageMenu) {
         languageToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isVisible = languageMenu.style.display === 'block';
-            languageMenu.style.display = isVisible ? 'none' : 'block';
+            toggleMenu(languageMenu, languageToggleBtn);
             updateLanguageCheckmarks();
         });
 
@@ -284,24 +393,19 @@ function setupSidebarLogic(onTabChange) {
             e.preventDefault();
             e.stopPropagation();
             changeLanguage('ar');
-            languageMenu.style.display = 'none';
         });
 
         langEnglish?.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             changeLanguage('en');
-            languageMenu.style.display = 'none';
         });
     }
 
     function updateLanguageCheckmarks() {
         const currentLang = localStorage.getItem('mad3oom-language') || 'ar';
-        const arabicCheck = langArabic?.querySelector('.lang-check');
-        const englishCheck = langEnglish?.querySelector('.lang-check');
-
-        if (arabicCheck) arabicCheck.style.display = currentLang === 'ar' ? 'inline' : 'none';
-        if (englishCheck) englishCheck.style.display = currentLang === 'en' ? 'inline' : 'none';
+        langArabic?.querySelector('.lang-check')?.toggleAttribute('hidden', currentLang !== 'ar');
+        langEnglish?.querySelector('.lang-check')?.toggleAttribute('hidden', currentLang !== 'en');
     }
 
     function changeLanguage(lang) {
@@ -312,7 +416,6 @@ function setupSidebarLogic(onTabChange) {
             const html = document.documentElement;
             html.lang = lang;
             html.dir = lang === 'ar' ? 'rtl' : 'ltr';
-            document.body.style.direction = lang === 'ar' ? 'rtl' : 'ltr';
         }
         window.location.reload();
     }
@@ -321,87 +424,124 @@ function setupSidebarLogic(onTabChange) {
     if (customerAvatarBtn && customerAvatarMenu) {
         customerAvatarBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isVisible = customerAvatarMenu.style.display === 'block';
-            customerAvatarMenu.style.display = isVisible ? 'none' : 'block';
+            toggleMenu(customerAvatarMenu, customerAvatarBtn);
         });
-
-        // معالج مسمّى حتى لا تتراكم النسخ عند إعادة تهيئة القائمة
-        const closeAllMenus = () => {
-            customerAvatarMenu.style.display = 'none';
-            if (languageMenu) languageMenu.style.display = 'none';
-        };
-        document.removeEventListener('click', document._sidebarCloseMenus);
-        document._sidebarCloseMenus = closeAllMenus;
-        document.addEventListener('click', closeAllMenus);
+        customerAvatarMenu.addEventListener('click', e => e.stopPropagation());
     }
 
+    // معالج واحد مسمّى حتى لا تتراكم النسخ عند إعادة تهيئة القائمة
+    const closeAllMenus = () => {
+        document.querySelectorAll('.nav-menu').forEach(menu => { menu.hidden = true; });
+        document.querySelectorAll('[aria-haspopup]').forEach(t => t.setAttribute('aria-expanded', 'false'));
+    };
+    document.removeEventListener('click', document._sidebarCloseMenus);
+    document._sidebarCloseMenus = closeAllMenus;
+    document.addEventListener('click', closeAllMenus);
+
+    // Escape يقفل أي قائمة مفتوحة أو الدرج — مخرج واحد متوقَّع من أي حالة
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        const anyMenuOpen = [...document.querySelectorAll('.nav-menu')].some(m => !m.hidden);
+        if (anyMenuOpen) { closeAllMenus(); return; }
+        if (sidebar.classList.contains('active')) { setDrawer(false); menuToggle.focus(); }
+    });
+
+    // ── عناصر قائمة الحساب ───────────────────────────────────────────────────
     const customerProfile = document.getElementById('customerProfile');
     const customerAccountSettings = document.getElementById('customerAccountSettings');
     const customerSecuritySettings = document.getElementById('customerSecuritySettings');
-    const customerHelpSupport = document.getElementById('customerHelpSupport');
 
-    if (customerProfile) {
-        customerProfile.addEventListener('click', (e) => {
+    // داخل اللوحة الأقسام بتتبدّل من غير إعادة تحميل؛ برّه الروابط تشتغل عادي.
+    [[customerProfile, 'profile'], [customerSecuritySettings, 'security']].forEach(([el, tab]) => {
+        el?.addEventListener('click', (e) => {
+            if (!onTabChange) return;
             e.preventDefault();
-            customerAvatarMenu.style.display = 'none';
-            if (onTabChange) {
-                setActiveSidebarTab('profile');
-                onTabChange('profile');
-            } else {
-                window.location.href = `${DASHBOARD_PATH}#profile`;
-            }
+            closeAllMenus();
+            setActiveSidebarTab(tab);
+            onTabChange(tab);
         });
-    }
+    });
 
     if (customerAccountSettings) {
         customerAccountSettings.addEventListener('click', (e) => {
             e.preventDefault();
-            customerAvatarMenu.style.display = 'none';
-            if (window.openSettingsModal) {
-                window.openSettingsModal();
-            } else {
-                window.location.href = `${DASHBOARD_PATH}#profile`;
-            }
-        });
-    }
-
-    if (customerSecuritySettings) {
-        customerSecuritySettings.addEventListener('click', (e) => {
-            e.preventDefault();
-            customerAvatarMenu.style.display = 'none';
-            window.location.href = '/customer-security-settings.html';
-        });
-    }
-
-    if (customerHelpSupport) {
-        customerHelpSupport.addEventListener('click', (e) => {
-            e.preventDefault();
-            customerAvatarMenu.style.display = 'none';
-            window.location.href = '/knowledge-base.html';
+            closeAllMenus();
+            if (window.openSettingsModal) window.openSettingsModal();
+            else window.location.href = `${DASHBOARD_PATH}#profile`;
         });
     }
 
     // ── تسجيل الخروج ─────────────────────────────────────────────────────────
-    const customerSignOut = document.getElementById('customerSignOut');
-    const sidebarSignOut = document.getElementById('sidebarSignOut');
-
     const onLogout = async (e) => {
         e.preventDefault();
         try {
             const { logout } = await import('../auth-client.js');
             await logout();
-            window.location.replace('login.html');
+            window.location.replace('/login.html');
         } catch (err) {
             console.error('Logout failed:', err);
             localStorage.removeItem('mad3oom-guest-session');
-            window.location.replace('login.html');
+            window.location.replace('/login.html');
         }
     };
 
-    if (customerSignOut) customerSignOut.addEventListener('click', onLogout);
-    if (sidebarSignOut) sidebarSignOut.addEventListener('click', onLogout);
+    document.getElementById('customerSignOut')?.addEventListener('click', onLogout);
+    document.getElementById('sidebarSignOut')?.addEventListener('click', onLogout);
 
     updateLanguageCheckmarks();
+}
+
+/**
+ * البحث: مربع واحد في الشريط العلوي لكل الصفحات.
+ * لو الصفحة سجّلت معالجًا (اللوحة) بترسم نتائجها في مكانها؛ وإلا الإدخال
+ * بينقل للوحة ومعاه النص في ?q= فتكمّل هي البحث بنفس منطقها.
+ */
+function setupPortalSearch(onTabChange) {
+    const wrap = document.getElementById('portalSearch');
+    const input = document.getElementById('globalSearchInput');
+    const trigger = document.getElementById('portalSearchTrigger');
+    const closeBtn = document.getElementById('portalSearchClose');
+    if (!wrap || !input) return;
+
+    const openOverlay = () => {
+        wrap.classList.add('is-open');
+        input.focus();
+    };
+    const closeOverlay = () => {
+        wrap.classList.remove('is-open');
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    trigger?.addEventListener('click', (e) => { e.stopPropagation(); openOverlay(); });
+    closeBtn?.addEventListener('click', (e) => { e.stopPropagation(); closeOverlay(); });
+
+    // اختصار "/" يركّز البحث من أي مكان، إلا وإحنا بنكتب في حقل تاني
+    document.addEventListener('keydown', (e) => {
+        if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+            const tag = document.activeElement?.tagName;
+            const editing = tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable;
+            if (editing) return;
+            e.preventDefault();
+            openOverlay();
+        } else if (e.key === 'Escape' && document.activeElement === input) {
+            closeOverlay();
+            input.blur();
+        }
+    });
+
+    if (searchHandler) return;   // اللوحة بتتولّى الرسم بنفسها
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const term = input.value.trim();
+        if (!term) return;
+        window.location.href = `${DASHBOARD_PATH}?q=${encodeURIComponent(term)}`;
+    });
+
+    // برّه اللوحة مفيش نتائج تُرسم هنا، فبنوضّح ده بدل صندوق فاضي
+    input.setAttribute('placeholder', 'ابحث ثم اضغط Enter…');
+    void onTabChange;
 }
 
 async function checkWhatsAppPermission() {
