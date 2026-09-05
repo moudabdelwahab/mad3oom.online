@@ -1,21 +1,29 @@
-// customer-dashboard.js — منطق لوحة العميل
+// customer-dashboard.js — منطق بوابة دعم العميل
 //
-// البنية: كل قسم في اللوحة له وحدة render خاصة به، وكلها بتقرأ من:
-//   - tickets-service.js        (التذاكر، الردود، المرفقات، التقييم)
-//   - notifications-service.js  (الإشعارات)
-//   - rewards-dashboard.js      (المكافآت)
-//   - assets/js/customer/customer-data.js       (حالة الحساب والخدمات)
-//   - assets/js/customer/platform-settings.js   (إعدادات الأدمن)
-// مفيش استعلامات مكررة هنا لأي حاجة ليها خدمة أصلاً.
+// البنية: كل قسم له وحدة render خاصة، وكلها بتقرا من طبقات مشتركة:
+//   tickets-service.js                        التذاكر والردود والمرفقات
+//   notifications-service.js                  الإشعارات
+//   rewards-dashboard.js                      المكافآت
+//   assets/js/customer/customer-data.js       حالة الحساب والخدمات
+//   assets/js/customer/platform-settings.js   إعدادات الأدمن
+//   assets/js/customer/ticket-view-model.js   لغة التذاكر كما يراها العميل
+//   assets/js/customer/notification-router.js تحويل الإشعار إلى إجراء
+//   assets/js/customer/account-health.js      "إيه اللي محتاج منك إجراء"
+//   assets/js/customer/activity-model.js      سجل النشاط الآمن للعميل
+//
+// مفيش هنا أي منطق مكرر لحاجة ليها وحدة فوق — الملف ده تنسيق ورسم فقط.
 import { requireAuth, updateProfile, updatePassword } from './auth-client.js';
-import { initCustomerSidebar, setSidebarBadge, setActiveSidebarTab } from './assets/js/customer-sidebar.js';
+import {
+    initCustomerSidebar,
+    setSidebarBadge,
+    setActiveSidebarTab
+} from './assets/js/customer-sidebar.js';
 import { initExpiryModalHandler } from './assets/js/subscription-expiry-modal.js';
 import { initRewardsDashboard } from './rewards-dashboard.js';
 import { initCustomerSettingsModal } from './customer-settings-modal.js';
 import {
     fetchUserTickets,
     createTicket,
-    fetchTicketStats,
     fetchTicketReplies,
     addTicketReply,
     subscribeToTickets,
@@ -35,8 +43,30 @@ import {
     formatRelativeArabic
 } from './notifications-service.js';
 import { ui } from './ui-service.js';
-import { getPlatformSettings, supportAvailability, slaTargetHours, formatTime, dayName } from './assets/js/customer/platform-settings.js';
+import {
+    getPlatformSettings,
+    supportAvailability,
+    slaTargetHours,
+    formatTime,
+    dayName
+} from './assets/js/customer/platform-settings.js';
 import * as customerData from './assets/js/customer/customer-data.js';
+import {
+    TICKET_VIEWS,
+    statusInfo,
+    applyTicketView,
+    countByView,
+    availableActions,
+    needsCustomerReply
+} from './assets/js/customer/ticket-view-model.js';
+import {
+    resolveNotification,
+    destinationLabel,
+    categoriesPresentIn,
+    NOTIFICATION_CATEGORIES
+} from './assets/js/customer/notification-router.js';
+import { assessAccountHealth } from './assets/js/customer/account-health.js';
+import { toTimeline } from './assets/js/customer/activity-model.js';
 
 /* =========================================================
    حماية من bfcache (Back-Forward Cache)
@@ -72,7 +102,6 @@ function sanitizeUrl(url) {
     return '';
 }
 
-const STATUS_LABELS = { open: 'مفتوحة', 'in-progress': 'قيد المعالجة', resolved: 'تم الحل', confirmed: 'مؤكدة', rejected: 'مرفوضة' };
 const PRIORITY_LABELS = { high: 'عالية', medium: 'متوسطة', low: 'منخفضة' };
 const CATEGORY_LABELS = { whatsapp: 'واتساب', tickets: 'تذاكر', subscription: 'اشتراك', login: 'تسجيل دخول', other: 'أخرى' };
 const CATEGORY_CLASS = { whatsapp: 'cat-whatsapp', tickets: 'cat-tickets', subscription: 'cat-subscription', login: 'cat-login', other: 'cat-other' };
@@ -89,16 +118,15 @@ const ACTIVITY_LABELS = {
     tag_remove: 'تمت إزالة وسم'
 };
 
-// نوع الحدث اللي محجوب على مستوى قاعدة البيانات (migrations/010). الفلترة هنا
-// طبقة إضافية للعرض فقط، مش هي الحماية.
+// محجوبة على مستوى قاعدة البيانات (migrations/010). الفلترة هنا للعرض فقط.
 const CUSTOMER_HIDDEN_ACTIVITY_TYPES = new Set(['assignee_change', 'assigned', 'internal_note']);
 
 const MAX_ATTACHMENTS = 5;
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 
 function statusBadge(status) {
-    const label = STATUS_LABELS[status] || status || '—';
-    return `<span class="pill status-${escapeHtml(status || 'neutral')}"><span class="pill-dot"></span>${escapeHtml(label)}</span>`;
+    const info = statusInfo(status);
+    return `<span class="pill ${info.pill}"><span class="pill-dot"></span>${escapeHtml(info.label)}</span>`;
 }
 
 function priorityBadge(priority, { onlyHigh = false } = {}) {
@@ -135,24 +163,23 @@ function formatDateTime(dateStr) {
     return new Date(dateStr).toLocaleString('ar-EG');
 }
 
-function daysUntil(dateStr) {
-    if (!dateStr) return null;
-    return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000);
-}
-
-/** رسم حالة موحّدة (تحميل/فراغ/خطأ) داخل أي حاوية. */
-function renderState(container, { variant = 'empty', title, text, icon = true } = {}) {
+/** رسم حالة موحّدة (فراغ/خطأ) مع إجراء اختياري — مطلوب في كل قسم. */
+function renderState(container, { variant = 'empty', title, text, icon = true, action } = {}) {
     if (!container) return;
     const iconSvg = icon
         ? (variant === 'error'
             ? '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
             : '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>')
         : '';
+    const actionHtml = action
+        ? `<button type="button" class="btn ${action.variant || 'btn-secondary'}"${action.goto ? ` data-goto="${escapeHtml(action.goto)}"` : ''}${action.act ? ` data-action="${escapeHtml(action.act)}"` : ''}${action.retry ? ` data-retry="${escapeHtml(action.retry)}"` : ''}>${escapeHtml(action.label)}</button>`
+        : '';
     container.innerHTML = `
         <div class="state-block ${variant === 'error' ? 'state-block--error' : ''}">
             ${iconSvg}
             <p class="state-title">${escapeHtml(title || '')}</p>
             ${text ? `<p class="state-text">${escapeHtml(text)}</p>` : ''}
+            ${actionHtml}
         </div>`;
 }
 
@@ -161,10 +188,24 @@ function renderSkeletonLines(container, count = 3) {
     container.innerHTML = Array.from({ length: count }, () => '<div class="skeleton skeleton-line"></div>').join('');
 }
 
-/** ملء عنصر بقيمة رقمية بأمان. */
 function setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
+}
+
+/** صف بيانات موحّد. value و note لازم يكونوا HTML آمن مبني مسبقاً. */
+function dataRow({ label, value, note }) {
+    return `
+        <div class="data-row">
+            <span class="data-row-label">${escapeHtml(label)}</span>
+            <span class="data-row-value">${value}</span>
+            ${note ? `<div class="data-row-note">${note}</div>` : ''}
+        </div>`;
+}
+
+function meter(percent, tone = '') {
+    const width = Math.max(0, Math.min(100, Number(percent) || 0));
+    return `<div class="meter"><div class="meter-fill ${tone}" style="width:${width}%"></div></div>`;
 }
 
 /* =========================================================
@@ -172,8 +213,6 @@ function setText(id, value) {
 ========================================================= */
 
 (async function () {
-
-    /* ================= المصادقة ================= */
 
     const user = await requireAuth('user');
     if (!user) {
@@ -184,8 +223,6 @@ function setText(id, value) {
     const isGuest = user.isGuest || false;
     const isImpersonated = !!user.isImpersonated;
 
-    // إعدادات المنصة تُحمَّل أولاً لأن أقسام كثيرة بتتغيّر شكلها بناءً عليها
-    // (المرفقات، التقييم، حدود التذاكر، رسالة الترحيب).
     const settings = await getPlatformSettings();
     const cx = settings.customer_experience;
 
@@ -199,12 +236,10 @@ function setText(id, value) {
         const isSelfLogin = user.impersonatorId && user.impersonatorId === user.id;
 
         const label = document.createElement('span');
-        if (isSelfLogin) {
-            label.textContent = 'بتشوف حسابك كـ عضو (وضع "الدخول كعضو")';
-        } else {
-            // .textContent عمدًا: الاسم قيمة قادمة من قاعدة البيانات
-            label.textContent = `بتشوف لوحة العضو: ${memberName}`;
-        }
+        // .textContent عمدًا: الاسم قيمة قادمة من قاعدة البيانات
+        label.textContent = isSelfLogin
+            ? 'بتشوف حسابك كـ عضو (وضع "الدخول كعضو")'
+            : `بتشوف لوحة العضو: ${memberName}`;
 
         const backBtn = document.createElement('button');
         backBtn.type = 'button';
@@ -221,13 +256,11 @@ function setText(id, value) {
 
     /* ================= التنقّل بين الأقسام ================= */
 
-    const SECTIONS = ['overview', 'tickets', 'notifications', 'rewards', 'badges', 'profile'];
-    const GUEST_BLOCKED = new Set(['rewards', 'badges', 'profile', 'notifications']);
+    const SECTIONS = ['overview', 'support', 'tickets', 'notifications', 'usage', 'activity', 'security', 'rewards', 'badges', 'profile'];
+    const GUEST_BLOCKED = new Set(['rewards', 'badges', 'profile', 'notifications', 'usage', 'activity', 'security']);
     let currentSection = 'overview';
 
-    // أقسام يخفيها إعداد من لوحة الإدارة. المكافآت مرتبطة بـ
-    // customer_experience.enable_rewards_system — لو الأدمن أطفأها، القسم
-    // يختفي من اللوحة ومن القائمة الجانبية معاً، مش من واحدة بس.
+    // أقسام يخفيها إعداد من لوحة الإدارة (المكافآت مرتبطة بـ enable_rewards_system)
     const disabledSections = new Set();
     if (!cx.enable_rewards_system) {
         disabledSections.add('rewards');
@@ -237,7 +270,6 @@ function setText(id, value) {
         document.getElementById('rewardsTabContent')?.remove();
     }
 
-    // ما يُحمَّل مرة واحدة فقط عند أول زيارة للقسم (Lazy load)
     const loadedOnce = new Set();
 
     function showSection(name, { updateHash = true } = {}) {
@@ -258,7 +290,7 @@ function setText(id, value) {
         if (updateHash && window.location.hash.slice(1) !== name) {
             history.replaceState(null, '', `#${name}`);
         }
-        document.getElementById('customerMain')?.scrollIntoView({ block: 'start', behavior: 'auto' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
 
         if (!loadedOnce.has(name)) {
             loadedOnce.add(name);
@@ -270,6 +302,10 @@ function setText(id, value) {
         if (name === 'badges') renderBadges();
         if (name === 'notifications') renderNotifications();
         if (name === 'profile') renderProfileSection();
+        if (name === 'usage') renderUsageSection();
+        if (name === 'activity') renderActivitySection();
+        if (name === 'security') renderSecuritySection();
+        if (name === 'support') renderSupportSection();
     }
 
     window.addEventListener('hashchange', () => {
@@ -287,6 +323,7 @@ function setText(id, value) {
                 document.querySelector(`.sidebar-item[data-tab="${section}"]`)?.remove();
             });
             setActiveSidebarTab(currentSection);
+            setSidebarBadge('tickets', countByView(cachedTickets, user.id).awaiting);
         }
     });
 
@@ -304,20 +341,46 @@ function setText(id, value) {
     }
 
     /* =========================================================
-       قسم: نظرة عامة
+       اللقطة المشتركة: تُجلب مرة وتغذّي كل الأقسام
     ========================================================= */
 
-    // نتيجة آخر تحميل — تُستخدم لبناء التنبيهات بدون إعادة استعلام
-    let overviewSnapshot = null;
+    let snapshot = null;
+    let cachedTickets = [];
+
+    async function loadSnapshot() {
+        if (isGuest) {
+            snapshot = { tickets: [] };
+            return snapshot;
+        }
+
+        const [account, planSubs, waSub, wallet, sie, subdomains, systemStatus, badges, tickets] =
+            await Promise.all([
+                customerData.fetchAccountStatus(),
+                customerData.fetchPlanSubscriptions(),
+                customerData.fetchWhatsappSubscription(),
+                customerData.fetchWhatsappWallet(),
+                customerData.fetchSieAccess(),
+                customerData.fetchSubdomains(),
+                customerData.fetchSystemStatus(),
+                customerData.fetchBadgeProgress(),
+                fetchUserTickets({}).catch(err => { console.error('[Snapshot] tickets:', err); return []; })
+            ]);
+
+        cachedTickets = tickets || [];
+        snapshot = { account, planSubs, waSub, wallet, sie, subdomains, systemStatus, badges, tickets: cachedTickets };
+        return snapshot;
+    }
+
+    /* =========================================================
+       قسم: نظرة عامة (موجّه للإجراء)
+    ========================================================= */
 
     async function renderOverview() {
-        const welcomeEl = document.getElementById('overviewWelcomeMessage');
         const headingEl = document.getElementById('overviewHeading');
+        const welcomeEl = document.getElementById('overviewWelcomeMessage');
 
         const displayName = user.profile?.full_name || user.email?.split('@')[0] || 'مستخدم';
         if (headingEl) headingEl.textContent = isGuest ? 'مرحباً بك (زائر)' : `مرحباً، ${displayName}`;
-
-        // رسالة الترحيب يضبطها الأدمن من "إعدادات تجربة العميل"
         if (welcomeEl) {
             welcomeEl.textContent = cx.welcome_message?.trim()
                 || 'تابع تذاكرك وحالة خدماتك من مكان واحد.';
@@ -328,56 +391,78 @@ function setText(id, value) {
             return;
         }
 
-        const [
-            statsRes, account, planSubs, waSub, wallet, sie, subdomains,
-            systemStatus, activity, badges, tickets
-        ] = await Promise.all([
-            fetchTicketStats().catch(err => { console.error('[Overview] stats:', err); return null; }),
-            customerData.fetchAccountStatus(),
-            customerData.fetchPlanSubscriptions(),
-            customerData.fetchWhatsappSubscription(),
-            customerData.fetchWhatsappWallet(),
-            customerData.fetchSieAccess(),
-            customerData.fetchSubdomains(),
-            customerData.fetchSystemStatus(),
-            customerData.fetchAccountActivity(8),
-            customerData.fetchBadgeProgress(),
-            fetchUserTickets({}).catch(() => [])
-        ]);
+        renderAccountHealth();
+        renderOverviewKpis();
+        renderAccountStatus();
 
-        overviewSnapshot = { statsRes, account, planSubs, waSub, wallet, sie, subdomains, systemStatus, badges, tickets };
-
-        renderOverviewKpis(statsRes, tickets, badges);
-        renderAccountStatus({ account, planSubs, waSub, wallet, sie, subdomains });
-        renderSupportAvailability();
-        renderSystemStatus(systemStatus);
-        renderRecentActivity(activity);
-        renderOverviewAlerts();
+        const activity = await customerData.fetchAccountActivity(12);
+        renderActivityTimeline(activity, 'recentActivityBody', 6);
     }
 
     function renderGuestOverview() {
-        document.getElementById('overviewKpis').innerHTML = '';
-        const guestNotice = {
+        const kpis = document.getElementById('overviewKpis');
+        if (kpis) kpis.innerHTML = '';
+        document.getElementById('accountHealthCard')?.setAttribute('hidden', '');
+        const notice = {
             title: 'أنت في وضع الضيف',
             text: 'سجّل الدخول بحساب لعرض تذاكرك وحالة خدماتك ومتابعة اشتراكاتك.'
         };
-        ['accountStatusBody', 'supportAvailabilityBody', 'recentActivityBody'].forEach(id => {
-            renderState(document.getElementById(id), { variant: 'empty', ...guestNotice });
+        ['accountStatusBody', 'recentActivityBody'].forEach(id => {
+            renderState(document.getElementById(id), { variant: 'empty', ...notice });
         });
-        renderSupportAvailability();
-        customerData.fetchSystemStatus().then(renderSystemStatus);
     }
 
-    /** يحسب التذاكر التي ينتظر فيها الفريقُ ردَّ العميل. */
-    function countAwaitingCustomer(tickets) {
-        return (tickets || []).filter(t =>
-            t.status !== 'resolved' &&
-            t.last_updated_by &&
-            t.last_updated_by !== user.id
-        ).length;
+    const HEALTH_ICONS = {
+        healthy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>',
+        attention: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="10"/></svg>',
+        critical: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+    };
+
+    const SEVERITY_TONE = { critical: 'danger', warning: 'warning', info: 'info' };
+
+    function renderAccountHealth() {
+        const card = document.getElementById('accountHealthCard');
+        if (!card || !snapshot) return;
+
+        const health = assessAccountHealth(snapshot, { userId: user.id });
+
+        card.removeAttribute('hidden');
+        card.setAttribute('data-status', health.status);
+        const icon = document.getElementById('healthIcon');
+        if (icon) icon.innerHTML = HEALTH_ICONS[health.status];
+        setText('healthHeadline', health.headline);
+        setText('healthSubline', health.subline);
+
+        const list = document.getElementById('healthItems');
+        if (!list) return;
+
+        if (!health.items.length) {
+            list.innerHTML = '';
+            return;
+        }
+
+        list.innerHTML = health.items.map(item => {
+            const tone = SEVERITY_TONE[item.severity] || 'info';
+            const action = item.action
+                ? (item.action.href
+                    ? `<a class="alert-action" href="${escapeHtml(item.action.href)}">${escapeHtml(item.action.label)}</a>`
+                    : `<button type="button" class="alert-action" data-goto="${escapeHtml(item.action.section)}" style="background:none;border:none;cursor:pointer;font-family:inherit;">${escapeHtml(item.action.label)}</button>`)
+                : '';
+            return `
+                <div class="alert-item alert-item--${tone}">
+                    <span class="alert-icon">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="10"/></svg>
+                    </span>
+                    <div class="alert-body">
+                        <p class="alert-title">${escapeHtml(item.title)}</p>
+                        <p class="alert-text">${escapeHtml(item.text)}</p>
+                    </div>
+                    ${action}
+                </div>`;
+        }).join('');
     }
 
-    /** متوسط زمن أول رد على تذاكر العميل (بالساعات) — مؤشر حقيقي من بياناته هو. */
+    /** متوسط زمن أول رد على تذاكر العميل — مؤشر من بياناته هو. */
     function averageFirstResponseHours(tickets) {
         const answered = (tickets || []).filter(t => t.first_response_at && t.created_at);
         if (!answered.length) return null;
@@ -386,41 +471,43 @@ function setText(id, value) {
         return totalMs / answered.length / 3600000;
     }
 
-    function renderOverviewKpis(stats, tickets, badges) {
+    function renderOverviewKpis() {
         const container = document.getElementById('overviewKpis');
-        if (!container) return;
+        if (!container || !snapshot) return;
 
-        const awaiting = countAwaitingCustomer(tickets);
-        const avgHours = averageFirstResponseHours(tickets);
-        const badgeData = badges?.ok ? badges.data : null;
+        const counts = countByView(cachedTickets, user.id);
+        const avgHours = averageFirstResponseHours(cachedTickets);
+        const badgeData = snapshot.badges?.ok ? snapshot.badges.data : null;
+        const unread = Number(container.dataset.unread || 0);
 
         const cards = [
             {
                 label: 'تذاكر مفتوحة',
-                value: stats ? (stats.open + stats.inProgress) : '—',
-                hint: stats ? `${stats.total} تذكرة إجمالاً` : '',
+                value: counts.open,
+                hint: `${counts.all} تذكرة إجمالاً`,
                 tone: 'info',
                 action: 'tickets'
             },
             {
                 label: 'بانتظار ردّك',
-                value: awaiting,
-                hint: awaiting ? 'فيه ردود من الدعم محتاجة متابعتك' : 'لا شيء ينتظر ردك',
-                tone: awaiting ? 'warning' : 'success',
+                value: counts.awaiting,
+                hint: counts.awaiting ? 'فيه ردود محتاجة متابعتك' : 'لا شيء ينتظر ردك',
+                tone: counts.awaiting ? 'warning' : 'success',
                 action: 'tickets'
             },
             {
                 label: 'متوسط أول رد',
-                value: avgHours === null ? '—' : `${avgHours < 1 ? Math.round(avgHours * 60) : avgHours.toFixed(1)}`,
+                value: avgHours === null ? '—'
+                    : (avgHours < 1 ? String(Math.round(avgHours * 60)) : avgHours.toFixed(1)),
                 hint: avgHours === null ? 'لم يُسجَّل رد بعد' : (avgHours < 1 ? 'دقيقة على تذاكرك' : 'ساعة على تذاكرك'),
                 tone: 'accent'
             },
             {
-                label: 'الشارات',
-                value: badgeData ? `${badgeData.earned}/${badgeData.total}` : '—',
-                hint: 'إنجازاتك على المنصة',
-                tone: 'accent',
-                action: 'badges'
+                label: 'إشعارات غير مقروءة',
+                value: unread,
+                hint: badgeData ? `${badgeData.earned}/${badgeData.total} شارة مكتسبة` : '',
+                tone: unread ? 'accent' : 'success',
+                action: 'notifications'
             }
         ];
 
@@ -436,113 +523,145 @@ function setText(id, value) {
         }).join('');
     }
 
-    function renderAccountStatus({ account, planSubs, waSub, wallet, sie, subdomains }) {
+    function renderAccountStatus() {
         const container = document.getElementById('accountStatusBody');
-        if (!container) return;
+        if (!container || !snapshot) return;
 
-        if (!account?.ok) {
-            renderState(container, { variant: 'error', title: 'تعذّر تحميل حالة الحساب', text: 'حدّث الصفحة أو حاول بعد قليل.' });
+        if (!snapshot.account?.ok) {
+            renderState(container, {
+                variant: 'error',
+                title: 'تعذّر تحميل حالة الحساب',
+                text: 'تحقق من اتصالك ثم أعد المحاولة.',
+                action: { label: 'إعادة المحاولة', retry: 'overview' }
+            });
             return;
         }
 
-        const profile = account.data || {};
+        const profile = snapshot.account.data || {};
         const rows = [];
+        const banned = profile.ban_status && !['active', 'none'].includes(profile.ban_status);
 
-        // 1) حالة الحساب نفسه (يتحكم فيها الأدمن)
-        const banned = profile.ban_status && profile.ban_status !== 'active' && profile.ban_status !== 'none';
         rows.push({
             label: 'حالة الحساب',
             value: banned
-                ? `<span class="pill status-rejected"><span class="pill-dot"></span>مقيّد</span>`
-                : `<span class="pill status-resolved"><span class="pill-dot"></span>نشط</span>`,
+                ? '<span class="pill status-rejected"><span class="pill-dot"></span>مقيّد</span>'
+                : '<span class="pill status-resolved"><span class="pill-dot"></span>نشط</span>',
             note: escapeHtml(banned
-                ? (profile.ban_reason ? `السبب: ${profile.ban_reason}` : 'تواصل مع الدعم لمعرفة التفاصيل.')
+                ? (profile.ban_reason || 'تواصل مع الدعم لمعرفة التفاصيل.')
                 : `عضو منذ ${formatDate(profile.created_at)}`)
         });
 
-        // 2) باقات المنصة (customer_subscriptions — يديرها الأدمن)
-        if (planSubs?.ok) {
-            const active = (planSubs.data || []).filter(s =>
-                s.status === 'active' && (!s.end_date || new Date(s.end_date) > new Date()));
-            if (active.length) {
-                rows.push({
-                    label: 'الباقات المفعّلة',
-                    value: active.map(s =>
-                        `<span class="pill status-resolved">${escapeHtml(s.subscription_plans?.name_ar || s.subscription_plans?.name || 'باقة')}</span>`
-                    ).join(' '),
-                    note: escapeHtml(active
-                        .filter(s => s.end_date)
-                        .map(s => `${s.subscription_plans?.name_ar || 'الباقة'} حتى ${formatDate(s.end_date)}`)
-                        .join(' · '))
-                });
-            }
+        const activePlans = (snapshot.planSubs?.ok ? snapshot.planSubs.data : [])
+            .filter(s => s.status === 'active' && (!s.end_date || new Date(s.end_date) > new Date()));
+        if (activePlans.length) {
+            rows.push({
+                label: 'الباقات المفعّلة',
+                value: activePlans.map(s =>
+                    `<span class="pill status-resolved">${escapeHtml(s.subscription_plans?.name_ar || s.subscription_plans?.name || 'باقة')}</span>`
+                ).join(' ')
+            });
         }
 
-        // 3) خدمة الواتساب (اشتراك أو تفعيل يدوي من الأدمن)
-        const waStatus = waSub?.ok ? waSub.data : null;
-        if (waStatus?.hasActiveSubscription) {
+        const wa = snapshot.waSub?.ok ? snapshot.waSub.data : null;
+        if (wa?.hasActiveSubscription) {
             rows.push({
                 label: 'خدمة الواتساب',
-                value: `<span class="pill status-resolved"><span class="pill-dot"></span>فعّالة</span>`,
-                note: escapeHtml(`متبقٍ ${waStatus.daysRemaining} يوم — حتى ${formatDate(waStatus.activeSubscription?.end_date)}`)
+                value: '<span class="pill status-resolved"><span class="pill-dot"></span>فعّالة</span>',
+                note: escapeHtml(`متبقٍ ${wa.daysRemaining} يوم`)
             });
         } else if (profile.whatsapp_enabled) {
             rows.push({
                 label: 'خدمة الواتساب',
-                value: `<span class="pill status-resolved"><span class="pill-dot"></span>مفعّلة</span>`,
+                value: '<span class="pill status-resolved"><span class="pill-dot"></span>مفعّلة</span>',
                 note: 'مفعّلة لحسابك من فريق الإدارة'
             });
         }
 
-        // 4) رصيد الواتساب (يشحنه الأدمن)
-        if (wallet?.ok && wallet.data) {
-            const w = wallet.data;
+        const wallet = snapshot.wallet?.ok ? snapshot.wallet.data : null;
+        if (wallet) {
             rows.push({
                 label: 'رصيد الواتساب',
-                value: escapeHtml(`${w.balance.toLocaleString('ar-EG')} ${w.currency || ''}`),
-                note: escapeHtml(w.isLow
-                    ? `الرصيد أقل من الحد الأدنى (${w.low_balance_threshold}) — تواصل مع الدعم للشحن.`
-                    : `آخر تحديث ${formatDate(w.updated_at)}`)
+                value: escapeHtml(`${wallet.balance.toLocaleString('ar-EG')} ${wallet.currency || ''}`),
+                note: wallet.isLow ? '<span class="pill status-in-progress">تحت الحد الأدنى</span>' : ''
             });
         }
 
-        // 5) وصول المحرك الذكي (الأدمن يمنحه ويحدد الحصة)
-        if (sie?.ok && sie.data?.is_enabled) {
-            const s = sie.data;
-            const meterClass = s.usedPercent >= 90 ? 'meter-fill--danger' : s.usedPercent >= 70 ? 'meter-fill--warning' : '';
+        const sie = snapshot.sie?.ok ? snapshot.sie.data : null;
+        if (sie?.is_enabled && sie.quota > 0) {
+            const tone = sie.usedPercent >= 90 ? 'meter-fill--danger' : sie.usedPercent >= 70 ? 'meter-fill--warning' : '';
             rows.push({
                 label: 'المحرك الذكي',
-                value: s.quota > 0 ? escapeHtml(`${s.used} / ${s.quota} رسالة`) : 'بدون حد',
-                note: s.quota > 0
-                    ? `<div class="meter" style="margin-top:.4rem;"><div class="meter-fill ${meterClass}" style="width:${s.usedPercent}%"></div></div>`
-                    : (s.expires_at ? escapeHtml(`ينتهي في ${formatDate(s.expires_at)}`) : ''),
-                noteIsHtml: s.quota > 0
+                value: escapeHtml(`${sie.used} / ${sie.quota} رسالة`),
+                note: meter(sie.usedPercent, tone)
             });
         }
 
-        // 6) النطاقات الفرعية (العميل يطلبها والأدمن يفعّلها)
-        if (subdomains?.ok && subdomains.data?.length) {
-            const activeDomain = subdomains.data.find(d => d.status === 'active') || subdomains.data[0];
-            const statusClass = activeDomain.status === 'active' ? 'status-resolved'
-                : activeDomain.status === 'pending' ? 'status-in-progress' : 'status-neutral';
+        const domains = snapshot.subdomains?.ok ? snapshot.subdomains.data : [];
+        if (domains.length) {
+            const active = domains.find(d => d.status === 'active') || domains[0];
             rows.push({
                 label: 'النطاق الفرعي',
-                value: `<span class="pill ${statusClass}">${escapeHtml(activeDomain.full_domain || activeDomain.subdomain)}</span>`,
-                note: escapeHtml(activeDomain.status === 'active'
-                    ? `مفعّل منذ ${formatDate(activeDomain.activated_at || activeDomain.created_at)}`
-                    : `الحالة: ${activeDomain.status}`)
+                value: `<span class="pill ${active.status === 'active' ? 'status-resolved' : 'status-in-progress'}">${escapeHtml(active.full_domain || active.subdomain)}</span>`
             });
         }
 
-        // كل من row.value و row.note مبنيان أعلاه كـHTML آمن بالفعل (أي نص
-        // قادم من قاعدة البيانات مرّ على escapeHtml عند بنائه)، فلا نهرّبهما
-        // مرة تانية هنا حتى لا تتحوّل الشارات والمؤشرات إلى نص خام.
-        container.innerHTML = `<div class="data-rows">${rows.map(row => `
-            <div class="data-row">
-                <span class="data-row-label">${escapeHtml(row.label)}</span>
-                <span class="data-row-value">${row.value}</span>
-                ${row.note ? `<div class="data-row-note">${row.note}</div>` : ''}
-            </div>`).join('')}</div>`;
+        container.innerHTML = `<div class="data-rows">${rows.map(dataRow).join('')}</div>`;
+    }
+
+    function renderActivityTimeline(result, targetId, limit) {
+        const container = document.getElementById(targetId);
+        if (!container) return;
+
+        if (!result?.ok) {
+            renderState(container, {
+                variant: 'error',
+                title: 'تعذّر تحميل سجل النشاط',
+                text: 'تحقق من اتصالك ثم أعد المحاولة.',
+                action: { label: 'إعادة المحاولة', retry: 'activity' }
+            });
+            return;
+        }
+
+        const items = toTimeline(result.data, { limit });
+        if (!items.length) {
+            renderState(container, {
+                variant: 'empty',
+                title: 'لا يوجد نشاط مسجَّل بعد',
+                text: 'ستظهر هنا عملياتك على المنصة أولاً بأول — تسجيل الدخول، التذاكر، وتحديثات حسابك.'
+            });
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="activity-timeline">
+                ${items.map(item => `
+                    <div class="activity-item">
+                        <span class="activity-icon">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </span>
+                        <div>
+                            <div class="activity-text">${escapeHtml(item.label)}</div>
+                            <div class="activity-time">${escapeHtml(timeAgo(item.createdAt))}${item.device ? ` · ${escapeHtml(item.device)}` : ''}</div>
+                        </div>
+                    </div>`).join('')}
+            </div>`;
+    }
+
+    /* =========================================================
+       قسم: مركز الدعم
+    ========================================================= */
+
+    function renderSupportSection() {
+        renderSupportAvailability();
+        renderSystemStatus();
+
+        const hint = document.getElementById('supportTicketsHint');
+        if (hint && !isGuest) {
+            const counts = countByView(cachedTickets, user.id);
+            hint.textContent = counts.awaiting
+                ? `${counts.awaiting} تذكرة بانتظار ردّك`
+                : `${counts.open} تذكرة مفتوحة من ${counts.all}`;
+        }
     }
 
     function renderSupportAvailability() {
@@ -551,67 +670,58 @@ function setText(id, value) {
 
         const { isOnline, todayLabel } = supportAvailability(settings);
         const hours = settings.support?.working_hours || [];
-        const parts = [];
+        const rows = [];
 
-        // إظهار حالة الاتصال يتحكم فيها الأدمن (show_support_online_status)
         if (cx.show_support_online_status) {
-            parts.push(`
-                <div class="data-row">
-                    <span class="data-row-label">حالة الفريق الآن</span>
-                    <span class="data-row-value">
-                        <span class="pill ${isOnline ? 'status-resolved' : 'status-neutral'}">
-                            <span class="pill-dot"></span>${isOnline ? 'متاح الآن' : 'خارج ساعات العمل'}
-                        </span>
-                    </span>
-                    <p class="data-row-note">${escapeHtml(todayLabel)}</p>
-                </div>`);
+            rows.push({
+                label: 'حالة الفريق الآن',
+                value: `<span class="pill ${isOnline ? 'status-resolved' : 'status-neutral'}"><span class="pill-dot"></span>${isOnline ? 'متاح الآن' : 'خارج ساعات العمل'}</span>`,
+                note: escapeHtml(todayLabel)
+            });
         }
 
-        // أهداف زمن الرد كما ضبطها الأدمن في sla_config
         const slaRows = ['high', 'medium', 'low']
             .map(p => ({ p, hours: slaTargetHours(settings, p) }))
             .filter(x => x.hours !== null);
 
         if (slaRows.length) {
-            parts.push(`
-                <div class="data-row">
-                    <span class="data-row-label">هدف أول رد</span>
-                    <span class="data-row-value">${slaRows.map(x =>
-                        `<span class="pill priority-${x.p}">${escapeHtml(PRIORITY_LABELS[x.p])}: ${x.hours} س</span>`
-                    ).join(' ')}</span>
-                </div>`);
+            rows.push({
+                label: 'هدف أول رد',
+                value: slaRows.map(x =>
+                    `<span class="pill priority-${x.p}">${escapeHtml(PRIORITY_LABELS[x.p])}: ${x.hours} س</span>`
+                ).join(' ')
+            });
         }
 
+        const workingDays = hours.filter(h => h.is_working_day);
         if (hours.length) {
-            const workingDays = hours.filter(h => h.is_working_day);
-            const summary = workingDays.length
-                ? workingDays.map(h => `${dayName(h.day_of_week)} ${formatTime(h.start_time)}–${formatTime(h.end_time)}`).join(' · ')
-                : 'لا توجد أيام عمل محددة';
-            parts.push(`
-                <div class="data-row">
-                    <span class="data-row-label">ساعات العمل</span>
-                    <span class="data-row-value">${workingDays.length} أيام أسبوعياً</span>
-                    <p class="data-row-note">${escapeHtml(summary)}</p>
-                </div>`);
+            rows.push({
+                label: 'ساعات العمل',
+                value: escapeHtml(`${workingDays.length} أيام أسبوعياً`),
+                note: escapeHtml(workingDays.length
+                    ? workingDays.map(h => `${dayName(h.day_of_week)} ${formatTime(h.start_time)}–${formatTime(h.end_time)}`).join(' · ')
+                    : 'لا توجد أيام عمل محددة')
+            });
         }
 
-        // رقم واتساب الدعم — يضبطه الأدمن، ولو فاضي مش بيتعرض أصلاً
         if (cx.support_whatsapp) {
-            parts.push(`
-                <div class="data-row">
-                    <span class="data-row-label">واتساب الدعم</span>
-                    <span class="data-row-value">
-                        <a class="panel-link" href="https://wa.me/${encodeURIComponent(cx.support_whatsapp)}" target="_blank" rel="noopener noreferrer">تواصل مباشر</a>
-                    </span>
-                </div>`);
+            rows.push({
+                label: 'واتساب الدعم',
+                value: `<a class="panel-link" href="https://wa.me/${encodeURIComponent(cx.support_whatsapp)}" target="_blank" rel="noopener noreferrer">تواصل مباشر</a>`
+            });
         }
 
-        if (!parts.length) {
-            renderState(container, { variant: 'empty', title: 'لم تُحدَّد ساعات عمل بعد', text: 'يمكنك فتح تذكرة في أي وقت وسيصلك الرد فور توفّر الفريق.' });
+        if (!rows.length) {
+            renderState(container, {
+                variant: 'empty',
+                title: 'لم تُحدَّد ساعات عمل بعد',
+                text: 'يمكنك فتح تذكرة في أي وقت وسيصلك الرد فور توفّر الفريق.',
+                action: { label: 'فتح تذكرة', act: 'open-create-ticket', variant: 'btn-primary' }
+            });
             return;
         }
 
-        container.innerHTML = `<div class="data-rows">${parts.join('')}</div>`;
+        container.innerHTML = `<div class="data-rows">${rows.map(dataRow).join('')}</div>`;
     }
 
     const SERVICE_STATUS_LABELS = {
@@ -622,19 +732,28 @@ function setText(id, value) {
         maintenance: 'صيانة'
     };
 
-    function renderSystemStatus(result) {
+    function renderSystemStatus() {
         const container = document.getElementById('systemStatusBody');
         if (!container) return;
 
+        const result = snapshot?.systemStatus;
         if (!result?.ok) {
-            renderState(container, { variant: 'error', title: 'تعذّر تحميل حالة النظام' });
+            renderState(container, {
+                variant: 'error',
+                title: 'تعذّر تحميل حالة النظام',
+                text: 'تحقق من اتصالك ثم أعد المحاولة.',
+                action: { label: 'إعادة المحاولة', retry: 'support' }
+            });
             return;
         }
 
         const { services, incidents, degraded, allOperational } = result.data;
-
         if (!services.length) {
-            renderState(container, { variant: 'empty', title: 'لا توجد خدمات مُراقَبة حالياً' });
+            renderState(container, {
+                variant: 'empty',
+                title: 'لا توجد خدمات مُراقَبة حالياً',
+                text: 'سيظهر هنا وضع كل خدمة بمجرد تفعيل المراقبة من فريق الإدارة.'
+            });
             return;
         }
 
@@ -658,162 +777,18 @@ function setText(id, value) {
                         <span class="alert-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg></span>
                         <div class="alert-body">
                             <p class="alert-title">${escapeHtml(inc.title)}</p>
-                            <p class="alert-text">${escapeHtml(inc.description || '')} — بدأ ${timeAgo(inc.created_at)}</p>
+                            <p class="alert-text">${escapeHtml(inc.description || '')} — بدأ ${escapeHtml(timeAgo(inc.created_at))}</p>
                         </div>
                     </div>`).join('')}
             </div>` : '';
 
-        const rows = services.map(s => {
-            const isOk = s.status === 'operational';
-            return `
-                <div class="data-row">
-                    <span class="data-row-label">${escapeHtml(s.name)}</span>
-                    <span class="data-row-value">
-                        <span class="pill ${isOk ? 'status-resolved' : 'status-in-progress'}">
-                            <span class="pill-dot"></span>${escapeHtml(SERVICE_STATUS_LABELS[s.status] || s.status)}
-                        </span>
-                    </span>
-                </div>`;
-        }).join('');
+        const rows = services.map(s => dataRow({
+            label: s.name,
+            value: `<span class="pill ${s.status === 'operational' ? 'status-resolved' : 'status-in-progress'}"><span class="pill-dot"></span>${escapeHtml(SERVICE_STATUS_LABELS[s.status] || s.status)}</span>`,
+            note: s.last_checked ? escapeHtml(`آخر فحص ${timeAgo(s.last_checked)}`) : ''
+        })).join('');
 
         container.innerHTML = `${banner}${incidentsHtml}<div class="data-rows" style="margin-top: var(--sp-3);">${rows}</div>`;
-    }
-
-    const ACTION_LABELS = {
-        login: 'تسجيل دخول',
-        logout: 'تسجيل خروج',
-        ticket_create: 'إنشاء تذكرة',
-        ticket_reply: 'إضافة رد على تذكرة',
-        ticket_delete: 'أرشفة تذكرة',
-        profile_update: 'تحديث الملف الشخصي',
-        password_change: 'تغيير كلمة المرور',
-        subscription_request: 'طلب اشتراك'
-    };
-
-    function renderRecentActivity(result) {
-        const container = document.getElementById('recentActivityBody');
-        if (!container) return;
-
-        if (!result?.ok) {
-            renderState(container, { variant: 'error', title: 'تعذّر تحميل سجل النشاط' });
-            return;
-        }
-
-        const logs = result.data || [];
-        if (!logs.length) {
-            renderState(container, { variant: 'empty', title: 'لا يوجد نشاط مسجَّل بعد', text: 'ستظهر هنا عملياتك على المنصة أولاً بأول.' });
-            return;
-        }
-
-        container.innerHTML = `
-            <div class="activity-timeline">
-                ${logs.map(log => `
-                    <div class="activity-item">
-                        <span class="activity-icon">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        </span>
-                        <div>
-                            <div class="activity-text">${escapeHtml(ACTION_LABELS[log.action] || log.action)}</div>
-                            <div class="activity-time">${escapeHtml(timeAgo(log.created_at))}${log.device_info ? ` · ${escapeHtml(log.device_info)}` : ''}</div>
-                        </div>
-                    </div>`).join('')}
-            </div>`;
-    }
-
-    /**
-     * تنبيهات "يحتاج انتباهك" — كلها مشتقة من بيانات حقيقية، مفيش أي تنبيه ثابت.
-     */
-    function renderOverviewAlerts() {
-        const panel = document.getElementById('overviewAlertsPanel');
-        const list = document.getElementById('overviewAlertsList');
-        if (!panel || !list || !overviewSnapshot) return;
-
-        const { account, waSub, wallet, sie, tickets, systemStatus } = overviewSnapshot;
-        const alerts = [];
-
-        const profile = account?.ok ? account.data : null;
-        if (profile?.ban_status && !['active', 'none'].includes(profile.ban_status)) {
-            alerts.push({
-                tone: 'danger',
-                title: 'حسابك مقيّد حالياً',
-                text: profile.ban_reason || 'تواصل مع فريق الدعم لمعرفة التفاصيل وإعادة التفعيل.'
-            });
-        }
-
-        const awaiting = countAwaitingCustomer(tickets);
-        if (awaiting > 0) {
-            alerts.push({
-                tone: 'warning',
-                title: `${awaiting} تذكرة بانتظار ردّك`,
-                text: 'فريق الدعم ردّ عليك ولم تردّ بعد — الرد السريع يقصّر زمن الحل.',
-                action: { label: 'عرض التذاكر', goto: 'tickets' }
-            });
-        }
-
-        const wa = waSub?.ok ? waSub.data : null;
-        if (wa?.isExpiringSoon) {
-            alerts.push({
-                tone: 'warning',
-                title: `اشتراك الواتساب ينتهي خلال ${wa.daysRemaining} يوم`,
-                text: `تاريخ الانتهاء: ${formatDate(wa.expiringSubscription?.end_date)} — جدّد قبل الانتهاء لتفادي توقّف الخدمة.`,
-                action: { label: 'الاشتراكات', href: '/customer-subscriptions.html' }
-            });
-        }
-
-        if (wallet?.ok && wallet.data?.isLow) {
-            alerts.push({
-                tone: 'warning',
-                title: 'رصيد الواتساب منخفض',
-                text: `الرصيد الحالي ${wallet.data.balance} ${wallet.data.currency || ''} وهو تحت الحد الأدنى المحدد لحسابك.`
-            });
-        }
-
-        const sieData = sie?.ok ? sie.data : null;
-        if (sieData?.is_enabled && sieData.usedPercent !== null && sieData.usedPercent >= 80) {
-            alerts.push({
-                tone: sieData.usedPercent >= 100 ? 'danger' : 'warning',
-                title: sieData.usedPercent >= 100 ? 'استُهلكت حصة المحرك الذكي بالكامل' : 'اقتربت من نهاية حصة المحرك الذكي',
-                text: `استخدمت ${sieData.used} من ${sieData.quota} رسالة.`
-            });
-        }
-        if (sieData?.is_enabled && sieData.isExpired) {
-            alerts.push({
-                tone: 'danger',
-                title: 'انتهت صلاحية وصولك للمحرك الذكي',
-                text: `انتهت في ${formatDate(sieData.expires_at)} — تواصل مع الدعم للتجديد.`
-            });
-        }
-
-        const sys = systemStatus?.ok ? systemStatus.data : null;
-        if (sys?.incidents?.length) {
-            alerts.push({
-                tone: 'info',
-                title: 'يوجد عُطل معلن حالياً',
-                text: `${sys.incidents[0].title} — قد يفسّر ما تواجهه قبل فتح تذكرة جديدة.`
-            });
-        }
-
-        if (!alerts.length) {
-            panel.hidden = true;
-            return;
-        }
-
-        panel.hidden = false;
-        list.innerHTML = alerts.map(a => `
-            <div class="alert-item alert-item--${a.tone}">
-                <span class="alert-icon">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="10"/></svg>
-                </span>
-                <div class="alert-body">
-                    <p class="alert-title">${escapeHtml(a.title)}</p>
-                    <p class="alert-text">${escapeHtml(a.text)}</p>
-                </div>
-                ${a.action
-                    ? (a.action.href
-                        ? `<a class="alert-action" href="${escapeHtml(a.action.href)}">${escapeHtml(a.action.label)}</a>`
-                        : `<button type="button" class="alert-action" data-goto="${escapeHtml(a.action.goto)}" style="background:none;border:none;cursor:pointer;font-family:inherit;">${escapeHtml(a.action.label)}</button>`)
-                    : ''}
-            </div>`).join('');
     }
 
     /* =========================================================
@@ -821,132 +796,106 @@ function setText(id, value) {
     ========================================================= */
 
     let currentTicketId = null;
-    let currentFilters = { status: 'all', search: '' };
-    let cachedTickets = [];
-    let openTicketCount = 0;
+    let currentView = 'all';
+    let ticketSearch = '';
+    let ticketSort = 'updated';
 
-    async function renderStats() {
-        if (isGuest) return null;
-
-        const stats = await fetchTicketStats().catch(err => {
-            console.error('[Tickets] stats:', err);
-            return null;
-        });
-        if (!stats) return null;
-
-        setText('userTotalTickets', stats.total ?? 0);
-        setText('userOpenTickets', stats.open ?? 0);
-        setText('userInProgressTickets', stats.inProgress ?? 0);
-        setText('userResolvedTickets', stats.resolved ?? 0);
-
-        openTicketCount = (stats.open ?? 0) + (stats.inProgress ?? 0);
-        setSidebarBadge('tickets', openTicketCount);
-        updateTicketLimitHint();
-        return stats;
+    function sortTickets(list) {
+        const copy = [...list];
+        if (ticketSort === 'created') {
+            copy.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        } else if (ticketSort === 'oldest') {
+            copy.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        } else {
+            copy.sort((a, b) =>
+                new Date(b.last_updated_at || b.created_at) - new Date(a.last_updated_at || a.created_at));
+        }
+        return copy;
     }
 
-    /** يبيّن للعميل حد التذاكر المفتوحة اللي ضبطه الأدمن قبل ما يصطدم بيه. */
+    function renderTicketViewTabs() {
+        const container = document.getElementById('ticketViewTabs');
+        if (!container) return;
+        const counts = countByView(cachedTickets, user.id);
+
+        container.innerHTML = TICKET_VIEWS.map(view => `
+            <button type="button" class="view-tab" role="tab" data-view="${view.key}"
+                    aria-selected="${view.key === currentView}" title="${escapeHtml(view.hint)}">
+                ${escapeHtml(view.label)}
+                <span class="view-tab-count">${counts[view.key]}</span>
+            </button>`).join('');
+    }
+
     function updateTicketLimitHint() {
         const hintEl = document.getElementById('ticketsLimitHint');
         if (!hintEl) return;
-
+        const counts = countByView(cachedTickets, user.id);
         const max = settings.limits?.max_open_tickets;
         const parts = [];
-        if (max) {
-            parts.push(`لديك ${openTicketCount} من ${max} تذاكر مفتوحة مسموح بها في نفس الوقت.`);
-        }
+        if (max) parts.push(`لديك ${counts.open} من ${max} تذاكر مفتوحة مسموح بها في نفس الوقت.`);
         if (settings.limits?.ticket_retention_days) {
             parts.push(`تُؤرشف التذاكر تلقائياً بعد ${settings.limits.ticket_retention_days} يوماً.`);
         }
         hintEl.textContent = parts.join(' ');
     }
 
-    function ticketNeedsCustomerReply(ticket) {
-        return ticket.status !== 'resolved'
-            && ticket.last_updated_by
-            && ticket.last_updated_by !== user.id;
-    }
-
-    /**
-     * تلميح "الرد المتوقع" من sla_response_due_at المخزّن على التذكرة.
-     * الوحدة بتتدرّج (دقائق → ساعات → أيام) عشان الرقم يفضل مقروء مهما كانت
-     * المهلة، بدل ما يطلع رقم ساعات ضخم لو المهلة بعيدة.
-     */
     function slaFriendlyHint(ticket) {
-        if (!ticket?.sla_response_due_at || ticket.first_response_at || ticket.status === 'resolved') return '';
-
+        if (!ticket?.sla_response_due_at || ticket.first_response_at || statusInfo(ticket.status).closed) return '';
         const diffHours = (new Date(ticket.sla_response_due_at) - Date.now()) / 3600000;
         if (Number.isNaN(diffHours)) return '';
-
         if (diffHours <= 0) {
-            return `<div class="ticket-sla-hint"><span class="pill sla-warn">تأخر الرد — الفريق يتابعها</span></div>`;
+            return '<div class="ticket-sla-hint"><span class="pill sla-warn">تأخر الرد — الفريق يتابعها</span></div>';
         }
-
         let label;
-        if (diffHours < 1) {
-            label = `خلال ${Math.max(1, Math.round(diffHours * 60))} دقيقة`;
-        } else if (diffHours < 48) {
-            label = `خلال ${Math.round(diffHours)} ساعة`;
-        } else {
-            label = `خلال ${Math.round(diffHours / 24)} يوم`;
-        }
+        if (diffHours < 1) label = `خلال ${Math.max(1, Math.round(diffHours * 60))} دقيقة`;
+        else if (diffHours < 48) label = `خلال ${Math.round(diffHours)} ساعة`;
+        else label = `خلال ${Math.round(diffHours / 24)} يوم`;
         return `<div class="ticket-sla-hint"><span class="pill sla-info">الرد المتوقع ${escapeHtml(label)}</span></div>`;
     }
 
-    async function renderTickets(filters = currentFilters) {
+    function renderTickets() {
         const list = document.getElementById('userTicketsList');
         const countEl = document.getElementById('ticketsResultCount');
         if (!list) return;
 
-        // وضع الضيف: مفيش جلسة أصلاً، فخدمات التذاكر هترمي استثناء. نعرض
-        // رسالة صحيحة بدل رسالة "تعذّر الاتصال" المضللة.
+        renderTicketViewTabs();
+        updateTicketLimitHint();
+
         if (isGuest) {
             renderState(list, {
                 variant: 'empty',
                 title: 'سجّل الدخول لعرض تذاكرك',
-                text: 'تذاكر الدعم مرتبطة بحسابك. أنشئ حساباً أو سجّل الدخول للمتابعة.'
+                text: 'تذاكر الدعم مرتبطة بحسابك. سجّل الدخول للمتابعة.'
             });
             if (countEl) countEl.textContent = '';
             clearTicketPanel();
             return;
         }
 
-        list.innerHTML = '<div style="padding: var(--sp-3);">' +
-            '<div class="skeleton skeleton-card" style="margin-bottom:.5rem;"></div>'.repeat(3) + '</div>';
+        const filtered = sortTickets(
+            applyTicketView(cachedTickets, { view: currentView, search: ticketSearch, userId: user.id })
+        );
 
-        let tickets;
-        try {
-            tickets = await fetchUserTickets(filters);
-        } catch (err) {
-            console.error('[Tickets] fetch:', err);
-            renderState(list, { variant: 'error', title: 'تعذّر تحميل التذاكر', text: 'تحقق من اتصالك ثم حدّث الصفحة.' });
-            if (countEl) countEl.textContent = '';
-            return;
-        }
+        if (countEl) countEl.textContent = filtered.length ? `${filtered.length} تذكرة` : '';
 
-        cachedTickets = tickets || [];
-
-        if (countEl) {
-            countEl.textContent = cachedTickets.length
-                ? `${cachedTickets.length} تذكرة`
-                : '';
-        }
-
-        if (!cachedTickets.length) {
-            const filtered = filters.status !== 'all' || filters.search;
+        if (!filtered.length) {
+            const isFiltered = currentView !== 'all' || ticketSearch;
             renderState(list, {
                 variant: 'empty',
-                title: filtered ? 'لا توجد نتائج مطابقة' : 'لا توجد تذاكر حتى الآن',
-                text: filtered
-                    ? 'جرّب تغيير الفلتر أو مسح كلمة البحث.'
-                    : 'افتح تذكرة جديدة وسيتواصل معك فريق الدعم.'
+                title: isFiltered ? 'لا توجد نتائج مطابقة' : 'لا توجد تذاكر حتى الآن',
+                text: isFiltered
+                    ? 'جرّب مجموعة أخرى أو امسح كلمة البحث.'
+                    : 'افتح تذكرة جديدة وسيتواصل معك فريق الدعم في أقرب وقت.',
+                action: isFiltered
+                    ? { label: 'عرض كل التذاكر', act: 'reset-ticket-filters' }
+                    : { label: 'إنشاء تذكرة', act: 'open-create-ticket', variant: 'btn-primary' }
             });
             clearTicketPanel();
             return;
         }
 
-        list.innerHTML = cachedTickets.map(t => `
-            <button type="button" class="ticket-card${ticketNeedsCustomerReply(t) ? ' needs-reply' : ''}" data-id="${escapeHtml(t.id)}" role="listitem">
+        list.innerHTML = filtered.map(t => `
+            <button type="button" class="ticket-card${needsCustomerReply(t, user.id) ? ' needs-reply' : ''}" data-id="${escapeHtml(t.id)}" role="listitem">
                 <span class="ticket-card-top">
                     <span class="ticket-num">#${escapeHtml(String(t.ticket_number || '---'))}</span>
                     ${statusBadge(t.status)}
@@ -957,34 +906,47 @@ function setText(id, value) {
                     ${categoryBadge(t.category)}
                 </span>
                 <span class="ticket-footer-row">
-                    <span>${escapeHtml(new Date(t.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' }))}</span>
-                    ${ticketNeedsCustomerReply(t) ? '<span class="pill status-in-progress">بانتظار ردّك</span>' : ''}
+                    <span>آخر تحديث ${escapeHtml(timeAgo(t.last_updated_at || t.created_at))}</span>
+                    ${needsCustomerReply(t, user.id) ? '<span class="pill status-in-progress">بانتظار ردّك</span>' : ''}
                 </span>
                 ${slaFriendlyHint(t)}
             </button>`).join('');
 
         list.querySelectorAll('.ticket-card').forEach(card => {
-            card.addEventListener('click', () => {
-                list.querySelectorAll('.ticket-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                const ticket = cachedTickets.find(t => t.id === card.dataset.id);
-                if (ticket) showTicketInPanel(ticket);
-            });
+            card.addEventListener('click', () => openTicket(card.dataset.id));
         });
 
-        // إعادة اختيار التذكرة المفتوحة إن كانت لسه في القائمة، وإلا أول تذكرة
-        const keep = currentTicketId && cachedTickets.find(t => t.id === currentTicketId);
-        const target = keep || cachedTickets[0];
-        const targetCard = list.querySelector(`.ticket-card[data-id="${CSS.escape(target.id)}"]`);
-        if (targetCard) targetCard.classList.add('selected');
+        const keep = currentTicketId && filtered.find(t => t.id === currentTicketId);
+        const target = keep || filtered[0];
+        markSelectedCard(target.id);
+        currentTicketId = target.id;
         showTicketInPanel(target);
+    }
+
+    function markSelectedCard(ticketId) {
+        const list = document.getElementById('userTicketsList');
+        if (!list) return;
+        list.querySelectorAll('.ticket-card').forEach(c => c.classList.remove('selected'));
+        list.querySelector(`.ticket-card[data-id="${CSS.escape(ticketId)}"]`)?.classList.add('selected');
+    }
+
+    /** يفتح تذكرة بالمعرّف — نقطة الدخول الوحيدة (قائمة، إشعار، رابط مباشر، بحث). */
+    function openTicket(ticketId) {
+        const ticket = cachedTickets.find(t => t.id === ticketId);
+        if (!ticket) {
+            ui.showToast('التذكرة غير موجودة أو تمت إزالتها من قائمتك', 'warning');
+            return;
+        }
+        currentTicketId = ticketId;
+        markSelectedCard(ticketId);
+        document.getElementById('ticketsLayout')?.classList.add('detail-open');
+        showTicketInPanel(ticket);
     }
 
     function clearTicketPanel() {
         currentTicketId = null;
-        const panel = document.getElementById('ticketDetailsContent');
-        if (!panel) return;
-        renderState(panel, {
+        document.getElementById('ticketsLayout')?.classList.remove('detail-open');
+        renderState(document.getElementById('ticketDetailsContent'), {
             variant: 'empty',
             title: 'اختر تذكرة لعرض تفاصيلها',
             text: 'التفاصيل والردود وسجل التذكرة ستظهر هنا.'
@@ -997,33 +959,37 @@ function setText(id, value) {
         if (isImage && url) {
             return `<img src="${url}" alt="${escapeHtml(att.file_name || 'مرفق')}" loading="lazy">`;
         }
-        return `<span class="att-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>`;
+        return '<span class="att-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>';
     }
 
     async function showTicketInPanel(ticket) {
-        currentTicketId = ticket.id;
         const panel = document.getElementById('ticketDetailsContent');
         if (!panel) return;
 
         renderSkeletonLines(panel, 5);
 
-        // التقييم يظهر فقط لو الأدمن سامح بيه (allow_ticket_rating)
-        const ratingAllowed = cx.allow_ticket_rating && ticket.status === 'resolved';
+        const actions = availableActions(ticket, { userId: user.id, ratingAllowed: cx.allow_ticket_rating });
 
         const [attachments, tags, activity, existingRating] = await Promise.all([
             fetchTicketAttachments(ticket.id).catch(() => []),
             fetchTicketTags(ticket.id).catch(() => []),
             fetchTicketActivity(ticket.id).catch(() => []),
-            ratingAllowed ? fetchTicketRating(ticket.id).catch(() => null) : Promise.resolve(null)
+            actions.canRate ? fetchTicketRating(ticket.id).catch(() => null) : Promise.resolve(null)
         ]);
+
+        // تجاهُل نتيجة قديمة لو المستخدم بدّل التذكرة أثناء التحميل
+        if (currentTicketId !== ticket.id) return;
 
         // توافق مع تذاكر قديمة كانت تخزّن صورة واحدة في image_url
         const legacyImage = (ticket.image_url && !attachments.some(a => a.file_url === ticket.image_url))
             ? [{ file_url: ticket.image_url, file_name: 'مرفق', mime_type: 'image/*' }]
             : [];
         const allAttachments = [...attachments, ...legacyImage];
-
         const visibleActivity = (activity || []).filter(a => !CUSTOMER_HIDDEN_ACTIVITY_TYPES.has(a.action_type));
+
+        const slaFacts = [];
+        if (ticket.sla_response_due_at) slaFacts.push(`هدف أول رد: ${formatDateTime(ticket.sla_response_due_at)}`);
+        if (ticket.first_response_at) slaFacts.push(`أول رد وصل: ${formatDateTime(ticket.first_response_at)}`);
 
         panel.innerHTML = `
             <div class="ticket-detail-head">
@@ -1031,6 +997,7 @@ function setText(id, value) {
                     <h2 class="ticket-detail-title">${escapeHtml(ticket.title)}</h2>
                     ${statusBadge(ticket.status)}
                 </div>
+                ${actions.needsReply ? '<div class="ticket-sla-hint" style="margin-top:var(--sp-2);"><span class="pill status-in-progress">بانتظار ردّك — فريق الدعم ردّ ولم تردّ بعد</span></div>' : ''}
                 <div class="ticket-badges-row" style="margin-top:var(--sp-3);">
                     ${priorityBadge(ticket.priority)}
                     ${categoryBadge(ticket.category)}
@@ -1039,8 +1006,11 @@ function setText(id, value) {
                 <div class="ticket-detail-meta">
                     <span>رقم التذكرة: <strong>#${escapeHtml(String(ticket.ticket_number || '---'))}</strong></span>
                     <span>أُنشئت ${escapeHtml(formatDate(ticket.created_at))}</span>
+                    <span>آخر تحديث ${escapeHtml(timeAgo(ticket.last_updated_at || ticket.created_at))}</span>
                     ${ticket.resolved_at ? `<span>حُلّت ${escapeHtml(formatDate(ticket.resolved_at))}</span>` : ''}
+                    ${ticket.reopen_count ? `<span>أُعيد فتحها ${escapeHtml(String(ticket.reopen_count))} مرة</span>` : ''}
                 </div>
+                ${slaFacts.length ? `<div class="ticket-detail-meta">${slaFacts.map(x => `<span>${escapeHtml(x)}</span>`).join('')}</div>` : ''}
                 ${slaFriendlyHint(ticket)}
             </div>
 
@@ -1061,14 +1031,14 @@ function setText(id, value) {
                 </div>
             </div>` : ''}
 
-            ${ratingAllowed ? `
+            ${actions.canRate ? `
             <div class="detail-section">
                 <div class="panel" style="margin:0; padding:var(--sp-4);">
                     <h3 class="detail-section-title" style="margin-bottom:var(--sp-3);">تقييمك للخدمة</h3>
                     <div id="ratingContainer">
                         ${existingRating ? `
                             <div class="rating-submitted">
-                                <span style="color:#F5A623;">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</span>
+                                <span style="color:var(--on-warning);">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</span>
                                 <span>شكراً لتقييمك</span>
                             </div>
                             ${existingRating.comment ? `<p class="detail-body u-muted" style="margin-top:.5rem; font-size:var(--fs-sm);">${escapeHtml(existingRating.comment)}</p>` : ''}
@@ -1088,11 +1058,11 @@ function setText(id, value) {
             <div class="detail-section">
                 <h3 class="detail-section-title">سجل التذكرة</h3>
                 <div class="activity-timeline">
-                    ${visibleActivity.slice(0, 8).map(a => `
+                    ${visibleActivity.slice(0, 10).map(a => `
                         <div class="activity-item">
                             <span class="activity-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
                             <div>
-                                <div class="activity-text">${escapeHtml(ACTIVITY_LABELS[a.action_type] || a.action_type)}${a.action_type === 'status_change' && a.to_value ? ` — ${escapeHtml(STATUS_LABELS[a.to_value] || a.to_value)}` : ''}</div>
+                                <div class="activity-text">${escapeHtml(ACTIVITY_LABELS[a.action_type] || a.action_type)}${a.action_type === 'status_change' && a.to_value ? ` — ${escapeHtml(statusInfo(a.to_value).label)}` : ''}</div>
                                 <div class="activity-time">${escapeHtml(timeAgo(a.created_at))}</div>
                             </div>
                         </div>`).join('')}
@@ -1100,16 +1070,31 @@ function setText(id, value) {
             </div>` : ''}
 
             <div class="detail-section" style="border-top:1px solid var(--color-border); padding-top:var(--sp-5);">
-                <h3 class="detail-section-title" style="font-size:var(--fs-base);">الردود</h3>
+                <h3 class="detail-section-title" style="font-size:var(--fs-base);">المحادثة</h3>
                 <div id="panelRepliesList" class="replies-scroll"></div>
-                <label class="visually-hidden" for="panelReplyText">اكتب ردك</label>
-                <textarea id="panelReplyText" class="form-control" rows="3" placeholder="اكتب ردك هنا…"></textarea>
-                <button type="button" id="panelSendReply" class="btn btn-primary btn-block" style="margin-top:var(--sp-3);">إرسال الرد</button>
+
+                ${actions.canReply ? `
+                    ${actions.canReopen ? '<p class="field-hint" style="margin-bottom:var(--sp-2);">التذكرة تم حلّها — إرسال ردّ جديد سيعيد فتحها لفريق الدعم.</p>' : ''}
+                    <label class="visually-hidden" for="panelReplyText">اكتب ردك</label>
+                    <textarea id="panelReplyText" class="form-control" rows="3" placeholder="اكتب ردك هنا…"></textarea>
+                    <button type="button" id="panelSendReply" class="btn btn-primary btn-block" style="margin-top:var(--sp-3);">
+                        ${actions.canReopen ? 'إرسال وإعادة فتح التذكرة' : 'إرسال الرد'}
+                    </button>
+                ` : `
+                    <div class="alert-item alert-item--info">
+                        <span class="alert-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg></span>
+                        <div class="alert-body">
+                            <p class="alert-title">هذه التذكرة مغلقة</p>
+                            <p class="alert-text">لو لسه محتاج مساعدة في نفس الموضوع، افتح تذكرة جديدة واذكر رقم هذه التذكرة.</p>
+                        </div>
+                        <button type="button" class="alert-action" data-action="open-create-ticket" style="background:none;border:none;cursor:pointer;font-family:inherit;">تذكرة جديدة</button>
+                    </div>
+                `}
             </div>
 
             <div style="display:flex; gap:var(--sp-3); border-top:1px solid var(--color-border); padding-top:var(--sp-5); flex-wrap:wrap;">
                 ${cx.support_whatsapp ? `
-                <button type="button" id="followUpWhatsApp" class="btn" style="flex:1; min-width:12rem; background:#25D366; color:#fff; border:none;">
+                <button type="button" id="followUpWhatsApp" class="btn" style="flex:1; min-width:12rem; background:var(--on-whatsapp); color:#fff; border:none;">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.383 0 0 5.383 0 12s5.383 12 12 12 12-5.383 12-12S18.617 0 12 0zm5.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
                     متابعة على الواتساب
                 </button>` : ''}
@@ -1121,7 +1106,7 @@ function setText(id, value) {
 
         await loadRepliesInPanel(ticket.id);
         wireRatingWidget(ticket);
-        wireTicketActions(ticket);
+        wireTicketActions(ticket, actions);
     }
 
     function wireRatingWidget(ticket) {
@@ -1132,8 +1117,7 @@ function setText(id, value) {
         let selected = 0;
         const stars = Array.from(starsEl.querySelectorAll('.star'));
         const paint = (value) => stars.forEach(s => {
-            const on = Number(s.dataset.value) <= value;
-            s.classList.toggle('active', on);
+            s.classList.toggle('active', Number(s.dataset.value) <= value);
             s.setAttribute('aria-checked', String(Number(s.dataset.value) === value));
         });
 
@@ -1158,10 +1142,9 @@ function setText(id, value) {
                 if (container) {
                     container.innerHTML = `
                         <div class="rating-submitted">
-                            <span style="color:#F5A623;">${'★'.repeat(selected)}${'☆'.repeat(5 - selected)}</span>
+                            <span style="color:var(--on-warning);">${'★'.repeat(selected)}${'☆'.repeat(5 - selected)}</span>
                             <span>شكراً لتقييمك</span>
-                        </div>
-                        ${comment ? `<p class="detail-body u-muted" style="margin-top:.5rem; font-size:var(--fs-sm);">${escapeHtml(comment)}</p>` : ''}`;
+                        </div>`;
                 }
                 ui.showToast('تم تسجيل تقييمك، شكراً لك', 'success');
             } catch (err) {
@@ -1172,28 +1155,21 @@ function setText(id, value) {
         });
     }
 
-    function wireTicketActions(ticket) {
-        // واتساب — الرقم من إعدادات الأدمن، والزر أصلاً مش موجود لو مفيش رقم
+    function wireTicketActions(ticket, actions) {
         document.getElementById('followUpWhatsApp')?.addEventListener('click', () => {
             const summary = [
-                `*تفاصيل التذكرة #${ticket.ticket_number}*`,
-                '',
+                `*تفاصيل التذكرة #${ticket.ticket_number}*`, '',
                 `*العنوان:* ${ticket.title}`,
-                `*الحالة:* ${STATUS_LABELS[ticket.status] || ticket.status}`,
-                `*تاريخ الإنشاء:* ${new Date(ticket.created_at).toLocaleDateString('ar-EG')}`,
-                '',
-                '*الوصف:*',
-                ticket.description
+                `*الحالة:* ${statusInfo(ticket.status).label}`,
+                `*تاريخ الإنشاء:* ${new Date(ticket.created_at).toLocaleDateString('ar-EG')}`, '',
+                '*الوصف:*', ticket.description
             ].join('\n');
             window.open(
                 `https://wa.me/${encodeURIComponent(cx.support_whatsapp)}?text=${encodeURIComponent(summary)}`,
-                '_blank',
-                'noopener'
+                '_blank', 'noopener'
             );
         });
 
-        // "إخفاء من قائمتي" = أرشفة عند العميل فقط. التذكرة وسجلها يبقيان
-        // محفوظين بالكامل لدى فريق الدعم — والنص بيقول كده صراحةً.
         document.getElementById('archiveTicket')?.addEventListener('click', async () => {
             const confirmed = await ui.showConfirm(
                 'إخفاء التذكرة من قائمتك؟',
@@ -1205,7 +1181,7 @@ function setText(id, value) {
             try {
                 await deleteTicket(ticket.id);
                 currentTicketId = null;
-                await Promise.all([renderStats(), renderTickets()]);
+                await refreshTickets();
                 ui.showToast('تم إخفاء التذكرة من قائمتك', 'success');
             } catch (err) {
                 console.error('[Tickets] archive:', err);
@@ -1213,7 +1189,6 @@ function setText(id, value) {
             }
         });
 
-        // إرسال رد
         const sendBtn = document.getElementById('panelSendReply');
         const replyInput = document.getElementById('panelReplyText');
         if (!sendBtn || !replyInput) return;
@@ -1225,23 +1200,39 @@ function setText(id, value) {
                 replyInput.focus();
                 return;
             }
+
+            // الردّ على تذكرة محلولة = إعادة فتحها (trigger في migrations/012)
+            if (actions.canReopen) {
+                const ok = await ui.showConfirm(
+                    'إعادة فتح التذكرة؟',
+                    'التذكرة تم حلّها. إرسال ردّ جديد سيعيدها لفريق الدعم للمتابعة.',
+                    { confirmLabel: 'إرسال وإعادة الفتح', cancelLabel: 'تراجع', type: 'info' }
+                );
+                if (!ok) return;
+            }
+
+            const original = sendBtn.textContent;
             sendBtn.disabled = true;
             sendBtn.textContent = 'جاري الإرسال…';
             try {
                 await addTicketReply(ticket.id, message);
                 replyInput.value = '';
-                await loadRepliesInPanel(ticket.id);
-                ui.showToast('تم إرسال ردك', 'success');
+                if (actions.canReopen) {
+                    await refreshTickets();
+                    ui.showToast('تم إرسال ردك وإعادة فتح التذكرة', 'success');
+                } else {
+                    await loadRepliesInPanel(ticket.id);
+                    ui.showToast('تم إرسال ردك', 'success');
+                }
             } catch (err) {
                 ui.showToast(`تعذّر إرسال الرد: ${err.message || 'خطأ غير متوقع'}`, 'error');
             } finally {
                 sendBtn.disabled = false;
-                sendBtn.textContent = 'إرسال الرد';
+                sendBtn.textContent = original;
             }
         };
 
         sendBtn.addEventListener('click', send);
-        // Ctrl/Cmd + Enter اختصار شائع لإرسال الرد
         replyInput.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
@@ -1261,7 +1252,11 @@ function setText(id, value) {
         try {
             const replies = await fetchTicketReplies(ticketId);
             if (!replies.length) {
-                renderState(list, { variant: 'empty', icon: false, title: 'لا توجد ردود بعد', text: 'سيظهر رد فريق الدعم هنا فور وصوله.' });
+                renderState(list, {
+                    variant: 'empty', icon: false,
+                    title: 'لا توجد ردود بعد',
+                    text: 'سيظهر رد فريق الدعم هنا فور وصوله.'
+                });
                 return;
             }
 
@@ -1283,275 +1278,71 @@ function setText(id, value) {
         }
     }
 
-    /* ================= إنشاء تذكرة ================= */
-
-    const createTicketModal = document.getElementById('createTicketModal');
-    const createTicketForm = document.getElementById('userCreateTicketForm');
-    let pendingAttachments = [];
-
-    function openCreateTicketModal() {
-        if (isGuest) {
-            ui.showToast('سجّل الدخول أولاً لإنشاء تذكرة', 'info');
-            return;
-        }
-        if (!createTicketModal) return;
-
-        // المرفقات تظهر فقط لو الأدمن مفعّلها (allow_ticket_attachments)
-        const attachField = document.getElementById('ticketAttachmentsField');
-        if (attachField) attachField.hidden = !cx.allow_ticket_attachments;
-
-        // منع الوصول للحد الأقصى للتذاكر المفتوحة (communication_control)
-        const max = settings.limits?.max_open_tickets;
-        const notice = document.getElementById('createTicketBlockedNotice');
-        const submitBtn = document.getElementById('submitTicketBtn');
-        const atLimit = !!max && openTicketCount >= max;
-
-        if (notice && submitBtn) {
-            if (atLimit) {
-                notice.classList.remove('u-hidden');
-                notice.innerHTML = `
-                    <div class="alert-item alert-item--warning">
-                        <span class="alert-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="10"/></svg></span>
-                        <div class="alert-body">
-                            <p class="alert-title">وصلت للحد الأقصى للتذاكر المفتوحة</p>
-                            <p class="alert-text">لديك ${openTicketCount} تذاكر مفتوحة والحد المسموح ${max}. تابع تذكرة قائمة أو انتظر حلّها قبل فتح تذكرة جديدة.</p>
-                        </div>
-                    </div>`;
-                submitBtn.disabled = true;
-            } else {
-                notice.classList.add('u-hidden');
-                notice.innerHTML = '';
-                submitBtn.disabled = false;
-            }
-        }
-
-        createTicketModal.classList.add('active');
-        document.getElementById('userTicketTitle')?.focus();
-    }
-
-    function closeCreateTicketModal() {
-        createTicketModal?.classList.remove('active');
-        clearFieldError('userTicketTitle');
-        clearFieldError('userTicketDescription');
-    }
-
-    document.addEventListener('click', (e) => {
-        const opener = e.target.closest('[data-action="open-create-ticket"]');
-        if (opener) {
-            e.preventDefault();
-            openCreateTicketModal();
-            return;
-        }
-
-        const closer = e.target.closest('.close-modal');
-        if (closer) {
-            closer.closest('.modal')?.classList.remove('active');
-            return;
-        }
-
-        // النقر خارج محتوى النافذة يغلقها
-        if (e.target.classList?.contains('modal')) {
-            e.target.classList.remove('active');
-            return;
-        }
-
-        // أزرار التنقل داخل بطاقات المؤشرات والتنبيهات
-        const goto = e.target.closest('[data-goto]');
-        if (goto) {
-            e.preventDefault();
-            showSection(goto.dataset.goto);
-            return;
-        }
-
-        // بطاقات مؤشرات التذاكر تعمل كفلاتر سريعة
-        const filterCard = e.target.closest('[data-ticket-filter]');
-        if (filterCard) {
-            const value = filterCard.dataset.ticketFilter;
-            const select = document.getElementById('ticketFilterStatus');
-            if (select) select.value = value;
-            currentFilters = { ...currentFilters, status: value };
-            renderTickets(currentFilters);
-        }
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            document.querySelector('.modal.active')?.classList.remove('active');
-        }
-    });
-
-    function showFieldError(fieldId, message) {
-        const errorEl = document.getElementById(`${fieldId}Error`);
-        const field = document.getElementById(fieldId);
-        if (errorEl) {
-            errorEl.textContent = message;
-            errorEl.classList.remove('u-hidden');
-        }
-        if (field) field.setAttribute('aria-invalid', 'true');
-    }
-
-    function clearFieldError(fieldId) {
-        const errorEl = document.getElementById(`${fieldId}Error`);
-        const field = document.getElementById(fieldId);
-        if (errorEl) {
-            errorEl.textContent = '';
-            errorEl.classList.add('u-hidden');
-        }
-        if (field) field.removeAttribute('aria-invalid');
-    }
-
-    /* ================= المرفقات ================= */
-
-    const attachmentsInput = document.getElementById('userTicketAttachments');
-    const attachmentsChips = document.getElementById('ticketAttachmentsChips');
-
-    function renderAttachmentChips() {
-        if (!attachmentsChips) return;
-        attachmentsChips.innerHTML = pendingAttachments.map((file, index) => `
-            <span class="file-chip">
-                <span class="u-truncate" style="max-width:11rem;">${escapeHtml(file.name)}</span>
-                <button type="button" data-remove-attachment="${index}" aria-label="إزالة ${escapeHtml(file.name)}">×</button>
-            </span>`).join('');
-    }
-
-    attachmentsInput?.addEventListener('change', () => {
-        const incoming = Array.from(attachmentsInput.files || []);
-        for (const file of incoming) {
-            if (pendingAttachments.length >= MAX_ATTACHMENTS) {
-                ui.showToast(`الحد الأقصى ${MAX_ATTACHMENTS} ملفات`, 'warning');
-                break;
-            }
-            if (file.size > MAX_ATTACHMENT_BYTES) {
-                ui.showToast(`الملف "${file.name}" أكبر من 5 ميجابايت ولم يُضَف`, 'warning');
-                continue;
-            }
-            pendingAttachments.push(file);
-        }
-        attachmentsInput.value = '';
-        renderAttachmentChips();
-    });
-
-    attachmentsChips?.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-remove-attachment]');
-        if (!btn) return;
-        pendingAttachments.splice(Number(btn.dataset.removeAttachment), 1);
-        renderAttachmentChips();
-    });
-
-    createTicketForm?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const titleEl = document.getElementById('userTicketTitle');
-        const descEl = document.getElementById('userTicketDescription');
-        const submitBtn = document.getElementById('submitTicketBtn');
-
-        const title = titleEl.value.trim();
-        const description = descEl.value.trim();
-        const priority = document.getElementById('userTicketPriority').value;
-        const category = document.getElementById('userTicketCategory').value;
-
-        clearFieldError('userTicketTitle');
-        clearFieldError('userTicketDescription');
-
-        let hasError = false;
-        if (title.length < 5) {
-            showFieldError('userTicketTitle', 'اكتب عنواناً واضحاً (5 أحرف على الأقل)');
-            hasError = true;
-        }
-        if (description.length < 15) {
-            showFieldError('userTicketDescription', 'اشرح المشكلة بتفصيل أكبر (15 حرفاً على الأقل) ليتمكن الفريق من مساعدتك');
-            hasError = true;
-        }
-        if (hasError) return;
-
-        // منع التذاكر المكرّرة — إعداد يتحكم فيه الأدمن (communication_control)
-        if (settings.limits?.prevent_duplicate_tickets) {
-            const normalized = title.toLowerCase();
-            const duplicate = cachedTickets.find(t =>
-                t.status !== 'resolved' && (t.title || '').trim().toLowerCase() === normalized);
-            if (duplicate) {
-                const proceed = await ui.showConfirm(
-                    'لديك تذكرة مفتوحة بنفس العنوان',
-                    `التذكرة #${duplicate.ticket_number} بنفس العنوان ما زالت مفتوحة. المتابعة عليها أسرع من فتح تذكرة جديدة. هل تريد فتحها بدلاً من ذلك؟`,
-                    { confirmLabel: 'افتح التذكرة القائمة', cancelLabel: 'أنشئ تذكرة جديدة', type: 'info' }
-                );
-                if (proceed) {
-                    closeCreateTicketModal();
-                    showSection('tickets');
-                    currentTicketId = duplicate.id;
-                    await renderTickets();
-                    return;
-                }
-            }
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'جاري الإرسال…';
-
+    /** يعيد تحميل التذاكر ويحدّث كل ما يعتمد عليها. */
+    async function refreshTickets() {
         try {
-            // التصنيف بيتبعت مع الإنشاء نفسه: قاعدة البيانات بتمنع العميل من
-            // تعديل التصنيف بعد كده (وده سلوك مقصود)، فالفرصة الوحيدة لضبطه
-            // من واجهة العميل هي وقت الإنشاء.
-            const ticket = await createTicket({ title, description, priority, category });
-
-            // رفع المرفقات بعد إنشاء التذكرة (RLS بتربط المرفق بتذكرة موجودة)
-            if (cx.allow_ticket_attachments && pendingAttachments.length) {
-                const results = await Promise.allSettled(
-                    pendingAttachments.map(file => uploadTicketAttachment(ticket.id, file))
-                );
-                const failed = results.filter(r => r.status === 'rejected').length;
-                if (failed) {
-                    ui.showToast(`تم إنشاء التذكرة، لكن تعذّر رفع ${failed} من المرفقات`, 'warning', 6000);
-                }
-            }
-
-            createTicketForm.reset();
-            pendingAttachments = [];
-            renderAttachmentChips();
-            closeCreateTicketModal();
-
-            currentTicketId = ticket.id;
-            await Promise.all([renderStats(), renderTickets()]);
-            showSection('tickets');
-            ui.showToast(`تم إنشاء التذكرة #${ticket.ticket_number ?? ''} بنجاح`, 'success');
+            cachedTickets = await fetchUserTickets({});
         } catch (err) {
-            console.error('[Tickets] create:', err);
-            ui.showToast(`تعذّر إنشاء التذكرة: ${err.message || 'خطأ غير متوقع'}`, 'error');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'إرسال التذكرة';
+            console.error('[Tickets] refresh:', err);
+            return;
         }
-    });
-
-    /* ================= فلاتر التذاكر ================= */
-
-    const ticketFilterStatus = document.getElementById('ticketFilterStatus');
-    const ticketSearchInput = document.getElementById('ticketSearchInput');
-    let searchDebounce = null;
-
-    ticketFilterStatus?.addEventListener('change', () => {
-        currentFilters = { ...currentFilters, status: ticketFilterStatus.value };
-        renderTickets(currentFilters);
-    });
-
-    ticketSearchInput?.addEventListener('input', () => {
-        clearTimeout(searchDebounce);
-        searchDebounce = setTimeout(() => {
-            currentFilters = { ...currentFilters, search: ticketSearchInput.value.trim() };
-            renderTickets(currentFilters);
-        }, 320);
-    });
+        if (snapshot) snapshot.tickets = cachedTickets;
+        renderTickets();
+        setSidebarBadge('tickets', countByView(cachedTickets, user.id).awaiting);
+        if (currentSection === 'overview') {
+            renderAccountHealth();
+            renderOverviewKpis();
+        }
+        if (currentSection === 'support') renderSupportSection();
+    }
 
     /* =========================================================
-       قسم: الإشعارات
+       قسم: الإشعارات (قابلة للتنفيذ)
     ========================================================= */
 
     let notificationFilter = 'all';
+    let cachedNotifications = [];
 
     async function refreshNotificationBadge() {
         if (isGuest) return;
         const result = await customerData.fetchUnreadNotificationsCount();
-        if (result.ok) setSidebarBadge('notifications', result.data);
+        if (result.ok) {
+            setSidebarBadge('notifications', result.data);
+            const kpis = document.getElementById('overviewKpis');
+            if (kpis) {
+                kpis.dataset.unread = String(result.data);
+                if (currentSection === 'overview' && snapshot) renderOverviewKpis();
+            }
+        }
+    }
+
+    function renderNotificationFilters() {
+        const container = document.getElementById('notificationFilters');
+        if (!container) return;
+
+        const unreadCount = cachedNotifications.filter(n => !n.is_read).length;
+        const chips = [
+            { key: 'all', label: 'الكل', count: cachedNotifications.length },
+            { key: 'unread', label: 'غير المقروءة', count: unreadCount },
+            ...categoriesPresentIn(cachedNotifications).map(key => ({
+                key,
+                label: NOTIFICATION_CATEGORIES[key].label,
+                count: cachedNotifications.filter(n => (n.category || 'system') === key).length
+            }))
+        ];
+
+        container.innerHTML = chips.map(chip => `
+            <button type="button" class="filter-chip" data-filter="${escapeHtml(chip.key)}"
+                    aria-pressed="${chip.key === notificationFilter}">
+                ${escapeHtml(chip.label)}
+                <span class="filter-chip-count">${chip.count}</span>
+            </button>`).join('');
+    }
+
+    function filterNotifications() {
+        if (notificationFilter === 'all') return cachedNotifications;
+        if (notificationFilter === 'unread') return cachedNotifications.filter(n => !n.is_read);
+        return cachedNotifications.filter(n => (n.category || 'system') === notificationFilter);
     }
 
     async function renderNotifications() {
@@ -1561,56 +1352,128 @@ function setText(id, value) {
         renderSkeletonLines(container, 4);
 
         try {
-            const all = await fetchNotifications();
-            const items = notificationFilter === 'unread' ? all.filter(n => !n.is_read) : all;
-
-            if (!items.length) {
-                renderState(container, {
-                    variant: 'empty',
-                    title: notificationFilter === 'unread' ? 'لا توجد إشعارات غير مقروءة' : 'لا توجد إشعارات بعد',
-                    text: 'ستصلك هنا تحديثات تذاكرك واشتراكاتك وأي إجراء يخص حسابك.'
-                });
-                return;
-            }
-
-            container.innerHTML = `<div class="data-rows">${items.map(n => `
-                <div class="data-row" data-notification-id="${escapeHtml(n.id)}" style="cursor:${n.link ? 'pointer' : 'default'}; align-items:flex-start;">
-                    <span class="data-row-label" style="flex-direction:column; align-items:flex-start; gap:.2rem; flex:1;">
-                        <span style="color:var(--color-text); font-weight:700;">
-                            ${!n.is_read ? '<span class="pill status-open" style="margin-left:.4rem;">جديد</span>' : ''}${escapeHtml(n.title)}
-                        </span>
-                        <span style="font-weight:500; line-height:1.6;">${escapeHtml(n.message)}</span>
-                    </span>
-                    <span class="data-row-value" style="font-weight:500; font-size:var(--fs-xs); color:var(--color-text-3);">
-                        ${escapeHtml(formatRelativeArabic(n.created_at))}
-                    </span>
-                </div>`).join('')}</div>`;
-
-            container.querySelectorAll('[data-notification-id]').forEach(row => {
-                row.addEventListener('click', async () => {
-                    const id = row.dataset.notificationId;
-                    const notification = items.find(n => String(n.id) === String(id));
-                    if (!notification) return;
-                    if (!notification.is_read) {
-                        await markAsRead(id).catch(err => console.error('[Notifications] markAsRead:', err));
-                        refreshNotificationBadge();
-                    }
-                    if (notification.link) {
-                        window.location.href = notification.link;
-                    } else {
-                        renderNotifications();
-                    }
-                });
-            });
+            cachedNotifications = await fetchNotifications();
         } catch (err) {
             console.error('[Notifications] render:', err);
-            renderState(container, { variant: 'error', title: 'تعذّر تحميل الإشعارات', text: 'حدّث الصفحة أو حاول بعد قليل.' });
+            renderState(container, {
+                variant: 'error',
+                title: 'تعذّر تحميل الإشعارات',
+                text: 'تحقق من اتصالك ثم أعد المحاولة.',
+                action: { label: 'إعادة المحاولة', retry: 'notifications' }
+            });
+            return;
+        }
+
+        renderNotificationFilters();
+        const items = filterNotifications();
+
+        if (!items.length) {
+            renderState(container, {
+                variant: 'empty',
+                title: notificationFilter === 'all' ? 'لا توجد إشعارات بعد' : 'لا توجد إشعارات في هذا التصنيف',
+                text: notificationFilter === 'all'
+                    ? 'ستصلك هنا تحديثات تذاكرك واشتراكاتك وأي إجراء يخص حسابك.'
+                    : 'جرّب تصنيفاً آخر أو اعرض الكل.',
+                action: notificationFilter === 'all' ? null : { label: 'عرض الكل', act: 'reset-notification-filter' }
+            });
+            return;
+        }
+
+        container.innerHTML = items.map(n => {
+            const { meta, destination } = resolveNotification(n);
+            const actionable = destination.kind !== 'none';
+            const cta = destinationLabel(destination);
+            return `
+                <div class="notif-item ${actionable ? 'is-actionable' : ''} ${n.is_read ? '' : 'is-unread'}"
+                     data-id="${escapeHtml(String(n.id))}"${actionable ? ' role="button" tabindex="0"' : ''}>
+                    <span class="notif-icon notif-icon--${meta.tone}">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.icon}</svg>
+                    </span>
+                    <span class="notif-body">
+                        <span class="notif-head">
+                            <span class="notif-title">${escapeHtml(n.title)}</span>
+                            ${n.is_read ? '' : '<span class="pill status-open">جديد</span>'}
+                        </span>
+                        <span class="notif-text">${escapeHtml(n.message)}</span>
+                        <span class="notif-meta">
+                            <span>${escapeHtml(meta.label)}</span>
+                            <span>${escapeHtml(formatRelativeArabic(n.created_at))}</span>
+                            ${cta ? `<span class="notif-cta">${escapeHtml(cta)} ←</span>` : ''}
+                        </span>
+                    </span>
+                    <span class="notif-actions">
+                        <button type="button" class="notif-mark" data-mark="${escapeHtml(String(n.id))}"${n.is_read ? ' disabled' : ''}>
+                            ${n.is_read ? 'مقروء' : 'تحديد كمقروء'}
+                        </button>
+                    </span>
+                </div>`;
+        }).join('');
+    }
+
+    /** يفتح ما يشير إليه الإشعار: تذكرة، قسم، أو صفحة. */
+    async function activateNotification(notification) {
+        const { destination } = resolveNotification(notification);
+
+        if (!notification.is_read) {
+            await markAsRead(notification.id).catch(err => console.error('[Notifications] markAsRead:', err));
+            notification.is_read = true;
+            refreshNotificationBadge();
+            document.dispatchEvent(new CustomEvent('customer:notifications-read'));
+        }
+
+        switch (destination.kind) {
+            case 'ticket':
+                showSection('tickets');
+                // التذكرة قد تكون خارج القائمة المحمّلة (مؤرشفة مثلاً)
+                if (!cachedTickets.find(t => t.id === destination.ticketId)) await refreshTickets();
+                openTicket(destination.ticketId);
+                break;
+            case 'section':
+                showSection(destination.section);
+                break;
+            case 'url':
+                window.location.href = destination.href;
+                break;
+            default:
+                renderNotifications();
         }
     }
 
-    document.getElementById('notificationFilter')?.addEventListener('change', (e) => {
-        notificationFilter = e.target.value;
+    document.getElementById('notificationFilters')?.addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-filter]');
+        if (!chip) return;
+        notificationFilter = chip.dataset.filter;
         renderNotifications();
+    });
+
+    document.getElementById('notificationsList')?.addEventListener('click', async (e) => {
+        const markBtn = e.target.closest('[data-mark]');
+        if (markBtn) {
+            e.stopPropagation();
+            const id = markBtn.dataset.mark;
+            const notification = cachedNotifications.find(n => String(n.id) === String(id));
+            if (notification && !notification.is_read) {
+                await markAsRead(id).catch(err => console.error('[Notifications] markAsRead:', err));
+                notification.is_read = true;
+                refreshNotificationBadge();
+                renderNotifications();
+            }
+            return;
+        }
+
+        const item = e.target.closest('.notif-item.is-actionable');
+        if (!item) return;
+        const notification = cachedNotifications.find(n => String(n.id) === String(item.dataset.id));
+        if (notification) activateNotification(notification);
+    });
+
+    document.getElementById('notificationsList')?.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const item = e.target.closest('.notif-item.is-actionable');
+        if (!item) return;
+        e.preventDefault();
+        const notification = cachedNotifications.find(n => String(n.id) === String(item.dataset.id));
+        if (notification) activateNotification(notification);
     });
 
     document.getElementById('markAllNotificationsBtn')?.addEventListener('click', async (e) => {
@@ -1620,12 +1483,276 @@ function setText(id, value) {
             await markAllAsRead();
             await Promise.all([renderNotifications(), refreshNotificationBadge()]);
             ui.showToast('تم تحديد كل الإشعارات كمقروءة', 'success');
-        } catch (err) {
+        } catch {
             ui.showToast('تعذّر تحديث الإشعارات', 'error');
         } finally {
             btn.disabled = false;
         }
     });
+
+    /* =========================================================
+       قسم: الاستهلاك والاشتراك
+    ========================================================= */
+
+    async function renderUsageSection() {
+        const container = document.getElementById('usageBody');
+        if (!container) return;
+        if (!snapshot) await loadSnapshot();
+
+        const blocks = [];
+
+        const plans = snapshot.planSubs?.ok ? snapshot.planSubs.data : [];
+        const activePlans = plans.filter(p => p.status === 'active' && (!p.end_date || new Date(p.end_date) > new Date()));
+        blocks.push(`
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">الباقة الحالية</h2>
+                        <p class="panel-subtitle">الباقات المفعّلة على حسابك ومدتها</p>
+                    </div>
+                </div>
+                ${activePlans.length ? `<div class="data-rows">${activePlans.map(p => dataRow({
+                    label: p.subscription_plans?.name_ar || p.subscription_plans?.name || 'باقة',
+                    value: '<span class="pill status-resolved"><span class="pill-dot"></span>فعّالة</span>',
+                    note: escapeHtml([
+                        p.start_date ? `من ${formatDate(p.start_date)}` : '',
+                        p.end_date ? `حتى ${formatDate(p.end_date)}` : 'بدون تاريخ انتهاء'
+                    ].filter(Boolean).join(' · '))
+                })).join('')}</div>` : `
+                    <div class="state-block state-block--compact">
+                        <p class="state-title">لا توجد باقة مفعّلة</p>
+                        <p class="state-text">تصفّح الباقات المتاحة واختر ما يناسب استخدامك.</p>
+                        <a class="btn btn-primary" href="/customer-subscriptions.html">تصفّح الباقات</a>
+                    </div>`}
+            </section>`);
+
+        const wa = snapshot.waSub?.ok ? snapshot.waSub.data : null;
+        const wallet = snapshot.wallet?.ok ? snapshot.wallet.data : null;
+        if (wa?.hasActiveSubscription || wallet) {
+            const rows = [];
+            if (wa?.hasActiveSubscription) {
+                rows.push(dataRow({
+                    label: 'اشتراك الواتساب',
+                    value: '<span class="pill status-resolved"><span class="pill-dot"></span>فعّال</span>',
+                    note: escapeHtml(`متبقٍ ${wa.daysRemaining} يوم — حتى ${formatDate(wa.activeSubscription?.end_date)}`)
+                }));
+            }
+            if (wallet) {
+                const threshold = Number(wallet.low_balance_threshold) || 0;
+                const percent = threshold > 0 ? Math.min(100, (wallet.balance / (threshold * 4)) * 100) : 100;
+                rows.push(dataRow({
+                    label: 'رصيد الواتساب',
+                    value: escapeHtml(`${wallet.balance.toLocaleString('ar-EG')} ${wallet.currency || ''}`),
+                    note: `${meter(percent, wallet.isLow ? 'meter-fill--danger' : '')}<span>${escapeHtml(wallet.isLow
+                                ? `الرصيد تحت الحد الأدنى (${threshold}) — تواصل مع الدعم للشحن.`
+                                : `الحد الأدنى للتنبيه: ${threshold}`)}</span>`
+                }));
+                for (const tx of (wallet.transactions || []).slice(0, 5)) {
+                    rows.push(dataRow({
+                        label: tx.description || (Number(tx.amount) >= 0 ? 'إضافة رصيد' : 'خصم'),
+                        value: escapeHtml(`${Number(tx.amount) >= 0 ? '+' : ''}${tx.amount}`),
+                        note: escapeHtml(timeAgo(tx.created_at))
+                    }));
+                }
+            }
+            blocks.push(`
+                <section class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">خدمة الواتساب</h2>
+                            <p class="panel-subtitle">حالة الاشتراك والرصيد وآخر الحركات</p>
+                        </div>
+                    </div>
+                    <div class="data-rows">${rows.join('')}</div>
+                </section>`);
+        }
+
+        const sie = snapshot.sie?.ok ? snapshot.sie.data : null;
+        if (sie?.is_enabled) {
+            const tone = sie.usedPercent >= 90 ? 'meter-fill--danger' : sie.usedPercent >= 70 ? 'meter-fill--warning' : '';
+            blocks.push(`
+                <section class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">المحرك الذكي</h2>
+                            <p class="panel-subtitle">حصتك من الرسائل ومدى استهلاكها</p>
+                        </div>
+                    </div>
+                    <div class="usage-card">
+                        <div class="usage-row">
+                            <span class="usage-value">${sie.quota > 0 ? escapeHtml(`${sie.used} / ${sie.quota}`) : 'بدون حد'}</span>
+                            <span class="usage-caption">${sie.remaining !== null ? escapeHtml(`متبقٍ ${sie.remaining} رسالة`) : 'استخدام غير محدود'}</span>
+                        </div>
+                        ${sie.quota > 0 ? meter(sie.usedPercent, tone) : ''}
+                        <div class="data-rows">
+                            ${dataRow({ label: 'وضع الوصول', value: escapeHtml(sie.access_mode || '—') })}
+                            ${sie.expires_at ? dataRow({
+                                label: 'تاريخ الانتهاء',
+                                value: escapeHtml(formatDate(sie.expires_at)),
+                                note: sie.isExpired ? '<span class="pill status-rejected">منتهٍ</span>' : ''
+                            }) : ''}
+                            ${sie.last_used_at ? dataRow({ label: 'آخر استخدام', value: escapeHtml(timeAgo(sie.last_used_at)) }) : ''}
+                        </div>
+                    </div>
+                </section>`);
+        }
+
+        const domains = snapshot.subdomains?.ok ? snapshot.subdomains.data : [];
+        if (domains.length) {
+            blocks.push(`
+                <section class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">النطاقات الفرعية</h2>
+                            <p class="panel-subtitle">النطاقات المرتبطة بحسابك وحالتها</p>
+                        </div>
+                    </div>
+                    <div class="data-rows">${domains.map(d => dataRow({
+                        label: d.full_domain || d.subdomain,
+                        value: `<span class="pill ${d.status === 'active' ? 'status-resolved' : d.status === 'pending' ? 'status-in-progress' : 'status-neutral'}">${escapeHtml(d.status)}</span>`,
+                        note: escapeHtml(d.status === 'active'
+                            ? `مفعّل منذ ${formatDate(d.activated_at || d.created_at)}`
+                            : `طُلب في ${formatDate(d.created_at)}`)
+                    })).join('')}</div>
+                </section>`);
+        }
+
+        container.innerHTML = blocks.join('');
+    }
+
+    /* =========================================================
+       قسم: نشاط الحساب
+    ========================================================= */
+
+    async function renderActivitySection() {
+        const container = document.getElementById('activityBody');
+        if (!container) return;
+        renderSkeletonLines(container, 6);
+        const result = await customerData.fetchAccountActivity(60);
+        renderActivityTimeline(result, 'activityBody', 60);
+    }
+
+    /* =========================================================
+       قسم: الأمان
+    ========================================================= */
+
+    async function renderSecuritySection() {
+        const container = document.getElementById('securityBody');
+        if (!container) return;
+        renderSkeletonLines(container, 5);
+
+        const [accountRes, tokensRes, activityRes] = await Promise.all([
+            snapshot?.account ? Promise.resolve(snapshot.account) : customerData.fetchAccountStatus(),
+            customerData.fetchApiTokens(),
+            customerData.fetchAccountActivity(40)
+        ]);
+
+        if (!accountRes.ok) {
+            renderState(container, {
+                variant: 'error',
+                title: 'تعذّر تحميل بيانات الأمان',
+                text: 'تحقق من اتصالك ثم أعد المحاولة.',
+                action: { label: 'إعادة المحاولة', retry: 'security' }
+            });
+            return;
+        }
+
+        const p = accountRes.data || {};
+        const protections = [
+            dataRow({
+                label: 'التحقق بخطوتين (2FA)',
+                value: p.two_factor_enabled
+                    ? '<span class="pill status-resolved"><span class="pill-dot"></span>مفعّل</span>'
+                    : '<span class="pill status-neutral"><span class="pill-dot"></span>غير مفعّل</span>',
+                note: p.two_factor_enabled ? '' : 'تفعيله يحمي حسابك حتى لو تسرّبت كلمة المرور.'
+            }),
+            dataRow({
+                label: 'تنبيهات تيليجرام',
+                value: p.telegram_otp_enabled
+                    ? '<span class="pill status-resolved"><span class="pill-dot"></span>مفعّلة</span>'
+                    : '<span class="pill status-neutral">غير مفعّلة</span>',
+                note: p.telegram_username ? escapeHtml(`الحساب المرتبط: ${p.telegram_username}`) : ''
+            }),
+            dataRow({
+                label: 'آخر تغيير لكلمة المرور',
+                value: escapeHtml(p.last_password_change ? formatDate(p.last_password_change) : 'غير مسجَّل')
+            }),
+            dataRow({
+                label: 'حالة التوثيق',
+                value: p.is_verified
+                    ? '<span class="pill status-resolved"><span class="pill-dot"></span>موثّق</span>'
+                    : '<span class="pill status-neutral">غير موثّق</span>'
+            })
+        ].join('');
+
+        // سجل الدخول من نفس allow-list سجل النشاط — فمفيش أحداث إدارية
+        const loginEvents = toTimeline((activityRes.ok ? activityRes.data : []) || [], { limit: 40 })
+            .filter(item => item.group === 'security')
+            .slice(0, 8);
+
+        const tokens = tokensRes.ok ? (tokensRes.data || []) : [];
+        const activeTokens = tokens.filter(t => t.is_active && !t.revoked_at);
+
+        container.innerHTML = `
+            <div class="split-grid">
+                <section class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">حماية الحساب</h2>
+                            <p class="panel-subtitle">وسائل الحماية المفعّلة حالياً</p>
+                        </div>
+                        <a class="panel-link" href="/customer-security-settings.html">تعديل</a>
+                    </div>
+                    <div class="data-rows">${protections}</div>
+                </section>
+
+                <section class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">آخر عمليات الدخول</h2>
+                            <p class="panel-subtitle">لو فيه دخول مش أنت، غيّر كلمة المرور فوراً</p>
+                        </div>
+                    </div>
+                    ${loginEvents.length ? `
+                        <div class="activity-timeline">
+                            ${loginEvents.map(item => `
+                                <div class="activity-item">
+                                    <span class="activity-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                                    <div>
+                                        <div class="activity-text">${escapeHtml(item.label)}</div>
+                                        <div class="activity-time">${escapeHtml(timeAgo(item.createdAt))}${item.device ? ` · ${escapeHtml(item.device)}` : ''}</div>
+                                    </div>
+                                </div>`).join('')}
+                        </div>` : `
+                        <div class="state-block state-block--compact">
+                            <p class="state-title">لا يوجد سجل دخول محفوظ</p>
+                            <p class="state-text">ستظهر هنا عمليات الدخول إلى حسابك.</p>
+                        </div>`}
+                </section>
+            </div>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">مفاتيح API</h2>
+                        <p class="panel-subtitle">المفاتيح المرتبطة بحسابك — لا يُعرض السر أبداً، فقط آخر 4 خانات</p>
+                    </div>
+                </div>
+                ${activeTokens.length ? `<div class="data-rows">${activeTokens.map(t => dataRow({
+                    label: t.name || 'مفتاح API',
+                    value: `<span class="pill status-resolved">••••${escapeHtml(t.secret_last_four || '')}</span>`,
+                    note: escapeHtml([
+                        `أُنشئ ${formatDate(t.created_at)}`,
+                        t.last_used_at ? `آخر استخدام ${timeAgo(t.last_used_at)}` : 'لم يُستخدم بعد',
+                        t.usage_count ? `${t.usage_count} نداء` : ''
+                    ].filter(Boolean).join(' · '))
+                })).join('')}</div>` : `
+                    <div class="state-block state-block--compact">
+                        <p class="state-title">لا توجد مفاتيح API على حسابك</p>
+                        <p class="state-text">مفاتيح API تُصدر من فريق الإدارة عند الحاجة لربط أنظمتك بالمنصة.</p>
+                    </div>`}
+            </section>`;
+    }
 
     /* =========================================================
        قسم: الشارات
@@ -1642,10 +1769,8 @@ function setText(id, value) {
         }
 
         grid.innerHTML = '<div class="skeleton skeleton-card"></div>'.repeat(6);
-
         const { supabase } = await import('./api-config.js');
 
-        // تقييم فوري لشارات المستخدم (الدالة تعمل على نفس المستخدم المسجّل فقط)
         try {
             await supabase.rpc('evaluate_customer_badges', { p_user_id: user.id });
         } catch (err) {
@@ -1674,7 +1799,6 @@ function setText(id, value) {
             }
 
             if (summaryEl) summaryEl.textContent = `حصلت على ${earnedMap.size} من ${definitions.length} شارة`;
-            setSidebarBadge('badges', 0);
 
             grid.innerHTML = definitions.map(badge => {
                 const earnedAt = earnedMap.get(badge.id);
@@ -1689,24 +1813,24 @@ function setText(id, value) {
             }).join('');
         } catch (err) {
             console.error('[Badges] load:', err);
-            renderState(grid, { variant: 'error', title: 'تعذّر تحميل الشارات', text: 'حدّث الصفحة وحاول مرة أخرى.' });
+            renderState(grid, {
+                variant: 'error',
+                title: 'تعذّر تحميل الشارات',
+                text: 'تحقق من اتصالك ثم أعد المحاولة.',
+                action: { label: 'إعادة المحاولة', retry: 'badges' }
+            });
         }
     }
 
     /* =========================================================
-       قسم: الملف الشخصي  (كان بلا أي معالجات قبل هذا التعديل)
+       قسم: الملف الشخصي
     ========================================================= */
 
     let profileBaseline = { full_name: '', phone: '', bio: '' };
 
     async function renderProfileSection() {
-        const result = await customerData.fetchAccountStatus();
-        const summary = document.getElementById('profileSecuritySummary');
-
-        if (!result.ok) {
-            renderState(summary, { variant: 'error', title: 'تعذّر تحميل بيانات الحساب' });
-            return;
-        }
+        const result = snapshot?.account?.ok ? snapshot.account : await customerData.fetchAccountStatus();
+        if (!result.ok) return;
 
         const profile = result.data || {};
         profileBaseline = {
@@ -1723,44 +1847,6 @@ function setText(id, value) {
         if (phoneInput) phoneInput.value = profileBaseline.phone;
         if (bioInput) bioInput.value = profileBaseline.bio;
         if (emailInput) emailInput.value = profile.email || user.email || '';
-
-        if (summary) {
-            const rows = [
-                {
-                    label: 'التحقق بخطوتين (2FA)',
-                    value: profile.two_factor_enabled
-                        ? '<span class="pill status-resolved"><span class="pill-dot"></span>مفعّل</span>'
-                        : '<span class="pill status-neutral"><span class="pill-dot"></span>غير مفعّل</span>',
-                    note: profile.two_factor_enabled ? '' : 'تفعيله يحمي حسابك حتى لو تسربت كلمة المرور.'
-                },
-                {
-                    label: 'تنبيهات تيليجرام',
-                    value: profile.telegram_otp_enabled
-                        ? '<span class="pill status-resolved"><span class="pill-dot"></span>مفعّلة</span>'
-                        : '<span class="pill status-neutral">غير مفعّلة</span>',
-                    note: profile.telegram_username ? `الحساب المرتبط: ${profile.telegram_username}` : ''
-                },
-                {
-                    label: 'آخر تغيير لكلمة المرور',
-                    value: profile.last_password_change ? formatDate(profile.last_password_change) : 'غير مسجَّل',
-                    note: ''
-                },
-                {
-                    label: 'حالة التوثيق',
-                    value: profile.is_verified
-                        ? '<span class="pill status-resolved"><span class="pill-dot"></span>موثّق</span>'
-                        : '<span class="pill status-neutral">غير موثّق</span>',
-                    note: ''
-                }
-            ];
-
-            summary.innerHTML = `<div class="data-rows">${rows.map(r => `
-                <div class="data-row">
-                    <span class="data-row-label">${escapeHtml(r.label)}</span>
-                    <span class="data-row-value">${r.value}</span>
-                    ${r.note ? `<p class="data-row-note">${escapeHtml(r.note)}</p>` : ''}
-                </div>`).join('')}</div>`;
-        }
     }
 
     document.getElementById('profileForm')?.addEventListener('submit', async (e) => {
@@ -1769,9 +1855,9 @@ function setText(id, value) {
 
         const nameInput = document.getElementById('profileFullName');
         const phoneInput = document.getElementById('profilePhone');
+        const bioInput = document.getElementById('profileBio');
         const saveBtn = document.getElementById('profileSaveBtn');
 
-        const bioInput = document.getElementById('profileBio');
         const fullName = nameInput.value.trim();
         const phone = phoneInput.value.trim();
         const bio = bioInput ? bioInput.value.trim() : profileBaseline.bio;
@@ -1787,9 +1873,7 @@ function setText(id, value) {
             showFieldError('profilePhone', 'أدخل رقم هاتف صحيح');
             return;
         }
-        if (fullName === profileBaseline.full_name
-            && phone === profileBaseline.phone
-            && bio === profileBaseline.bio) {
+        if (fullName === profileBaseline.full_name && phone === profileBaseline.phone && bio === profileBaseline.bio) {
             ui.showToast('لا توجد تغييرات لحفظها', 'info');
             return;
         }
@@ -1803,7 +1887,8 @@ function setText(id, value) {
             profileBaseline = { full_name: fullName, phone, bio };
             if (user.profile) user.profile.full_name = fullName;
             updateSidebarUserInfo();
-            document.getElementById('overviewHeading').textContent = `مرحباً، ${fullName}`;
+            const heading = document.getElementById('overviewHeading');
+            if (heading) heading.textContent = `مرحباً، ${fullName}`;
             ui.showToast('تم حفظ بياناتك', 'success');
         } catch (err) {
             console.error('[Profile] update:', err);
@@ -1859,16 +1944,495 @@ function setText(id, value) {
         try {
             const { error } = await updatePassword(newPassword);
             if (error) throw new Error(error.message);
-
             document.getElementById('changePasswordForm').reset();
             ui.showToast('تم تحديث كلمة المرور بنجاح', 'success');
-            renderProfileSection();
         } catch (err) {
             console.error('[Profile] password:', err);
             ui.showToast(`تعذّر تحديث كلمة المرور: ${err.message || 'خطأ غير متوقع'}`, 'error');
         } finally {
             saveBtn.disabled = false;
             saveBtn.textContent = 'تحديث كلمة المرور';
+        }
+    });
+
+    /* =========================================================
+       إنشاء تذكرة + مساعدة استباقية
+    ========================================================= */
+
+    const createTicketModal = document.getElementById('createTicketModal');
+    const createTicketForm = document.getElementById('userCreateTicketForm');
+    let pendingAttachments = [];
+
+    function showFieldError(fieldId, message) {
+        const errorEl = document.getElementById(`${fieldId}Error`);
+        const field = document.getElementById(fieldId);
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.classList.remove('u-hidden');
+        }
+        if (field) field.setAttribute('aria-invalid', 'true');
+    }
+
+    function clearFieldError(fieldId) {
+        const errorEl = document.getElementById(`${fieldId}Error`);
+        const field = document.getElementById(fieldId);
+        if (errorEl) {
+            errorEl.textContent = '';
+            errorEl.classList.add('u-hidden');
+        }
+        if (field) field.removeAttribute('aria-invalid');
+    }
+
+    /**
+     * مساعدة استباقية قبل الإرسال — مبنية على بيانات حقيقية فقط:
+     * عُطل معلن حالياً، أو تذكرة مفتوحة عند العميل بنفس الموضوع.
+     * الهدف تقليل التذاكر المكررة، مش إظهار اقتراحات مخترعة.
+     */
+    function renderSelfHelp() {
+        const box = document.getElementById('createTicketSelfHelp');
+        if (!box) return;
+
+        const suggestions = [];
+        const status = snapshot?.systemStatus?.ok ? snapshot.systemStatus.data : null;
+
+        for (const incident of (status?.incidents || []).slice(0, 2)) {
+            suggestions.push({
+                tone: 'warning',
+                title: 'يوجد عُطل معلن حالياً',
+                text: `${incident.title} — لو مشكلتك متعلقة به، الفريق يعمل عليها بالفعل.`
+            });
+        }
+        if (!status?.incidents?.length && status?.degraded?.length) {
+            suggestions.push({
+                tone: 'info',
+                title: `${status.degraded.length} خدمة بأداء منخفض حالياً`,
+                text: status.degraded.map(s => s.name).join('، ')
+            });
+        }
+
+        const title = (document.getElementById('userTicketTitle')?.value || '').trim().toLowerCase();
+        if (title.length >= 4) {
+            const related = cachedTickets
+                .filter(t => !statusInfo(t.status).closed && (t.title || '').toLowerCase().includes(title))
+                .slice(0, 2);
+            for (const t of related) {
+                suggestions.push({
+                    tone: 'info',
+                    title: `لديك تذكرة مفتوحة مشابهة: #${t.ticket_number}`,
+                    text: `${t.title} — المتابعة عليها أسرع من فتح تذكرة جديدة.`,
+                    ticketId: t.id
+                });
+            }
+        }
+
+        if (!suggestions.length) {
+            box.classList.add('u-hidden');
+            box.innerHTML = '';
+            return;
+        }
+
+        box.classList.remove('u-hidden');
+        box.innerHTML = suggestions.map(s => `
+            <div class="alert-item alert-item--${s.tone}">
+                <span class="alert-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+                <div class="alert-body">
+                    <p class="alert-title">${escapeHtml(s.title)}</p>
+                    <p class="alert-text">${escapeHtml(s.text)}</p>
+                </div>
+                ${s.ticketId ? `<button type="button" class="alert-action" data-open-ticket="${escapeHtml(s.ticketId)}" style="background:none;border:none;cursor:pointer;font-family:inherit;">افتح التذكرة</button>` : ''}
+            </div>`).join('');
+    }
+
+    function openCreateTicketModal() {
+        if (isGuest) {
+            ui.showToast('سجّل الدخول أولاً لإنشاء تذكرة', 'info');
+            return;
+        }
+        if (!createTicketModal) return;
+
+        const attachField = document.getElementById('ticketAttachmentsField');
+        if (attachField) attachField.hidden = !cx.allow_ticket_attachments;
+
+        const max = settings.limits?.max_open_tickets;
+        const openCount = countByView(cachedTickets, user.id).open;
+        const notice = document.getElementById('createTicketBlockedNotice');
+        const submitBtn = document.getElementById('submitTicketBtn');
+        const atLimit = !!max && openCount >= max;
+
+        if (notice && submitBtn) {
+            if (atLimit) {
+                notice.classList.remove('u-hidden');
+                notice.innerHTML = `
+                    <div class="alert-item alert-item--warning">
+                        <span class="alert-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="10"/></svg></span>
+                        <div class="alert-body">
+                            <p class="alert-title">وصلت للحد الأقصى للتذاكر المفتوحة</p>
+                            <p class="alert-text">لديك ${openCount} تذاكر مفتوحة والحد المسموح ${max}. تابع تذكرة قائمة أو انتظر حلّها قبل فتح تذكرة جديدة.</p>
+                        </div>
+                    </div>`;
+                submitBtn.disabled = true;
+            } else {
+                notice.classList.add('u-hidden');
+                notice.innerHTML = '';
+                submitBtn.disabled = false;
+            }
+        }
+
+        renderSelfHelp();
+        createTicketModal.classList.add('active');
+        document.getElementById('userTicketTitle')?.focus();
+    }
+
+    function closeCreateTicketModal() {
+        createTicketModal?.classList.remove('active');
+        clearFieldError('userTicketTitle');
+        clearFieldError('userTicketDescription');
+    }
+
+    let selfHelpDebounce = null;
+    document.getElementById('userTicketTitle')?.addEventListener('input', () => {
+        clearTimeout(selfHelpDebounce);
+        selfHelpDebounce = setTimeout(renderSelfHelp, 350);
+    });
+
+    /* ================= المرفقات ================= */
+
+    const attachmentsInput = document.getElementById('userTicketAttachments');
+    const attachmentsChips = document.getElementById('ticketAttachmentsChips');
+
+    function renderAttachmentChips() {
+        if (!attachmentsChips) return;
+        attachmentsChips.innerHTML = pendingAttachments.map((file, index) => `
+            <span class="file-chip">
+                <span class="u-truncate" style="max-width:11rem;">${escapeHtml(file.name)}</span>
+                <button type="button" data-remove-attachment="${index}" aria-label="إزالة ${escapeHtml(file.name)}">×</button>
+            </span>`).join('');
+    }
+
+    attachmentsInput?.addEventListener('change', () => {
+        for (const file of Array.from(attachmentsInput.files || [])) {
+            if (pendingAttachments.length >= MAX_ATTACHMENTS) {
+                ui.showToast(`الحد الأقصى ${MAX_ATTACHMENTS} ملفات`, 'warning');
+                break;
+            }
+            if (file.size > MAX_ATTACHMENT_BYTES) {
+                ui.showToast(`الملف "${file.name}" أكبر من 5 ميجابايت ولم يُضَف`, 'warning');
+                continue;
+            }
+            pendingAttachments.push(file);
+        }
+        attachmentsInput.value = '';
+        renderAttachmentChips();
+    });
+
+    attachmentsChips?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-remove-attachment]');
+        if (!btn) return;
+        pendingAttachments.splice(Number(btn.dataset.removeAttachment), 1);
+        renderAttachmentChips();
+    });
+
+    createTicketForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const titleEl = document.getElementById('userTicketTitle');
+        const descEl = document.getElementById('userTicketDescription');
+        const submitBtn = document.getElementById('submitTicketBtn');
+
+        const title = titleEl.value.trim();
+        const description = descEl.value.trim();
+        const priority = document.getElementById('userTicketPriority').value;
+        const category = document.getElementById('userTicketCategory').value;
+
+        clearFieldError('userTicketTitle');
+        clearFieldError('userTicketDescription');
+
+        let hasError = false;
+        if (title.length < 5) {
+            showFieldError('userTicketTitle', 'اكتب عنواناً واضحاً (5 أحرف على الأقل)');
+            hasError = true;
+        }
+        if (description.length < 15) {
+            showFieldError('userTicketDescription', 'اشرح المشكلة بتفصيل أكبر (15 حرفاً على الأقل) ليتمكن الفريق من مساعدتك');
+            hasError = true;
+        }
+        if (hasError) return;
+
+        if (settings.limits?.prevent_duplicate_tickets) {
+            const normalized = title.toLowerCase();
+            const duplicate = cachedTickets.find(t =>
+                !statusInfo(t.status).closed && (t.title || '').trim().toLowerCase() === normalized);
+            if (duplicate) {
+                const proceed = await ui.showConfirm(
+                    'لديك تذكرة مفتوحة بنفس العنوان',
+                    `التذكرة #${duplicate.ticket_number} بنفس العنوان ما زالت مفتوحة. المتابعة عليها أسرع من فتح تذكرة جديدة. هل تريد فتحها بدلاً من ذلك؟`,
+                    { confirmLabel: 'افتح التذكرة القائمة', cancelLabel: 'أنشئ تذكرة جديدة', type: 'info' }
+                );
+                if (proceed) {
+                    closeCreateTicketModal();
+                    showSection('tickets');
+                    openTicket(duplicate.id);
+                    return;
+                }
+            }
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'جاري الإرسال…';
+
+        try {
+            const ticket = await createTicket({ title, description, priority, category });
+
+            if (cx.allow_ticket_attachments && pendingAttachments.length) {
+                const results = await Promise.allSettled(
+                    pendingAttachments.map(file => uploadTicketAttachment(ticket.id, file))
+                );
+                const failed = results.filter(r => r.status === 'rejected').length;
+                if (failed) {
+                    ui.showToast(`تم إنشاء التذكرة، لكن تعذّر رفع ${failed} من المرفقات`, 'warning', 6000);
+                }
+            }
+
+            createTicketForm.reset();
+            pendingAttachments = [];
+            renderAttachmentChips();
+            closeCreateTicketModal();
+
+            currentTicketId = ticket.id;
+            await refreshTickets();
+            showSection('tickets');
+            openTicket(ticket.id);
+            ui.showToast(`تم إنشاء التذكرة #${ticket.ticket_number ?? ''} بنجاح`, 'success');
+        } catch (err) {
+            console.error('[Tickets] create:', err);
+            ui.showToast(`تعذّر إنشاء التذكرة: ${err.message || 'خطأ غير متوقع'}`, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'إرسال التذكرة';
+        }
+    });
+
+    /* ================= فلاتر التذاكر ================= */
+
+    document.getElementById('ticketViewTabs')?.addEventListener('click', (e) => {
+        const tab = e.target.closest('[data-view]');
+        if (!tab) return;
+        currentView = tab.dataset.view;
+        currentTicketId = null;
+        renderTickets();
+    });
+
+    let searchDebounce = null;
+    document.getElementById('ticketSearchInput')?.addEventListener('input', (e) => {
+        clearTimeout(searchDebounce);
+        const value = e.target.value;
+        searchDebounce = setTimeout(() => {
+            ticketSearch = value.trim();
+            renderTickets();
+        }, 320);
+    });
+
+    document.getElementById('ticketSortSelect')?.addEventListener('change', (e) => {
+        ticketSort = e.target.value;
+        renderTickets();
+    });
+
+    document.getElementById('ticketBackBtn')?.addEventListener('click', () => {
+        document.getElementById('ticketsLayout')?.classList.remove('detail-open');
+    });
+
+    /* =========================================================
+       البحث الشامل
+    ========================================================= */
+
+    const searchInput = document.getElementById('globalSearchInput');
+    const searchResults = document.getElementById('globalSearchResults');
+
+    const SEARCHABLE_SECTIONS = [
+        { key: 'support', label: 'مركز الدعم', terms: 'دعم مساعدة تواصل حالة النظام ساعات العمل' },
+        { key: 'tickets', label: 'تذاكري', terms: 'تذاكر تذكرة مشكلة بلاغ' },
+        { key: 'notifications', label: 'الإشعارات', terms: 'اشعارات تنبيهات' },
+        { key: 'usage', label: 'الاستهلاك والاشتراك', terms: 'اشتراك باقة رصيد واتساب استهلاك حصة' },
+        { key: 'activity', label: 'نشاط الحساب', terms: 'نشاط سجل' },
+        { key: 'security', label: 'الأمان', terms: 'امان كلمة المرور تحقق بخطوتين مفاتيح api' },
+        { key: 'profile', label: 'الملف الشخصي', terms: 'ملف شخصي بيانات هاتف بريد' },
+        { key: 'badges', label: 'الشارات', terms: 'شارات انجازات' }
+    ];
+
+    function runGlobalSearch(term) {
+        const q = term.trim().toLowerCase();
+        if (q.length < 2) return null;
+
+        const tickets = cachedTickets
+            .filter(t => (t.title || '').toLowerCase().includes(q) || String(t.ticket_number || '').includes(q))
+            .slice(0, 5)
+            .map(t => ({ kind: 'ticket', id: t.id, title: `#${t.ticket_number} — ${t.title}`, meta: statusInfo(t.status).label }));
+
+        const notifications = cachedNotifications
+            .filter(n => (n.title || '').toLowerCase().includes(q) || (n.message || '').toLowerCase().includes(q))
+            .slice(0, 4)
+            .map(n => ({ kind: 'notification', id: n.id, title: n.title, meta: formatRelativeArabic(n.created_at) }));
+
+        const sections = SEARCHABLE_SECTIONS
+            .filter(s => SECTIONS.includes(s.key) && (s.label.toLowerCase().includes(q) || s.terms.includes(q)))
+            .slice(0, 4)
+            .map(s => ({ kind: 'section', id: s.key, title: s.label, meta: 'قسم' }));
+
+        return { tickets, notifications, sections };
+    }
+
+    function renderSearchResults(term) {
+        if (!searchResults) return;
+        const results = runGlobalSearch(term);
+
+        if (!results) {
+            searchResults.hidden = true;
+            searchInput?.setAttribute('aria-expanded', 'false');
+            return;
+        }
+
+        const groups = [
+            { label: 'التذاكر', items: results.tickets },
+            { label: 'الإشعارات', items: results.notifications },
+            { label: 'الأقسام', items: results.sections }
+        ].filter(g => g.items.length);
+
+        if (!groups.length) {
+            searchResults.innerHTML = `
+                <div class="state-block state-block--compact">
+                    <p class="state-title">لا توجد نتائج</p>
+                    <p class="state-text">جرّب كلمة أخرى، أو افتح تذكرة جديدة لتصف مشكلتك.</p>
+                </div>`;
+        } else {
+            searchResults.innerHTML = groups.map(group => `
+                <div class="search-group-label">${escapeHtml(group.label)}</div>
+                ${group.items.map(item => `
+                    <button type="button" class="search-result" role="option"
+                            data-kind="${escapeHtml(item.kind)}" data-id="${escapeHtml(String(item.id))}">
+                        <span class="search-result-title u-truncate">${escapeHtml(item.title)}</span>
+                        <span class="search-result-meta">${escapeHtml(item.meta)}</span>
+                    </button>`).join('')}`).join('');
+        }
+
+        searchResults.hidden = false;
+        searchInput?.setAttribute('aria-expanded', 'true');
+    }
+
+    let globalSearchDebounce = null;
+    searchInput?.addEventListener('input', (e) => {
+        clearTimeout(globalSearchDebounce);
+        const value = e.target.value;
+        globalSearchDebounce = setTimeout(() => renderSearchResults(value), 200);
+    });
+
+    searchInput?.addEventListener('focus', () => {
+        // الإشعارات مطلوبة للبحث فيها حتى لو القسم لسه ما اتفتحش
+        if (!cachedNotifications.length && !isGuest) {
+            fetchNotifications().then(list => { cachedNotifications = list; }).catch(() => {});
+        }
+    });
+
+    searchResults?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.search-result');
+        if (!btn) return;
+        const { kind, id } = btn.dataset;
+
+        searchResults.hidden = true;
+        if (searchInput) searchInput.value = '';
+
+        if (kind === 'ticket') {
+            showSection('tickets');
+            openTicket(id);
+        } else if (kind === 'section') {
+            showSection(id);
+        } else if (kind === 'notification') {
+            const notification = cachedNotifications.find(n => String(n.id) === String(id));
+            if (notification) activateNotification(notification);
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (searchResults && !searchResults.hidden && !e.target.closest('.portal-search')) {
+            searchResults.hidden = true;
+            searchInput?.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    // "/" يفتح البحث من أي مكان (اختصار شائع في بوابات الدعم)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '')) {
+            e.preventDefault();
+            searchInput?.focus();
+            return;
+        }
+        if (e.key === 'Escape') {
+            if (searchResults && !searchResults.hidden) {
+                searchResults.hidden = true;
+                searchInput?.blur();
+                return;
+            }
+            document.querySelector('.modal.active')?.classList.remove('active');
+        }
+    });
+
+    /* =========================================================
+       معالجات عامة (تفويض من مستوى الصفحة)
+    ========================================================= */
+
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action="open-create-ticket"]')) {
+            e.preventDefault();
+            openCreateTicketModal();
+            return;
+        }
+
+        if (e.target.closest('[data-action="reset-ticket-filters"]')) {
+            currentView = 'all';
+            ticketSearch = '';
+            const input = document.getElementById('ticketSearchInput');
+            if (input) input.value = '';
+            renderTickets();
+            return;
+        }
+
+        if (e.target.closest('[data-action="reset-notification-filter"]')) {
+            notificationFilter = 'all';
+            renderNotifications();
+            return;
+        }
+
+        const openTicketBtn = e.target.closest('[data-open-ticket]');
+        if (openTicketBtn) {
+            closeCreateTicketModal();
+            showSection('tickets');
+            openTicket(openTicketBtn.dataset.openTicket);
+            return;
+        }
+
+        const retry = e.target.closest('[data-retry]');
+        if (retry) {
+            const target = retry.dataset.retry;
+            loadSnapshot().then(() => {
+                if (target === 'overview') renderOverview();
+                else lazyLoadSection(target);
+            });
+            return;
+        }
+
+        if (e.target.closest('.close-modal')) {
+            e.target.closest('.modal')?.classList.remove('active');
+            return;
+        }
+
+        if (e.target.classList?.contains('modal')) {
+            e.target.classList.remove('active');
+            return;
+        }
+
+        const goto = e.target.closest('[data-goto]');
+        if (goto) {
+            e.preventDefault();
+            showSection(goto.dataset.goto);
         }
     });
 
@@ -1884,29 +2448,36 @@ function setText(id, value) {
         const btn = e.currentTarget;
         btn.disabled = true;
         try {
-            await Promise.all([renderOverview(), renderStats(), refreshNotificationBadge()]);
+            await loadSnapshot();
+            await Promise.all([renderOverview(), refreshNotificationBadge()]);
+            renderTickets();
             ui.showToast('تم تحديث البيانات', 'success', 2500);
         } finally {
             btn.disabled = false;
         }
     });
 
-    await Promise.all([
-        renderOverview(),
-        renderStats(),
-        renderTickets()
-    ]);
+    await loadSnapshot();
+    await renderOverview();
+    renderTickets();
+    setSidebarBadge('tickets', countByView(cachedTickets, user.id).awaiting);
 
-    // القسم الابتدائي من عنوان الصفحة (يسمح بروابط مباشرة مثل #tickets)
-    showSection(window.location.hash.slice(1) || 'overview', { updateHash: false });
+    /* ================= الوجهة الابتدائية =================
+       ?ticket=<uuid> بييجي من روابط الإشعارات المخزّنة في قاعدة البيانات
+       (customer-dashboard.html?ticket=…). كان بيتجاهَل تمامًا قبل كده. */
+    const params = new URLSearchParams(window.location.search);
+    const deepTicket = params.get('ticket');
+    if (deepTicket && !isGuest) {
+        showSection('tickets', { updateHash: false });
+        openTicket(deepTicket);
+    } else {
+        showSection(window.location.hash.slice(1) || 'overview', { updateHash: false });
+    }
 
     /* ================= التحديث اللحظي ================= */
 
     if (!isGuest) {
-        subscribeToTickets(() => {
-            Promise.all([renderStats(), renderTickets()]);
-            if (currentSection === 'overview') renderOverview();
-        });
+        subscribeToTickets(() => { refreshTickets(); });
 
         subscribeToNotifications(user.id, () => {
             refreshNotificationBadge();
@@ -1914,9 +2485,8 @@ function setText(id, value) {
         });
     }
 
-    /* ================= تسجيل الخروج ================= */
-    // تسجيل الخروج مربوط بالكامل في customer-sidebar.js على العنصرين
-    // #customerSignOut و #sidebarSignOut (وهما الزرّان الوحيدان الموجودان
-    // فعلياً في الواجهة). مفيش معالج مكرر هنا.
+    /* ================= تسجيل الخروج =================
+       مربوط بالكامل في customer-sidebar.js على #customerSignOut و
+       #sidebarSignOut (الزرّان الوحيدان الموجودان فعلياً). */
 
 })();
