@@ -192,7 +192,13 @@ export async function markAllAsRead() {
 /**
  * إنشاء إشعار جديد
  */
-export async function createNotification({ userId, title, message, type = 'info', link = null }) {
+/**
+ * @param {object} params
+ * @param {string} [params.category] مصدر الإشعار (tickets/subscription/…).
+ *   اختياري: لو اتساب فاضي، trigger في قاعدة البيانات بيشتقه من العنوان
+ *   والرابط (migrations/011)، فكل المنادين القدام يفضلوا شغالين من غير تعديل.
+ */
+export async function createNotification({ userId, title, message, type = 'info', link = null, category = null }) {
     if (!userId) return;
 
     const { error } = await supabase
@@ -202,7 +208,8 @@ export async function createNotification({ userId, title, message, type = 'info'
             title,
             message,
             type,
-            link
+            link,
+            ...(category ? { category } : {})
         });
 
     if (error) {

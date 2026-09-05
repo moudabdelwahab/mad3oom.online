@@ -14,8 +14,43 @@
  */
 
 const DASHBOARD_PATH = '/customer-dashboard.html';
+const COLLAPSE_KEY = 'mad3oom-sidebar-collapsed';
 
 let tabChangeHandler = null;
+
+/** هل المستخدم مفضّل القائمة مطوية؟ (يُقرأ قبل الرسم لتفادي أي قفزة) */
+export function isSidebarCollapsed() {
+    try {
+        return localStorage.getItem(COLLAPSE_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * يطبّق حالة الطي على <body> ويحفظها.
+ * الحالة على body مش على القائمة نفسها، لأن المحتوى الرئيسي والمساعد العائم
+ * محتاجين يعرفوا العرض الحالي كمان (كلهم بيقروا --sidebar-current).
+ */
+export function setSidebarCollapsed(collapsed, { persist = true } = {}) {
+    // العلَم على <html> مش على <body>: السكربت اللي بيشتغل قبل أول رسم في
+    // <head> ما بيقدرش يوصل لـbody، فلو الحالة اتحطت على body هتحصل قفزة
+    // في عرض المحتوى بعد التحميل. الاتنين بيكتبوا نفس السمة هنا.
+    document.documentElement.setAttribute('data-sidebar', collapsed ? 'collapsed' : 'expanded');
+
+    const btn = document.getElementById('sidebarCollapseBtn');
+    if (btn) {
+        btn.setAttribute('aria-expanded', String(!collapsed));
+        btn.setAttribute('aria-label', collapsed ? 'توسيع القائمة الجانبية' : 'طي القائمة الجانبية');
+        btn.title = collapsed ? 'توسيع القائمة' : 'طي القائمة';
+    }
+
+    if (persist) {
+        try {
+            localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
+        } catch { /* التخزين غير متاح (وضع خاص) — الحالة تفضل للجلسة الحالية */ }
+    }
+}
 
 export function initCustomerSidebar(optionsOrCallback) {
     const options = typeof optionsOrCallback === 'function'
@@ -27,11 +62,16 @@ export function initCustomerSidebar(optionsOrCallback) {
     const sidebarContainer = document.getElementById('sidebar-container');
     if (!sidebarContainer) return;
 
+    // تُطبَّق قبل جلب الـHTML: كده المحتوى الرئيسي بيترسم بعرضه الصحيح من أول
+    // لحظة بدل ما يتحرك بعد وصول القائمة.
+    setSidebarCollapsed(isSidebarCollapsed(), { persist: false });
+
     fetch('/assets/components/customer-sidebar.html')
         .then(response => response.text())
         .then(html => {
             sidebarContainer.innerHTML = html;
             setupSidebarLogic(tabChangeHandler);
+            setupCollapseToggle();
             syncNavHeight();
             if (typeof options.onReady === 'function') options.onReady();
         })
@@ -68,6 +108,19 @@ export function setActiveSidebarTab(tabName) {
     });
 }
 
+function setupCollapseToggle() {
+    // الحالة المحفوظة تُطبَّق فورًا (بدون حفظ) قبل أي تفاعل
+    setSidebarCollapsed(isSidebarCollapsed(), { persist: false });
+
+    const btn = document.getElementById('sidebarCollapseBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setSidebarCollapsed(document.documentElement.getAttribute('data-sidebar') !== 'collapsed');
+    });
+}
+
 /**
  * ارتفاع شريط التنقّل العلوي يتغيّر حسب حجم الشاشة، والقائمة الثابتة على
  * الشاشات الكبيرة لازم تبدأ من تحته بالظبط. بنقيسه فعلياً بدل ما نفترضه.
@@ -99,25 +152,23 @@ function setupSidebarLogic(onTabChange) {
     const customerAvatarBtn = document.getElementById('customerAvatarBtn');
     const customerAvatarMenu = document.getElementById('customerAvatarMenu');
     const notificationBtn = document.getElementById('notificationBtn');
-    const notificationMenu = document.getElementById('notificationMenu');
     const sidebarItems = document.querySelectorAll('.sidebar-item[data-tab]');
 
     if (!menuToggle || !sidebar) return;
 
     // ── الإشعارات ────────────────────────────────────────────────────────────
-    if (notificationBtn && notificationMenu) {
+    // الجرس بينقل لصفحة الإشعارات الكاملة (مش قائمة منسدلة): مصدر واحد لعرض
+    // الإشعارات بدل نسختين من نفس المنطق، وكل إشعار فيه إجراء حقيقي.
+    if (notificationBtn) {
         notificationBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             e.stopPropagation();
-            const isVisible = notificationMenu.style.display === 'block';
-            notificationMenu.style.display = isVisible ? 'none' : 'block';
-            if (!isVisible) loadNotifications();
-        });
-
-        document.getElementById('markAllReadBtn')?.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const { markAllAsRead } = await import('/notifications-service.js');
-            await markAllAsRead();
-            loadNotifications();
+            if (onTabChange) {
+                setActiveSidebarTab('notifications');
+                onTabChange('notifications');
+            } else {
+                window.location.href = `${DASHBOARD_PATH}#notifications`;
+            }
         });
     }
 
@@ -131,50 +182,19 @@ function setupSidebarLogic(onTabChange) {
             .replace(/'/g, '&#39;');
     }
 
-    async function loadNotifications() {
-        const list = document.getElementById('notificationList');
+    /** يحدّث شارة العدد على الجرس وفي القائمة الجانبية. */
+    async function refreshUnreadBadge() {
         const badge = document.getElementById('notificationBadge');
-        if (!list) return;
-
         try {
-            const { fetchNotifications, markAsRead } = await import('/notifications-service.js');
-            const notifications = await fetchNotifications();
-
-            const unreadCount = notifications.filter(n => !n.is_read).length;
+            const { fetchUnreadCount } = await import('/notifications-service.js');
+            const unread = await fetchUnreadCount();
             if (badge) {
-                badge.textContent = unreadCount;
-                badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+                badge.textContent = unread > 99 ? '99+' : String(unread);
+                badge.style.display = unread > 0 ? 'flex' : 'none';
             }
-            setSidebarBadge('notifications', unreadCount);
-
-            if (notifications.length === 0) {
-                list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--color-text-secondary); font-size: 0.85rem;">لا توجد إشعارات</div>';
-                return;
-            }
-
-            list.innerHTML = notifications.map(n => `
-                <div class="notification-item ${n.is_read ? '' : 'unread'}" data-id="${escapeHtml(n.id)}" style="padding: 12px 16px; border-bottom: 1px solid var(--color-border); cursor: pointer; transition: background 0.2s; ${n.is_read ? '' : 'background: rgba(0, 119, 204, 0.05);'}">
-                    <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; color: var(--color-text);">${escapeHtml(n.title)}</div>
-                    <div style="font-size: 0.8rem; color: var(--color-text-secondary); line-height: 1.4;">${escapeHtml(n.message)}</div>
-                    <div style="font-size: 0.7rem; color: #999; margin-top: 6px;">${escapeHtml(new Date(n.created_at).toLocaleString('ar-EG'))}</div>
-                </div>
-            `).join('');
-
-            list.querySelectorAll('.notification-item').forEach(item => {
-                item.addEventListener('click', async () => {
-                    const id = item.dataset.id;
-                    await markAsRead(id);
-                    const notification = notifications.find(n => String(n.id) === String(id));
-                    if (notification && notification.link) {
-                        window.location.href = notification.link;
-                    } else {
-                        loadNotifications();
-                    }
-                });
-            });
+            setSidebarBadge('notifications', unread);
         } catch (err) {
-            console.error('[CustomerSidebar] Error loading notifications:', err);
-            list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--color-danger); font-size: 0.85rem;">فشل تحميل الإشعارات</div>';
+            console.error('[CustomerSidebar] Error loading unread count:', err);
         }
     }
 
@@ -188,7 +208,8 @@ function setupSidebarLogic(onTabChange) {
 
             if (user && !notificationSubscription) {
                 notificationSubscription = subscribeToNotifications(user.id, (newNotification) => {
-                    loadNotifications();
+                    refreshUnreadBadge();
+                    document.dispatchEvent(new CustomEvent('customer:notification', { detail: newNotification }));
                     if ('Notification' in window && Notification.permission === 'granted') {
                         new Notification(newNotification.title, {
                             body: newNotification.message,
@@ -202,9 +223,11 @@ function setupSidebarLogic(onTabChange) {
         }
     }
 
-    loadNotifications();
+    refreshUnreadBadge();
     setupNotificationRealtime();
     checkWhatsAppPermission();
+    // إعادة حساب الشارة عند تغيّر حالة القراءة من صفحة الإشعارات
+    document.addEventListener('customer:notifications-read', refreshUnreadBadge);
 
     // ── فتح/غلق الدرج ────────────────────────────────────────────────────────
     const toggleSidebar = () => {
@@ -305,7 +328,6 @@ function setupSidebarLogic(onTabChange) {
         // معالج مسمّى حتى لا تتراكم النسخ عند إعادة تهيئة القائمة
         const closeAllMenus = () => {
             customerAvatarMenu.style.display = 'none';
-            if (notificationMenu) notificationMenu.style.display = 'none';
             if (languageMenu) languageMenu.style.display = 'none';
         };
         document.removeEventListener('click', document._sidebarCloseMenus);

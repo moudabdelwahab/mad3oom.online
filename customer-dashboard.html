@@ -3,20 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة العميل - منصة مدعوم</title>
+    <title>بوابة الدعم - منصة مدعوم</title>
     <link rel="icon" type="image/png" href="/assets/images/logo.png">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/assets/js/admin/admin-style.css">
     <link rel="stylesheet" href="/assets/css/customer-dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script>
+        /* يعمل قبل أول رسم: يضبط الثيم وحالة طي القائمة معاً، فلا يحدث وميض
+           ولا قفزة في عرض المحتوى عند التحميل. */
         (function() {
+            var root = document.documentElement;
             try {
-                var theme = localStorage.getItem('theme-preference') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                document.documentElement.setAttribute('data-theme', theme);
-            } catch(e) {
-                document.documentElement.setAttribute('data-theme', 'light');
+                var theme = localStorage.getItem('theme-preference')
+                    || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                root.setAttribute('data-theme', theme);
+                if (localStorage.getItem('mad3oom-sidebar-collapsed') === '1') {
+                    root.setAttribute('data-sidebar', 'collapsed');
+                }
+            } catch (e) {
+                root.setAttribute('data-theme', 'dark');
             }
+            root.classList.add('no-transition');
+            window.addEventListener('DOMContentLoaded', function () {
+                requestAnimationFrame(function () { root.classList.remove('no-transition'); });
+            });
         })();
     </script>
     <script src="theme-manager.js" defer></script>
@@ -34,11 +45,22 @@
 
     <main class="admin-main" id="customerMain">
 
+        <!-- ======================= بحث شامل ======================= -->
+        <div class="portal-search" role="search">
+            <svg class="portal-search-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <label class="visually-hidden" for="globalSearchInput">ابحث في بوابة الدعم</label>
+            <input type="search" id="globalSearchInput" class="portal-search-input" autocomplete="off"
+                   placeholder="ابحث في التذاكر والإشعارات والأقسام…" aria-expanded="false"
+                   aria-controls="globalSearchResults" role="combobox">
+            <kbd class="portal-search-kbd">/</kbd>
+            <div id="globalSearchResults" class="portal-search-results" role="listbox" hidden></div>
+        </div>
+
         <!-- ============================ نظرة عامة ============================ -->
         <section id="overviewTabContent" class="tab-content active" aria-labelledby="overviewHeading">
             <div class="page-topbar">
                 <div>
-                    <span class="eyebrow"><span class="dot"></span>لوحة العميل</span>
+                    <span class="eyebrow"><span class="dot"></span>بوابة الدعم</span>
                     <h1 id="overviewHeading">مرحباً بك</h1>
                     <p class="page-subtitle" id="overviewWelcomeMessage">جاري تحميل بيانات حسابك…</p>
                 </div>
@@ -54,7 +76,18 @@
                 </div>
             </div>
 
-            <!-- مؤشرات سريعة -->
+            <!-- حالة الحساب: الحكم أولاً، ثم الإجراءات -->
+            <section class="health-card" id="accountHealthCard" aria-live="polite">
+                <div class="health-head">
+                    <span class="health-icon" id="healthIcon" aria-hidden="true"></span>
+                    <div>
+                        <h2 class="health-headline" id="healthHeadline">جاري فحص حالة حسابك…</h2>
+                        <p class="health-subline" id="healthSubline"></p>
+                    </div>
+                </div>
+                <div class="alert-list" id="healthItems"></div>
+            </section>
+
             <div class="kpi-grid" id="overviewKpis" aria-live="polite">
                 <div class="kpi"><div class="skeleton skeleton-line" style="width:55%"></div><div class="skeleton skeleton-line" style="height:1.8rem;width:35%"></div></div>
                 <div class="kpi"><div class="skeleton skeleton-line" style="width:55%"></div><div class="skeleton skeleton-line" style="height:1.8rem;width:35%"></div></div>
@@ -62,22 +95,7 @@
                 <div class="kpi"><div class="skeleton skeleton-line" style="width:55%"></div><div class="skeleton skeleton-line" style="height:1.8rem;width:35%"></div></div>
             </div>
 
-            <!-- ما يحتاج انتباهك -->
-            <section class="panel" id="overviewAlertsPanel" hidden>
-                <div class="panel-header">
-                    <div>
-                        <h2 class="panel-title">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                            يحتاج انتباهك
-                        </h2>
-                        <p class="panel-subtitle">أشياء مهمة في حسابك الآن — كل بند هنا مبني على حالة حسابك الفعلية</p>
-                    </div>
-                </div>
-                <div class="alert-list" id="overviewAlertsList"></div>
-            </section>
-
-            <div class="split-grid" style="margin-bottom: var(--sp-5);">
-                <!-- حالة الحساب والخدمات -->
+            <div class="split-grid">
                 <section class="panel" aria-labelledby="accountStatusHeading">
                     <div class="panel-header">
                         <div>
@@ -87,6 +105,7 @@
                             </h2>
                             <p class="panel-subtitle">ما يفعّله فريق الإدارة لحسابك يظهر هنا مباشرة</p>
                         </div>
+                        <button type="button" class="panel-link" data-goto="usage">التفاصيل الكاملة</button>
                     </div>
                     <div id="accountStatusBody">
                         <div class="skeleton skeleton-line"></div>
@@ -95,7 +114,76 @@
                     </div>
                 </section>
 
-                <!-- توفّر الدعم -->
+                <section class="panel" aria-labelledby="recentActivityHeading">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title" id="recentActivityHeading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                                آخر النشاط على حسابك
+                            </h2>
+                            <p class="panel-subtitle">سجل عملياتك — يساعدك على اكتشاف أي نشاط غير متوقع</p>
+                        </div>
+                        <button type="button" class="panel-link" data-goto="activity">كل النشاط</button>
+                    </div>
+                    <div id="recentActivityBody">
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line"></div>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <!-- ============================ مركز الدعم ============================ -->
+        <section id="supportTabContent" class="tab-content" aria-labelledby="supportHeading">
+            <div class="page-topbar">
+                <div>
+                    <span class="eyebrow"><span class="dot"></span>Support Center</span>
+                    <h1 id="supportHeading">مركز الدعم</h1>
+                    <p class="page-subtitle">نقطة البداية لأي مشكلة — من هنا تفتح تذكرة، تتابع تذاكرك، وتعرف حالة الخدمات.</p>
+                </div>
+            </div>
+
+            <div class="action-grid" id="supportActions">
+                <button type="button" class="action-card" data-action="open-create-ticket">
+                    <span class="action-icon action-icon--accent">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </span>
+                    <span class="action-body">
+                        <span class="action-title">فتح تذكرة جديدة</span>
+                        <span class="action-text">اشرح مشكلتك وسيتواصل معك فريق الدعم</span>
+                    </span>
+                </button>
+                <button type="button" class="action-card" data-goto="tickets">
+                    <span class="action-icon action-icon--info">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </span>
+                    <span class="action-body">
+                        <span class="action-title">تذاكري</span>
+                        <span class="action-text" id="supportTicketsHint">تابع حالة تذاكرك وردود الفريق</span>
+                    </span>
+                </button>
+                <a class="action-card" href="/chat-customer.html">
+                    <span class="action-icon action-icon--success">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </span>
+                    <span class="action-body">
+                        <span class="action-title">محادثة فورية</span>
+                        <span class="action-text">تحدّث مع الدعم مباشرة خلال ساعات العمل</span>
+                    </span>
+                </a>
+                <a class="action-card" href="/knowledge-base.html" id="supportHelpCard">
+                    <span class="action-icon action-icon--purple">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    </span>
+                    <span class="action-body">
+                        <span class="action-title">قاعدة المعرفة</span>
+                        <span class="action-text">شروحات وإجابات للأسئلة الشائعة</span>
+                    </span>
+                </a>
+            </div>
+
+            <div class="split-grid">
                 <section class="panel" aria-labelledby="supportPanelHeading">
                     <div class="panel-header">
                         <div>
@@ -111,10 +199,7 @@
                         <div class="skeleton skeleton-line"></div>
                     </div>
                 </section>
-            </div>
 
-            <div class="split-grid">
-                <!-- حالة النظام -->
                 <section class="panel" aria-labelledby="systemStatusHeading">
                     <div class="panel-header">
                         <div>
@@ -122,28 +207,10 @@
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                                 حالة النظام
                             </h2>
-                            <p class="panel-subtitle">قبل ما تفتح تذكرة، اطّلع على حالة الخدمات الحالية</p>
+                            <p class="panel-subtitle">قبل فتح تذكرة، اطّلع على حالة الخدمات الحالية</p>
                         </div>
                     </div>
                     <div id="systemStatusBody">
-                        <div class="skeleton skeleton-line"></div>
-                        <div class="skeleton skeleton-line"></div>
-                    </div>
-                </section>
-
-                <!-- آخر النشاط -->
-                <section class="panel" aria-labelledby="recentActivityHeading">
-                    <div class="panel-header">
-                        <div>
-                            <h2 class="panel-title" id="recentActivityHeading">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
-                                آخر النشاط على حسابك
-                            </h2>
-                            <p class="panel-subtitle">سجل عملياتك — يساعدك تكتشف أي نشاط غير متوقع</p>
-                        </div>
-                    </div>
-                    <div id="recentActivityBody">
-                        <div class="skeleton skeleton-line"></div>
                         <div class="skeleton skeleton-line"></div>
                         <div class="skeleton skeleton-line"></div>
                     </div>
@@ -167,37 +234,20 @@
                 </div>
             </div>
 
-            <div class="kpi-grid" id="ticketKpis">
-                <button type="button" class="kpi is-clickable kpi--accent" data-ticket-filter="all">
-                    <span class="kpi-label">إجمالي التذاكر</span>
-                    <span class="kpi-value" id="userTotalTickets">—</span>
-                </button>
-                <button type="button" class="kpi is-clickable kpi--info" data-ticket-filter="open">
-                    <span class="kpi-label">المفتوحة</span>
-                    <span class="kpi-value" id="userOpenTickets">—</span>
-                </button>
-                <button type="button" class="kpi is-clickable kpi--warning" data-ticket-filter="in-progress">
-                    <span class="kpi-label">قيد المعالجة</span>
-                    <span class="kpi-value" id="userInProgressTickets">—</span>
-                </button>
-                <button type="button" class="kpi is-clickable kpi--success" data-ticket-filter="resolved">
-                    <span class="kpi-label">تم حلها</span>
-                    <span class="kpi-value" id="userResolvedTickets">—</span>
-                </button>
-            </div>
+            <!-- مجموعات العرض: الرقم على كل تبويب هو عدد ما سيظهر تحته -->
+            <div class="view-tabs" id="ticketViewTabs" role="tablist" aria-label="مجموعات التذاكر"></div>
 
-            <div class="tickets-layout">
+            <div class="tickets-layout" id="ticketsLayout">
                 <div class="tickets-list-panel">
                     <div class="tickets-list-head">
                         <div class="toolbar">
                             <label class="visually-hidden" for="ticketSearchInput">بحث في التذاكر</label>
                             <input type="search" id="ticketSearchInput" class="search-input" placeholder="ابحث بالعنوان أو رقم التذكرة…">
-                            <label class="visually-hidden" for="ticketFilterStatus">تصفية حسب الحالة</label>
-                            <select id="ticketFilterStatus" class="filter-select">
-                                <option value="all">كل الحالات</option>
-                                <option value="open">مفتوحة</option>
-                                <option value="in-progress">قيد المعالجة</option>
-                                <option value="resolved">تم الحل</option>
+                            <label class="visually-hidden" for="ticketSortSelect">ترتيب</label>
+                            <select id="ticketSortSelect" class="filter-select">
+                                <option value="updated">الأحدث تحديثاً</option>
+                                <option value="created">الأحدث إنشاءً</option>
+                                <option value="oldest">الأقدم</option>
                             </select>
                         </div>
                         <p class="panel-subtitle" id="ticketsResultCount" aria-live="polite"></p>
@@ -205,7 +255,11 @@
                     <div id="userTicketsList" class="tickets-list-scroll" role="list"></div>
                 </div>
 
-                <div class="ticket-details-panel">
+                <div class="ticket-details-panel" id="ticketDetailsPanel">
+                    <button type="button" class="ticket-back-btn" id="ticketBackBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                        رجوع للقائمة
+                    </button>
                     <div id="ticketDetailsContent" class="ticket-details-scroll"></div>
                 </div>
             </div>
@@ -217,25 +271,67 @@
                 <div>
                     <span class="eyebrow"><span class="dot"></span>Notifications</span>
                     <h1 id="notificationsHeading">الإشعارات</h1>
-                    <p class="page-subtitle">كل التحديثات على تذاكرك واشتراكاتك وحسابك في مكان واحد</p>
+                    <p class="page-subtitle">كل تحديث هنا قابل للضغط — يفتح التذكرة أو القسم المرتبط به مباشرة.</p>
                 </div>
                 <div class="page-topbar-actions">
                     <button type="button" class="btn btn-secondary" id="markAllNotificationsBtn">تحديد الكل كمقروء</button>
                 </div>
             </div>
 
+            <div class="filter-chips" id="notificationFilters" role="group" aria-label="تصفية الإشعارات"></div>
+
             <section class="panel">
-                <div class="panel-header">
-                    <div class="toolbar">
-                        <label class="visually-hidden" for="notificationFilter">تصفية الإشعارات</label>
-                        <select id="notificationFilter" class="filter-select">
-                            <option value="all">كل الإشعارات</option>
-                            <option value="unread">غير المقروءة فقط</option>
-                        </select>
-                    </div>
-                </div>
                 <div id="notificationsList"></div>
             </section>
+        </section>
+
+        <!-- ==================== الاستهلاك والاشتراك ==================== -->
+        <section id="usageTabContent" class="tab-content" aria-labelledby="usageHeading">
+            <div class="page-topbar">
+                <div>
+                    <span class="eyebrow"><span class="dot"></span>Usage &amp; Subscription</span>
+                    <h1 id="usageHeading">الاستهلاك والاشتراك</h1>
+                    <p class="page-subtitle">أنت فين حالياً في كل خدمة، وإيه اللي محتاج تعمله.</p>
+                </div>
+                <div class="page-topbar-actions">
+                    <a class="btn btn-secondary" href="/customer-subscriptions.html">إدارة الاشتراكات</a>
+                </div>
+            </div>
+            <div id="usageBody">
+                <div class="skeleton skeleton-card" style="margin-bottom:1rem;"></div>
+                <div class="skeleton skeleton-card"></div>
+            </div>
+        </section>
+
+        <!-- ==================== نشاط الحساب ==================== -->
+        <section id="activityTabContent" class="tab-content" aria-labelledby="activityHeading">
+            <div class="page-topbar">
+                <div>
+                    <span class="eyebrow"><span class="dot"></span>Account Activity</span>
+                    <h1 id="activityHeading">نشاط الحساب</h1>
+                    <p class="page-subtitle">الأحداث المهمة التي حدثت في حسابك، بترتيب زمني.</p>
+                </div>
+            </div>
+            <section class="panel">
+                <div id="activityBody"></div>
+            </section>
+        </section>
+
+        <!-- ==================== الأمان ==================== -->
+        <section id="securityTabContent" class="tab-content" aria-labelledby="securityHeading">
+            <div class="page-topbar">
+                <div>
+                    <span class="eyebrow"><span class="dot"></span>Security</span>
+                    <h1 id="securityHeading">الأمان</h1>
+                    <p class="page-subtitle">حالة حماية حسابك وآخر عمليات الدخول إليه.</p>
+                </div>
+                <div class="page-topbar-actions">
+                    <a class="btn btn-secondary" href="/customer-security-settings.html">إعدادات الأمان الكاملة</a>
+                </div>
+            </div>
+            <div id="securityBody">
+                <div class="skeleton skeleton-card"></div>
+            </div>
         </section>
 
         <!-- ============================ المكافآت ============================ -->
@@ -256,7 +352,7 @@
             <div class="kpi-grid">
                 <div class="kpi">
                     <span class="kpi-label">إجمالي النقاط</span>
-                    <span class="kpi-value" id="rewardsTotalPoints" style="color:#fbbf24;">0</span>
+                    <span class="kpi-value" id="rewardsTotalPoints">0</span>
                 </div>
                 <div class="kpi kpi--success">
                     <span class="kpi-label">النقاط المتاحة</span>
@@ -311,7 +407,7 @@
                             </div>
                         </div>
                         <div class="form-actions" style="align-items:center; justify-content:space-between;">
-                            <p class="field-hint" style="margin:0;">النقاط المتوقعة: <strong id="estimatedReportPoints" style="color:var(--color-accent-2);">10 نقاط</strong></p>
+                            <p class="field-hint" style="margin:0;">النقاط المتوقعة: <strong id="estimatedReportPoints" style="color:var(--on-accent);">10 نقاط</strong></p>
                             <button type="submit" class="btn btn-primary">إرسال البلاغ</button>
                         </div>
                     </form>
@@ -415,20 +511,6 @@
                     </form>
                 </section>
             </div>
-
-            <section class="panel">
-                <div class="panel-header">
-                    <div>
-                        <h2 class="panel-title">الأمان والوصول</h2>
-                        <p class="panel-subtitle">إعدادات الحماية المفعّلة على حسابك</p>
-                    </div>
-                    <a class="panel-link" href="/customer-security-settings.html">إعدادات الأمان الكاملة</a>
-                </div>
-                <div id="profileSecuritySummary">
-                    <div class="skeleton skeleton-line"></div>
-                    <div class="skeleton skeleton-line"></div>
-                </div>
-            </section>
         </section>
     </main>
 
@@ -444,6 +526,8 @@
             </div>
 
             <div id="createTicketBlockedNotice" class="alert-list u-hidden" style="margin-bottom: var(--sp-4);"></div>
+            <!-- اقتراحات استباقية قبل الإرسال (أعطال معلنة / تذكرة مشابهة قائمة) -->
+            <div id="createTicketSelfHelp" class="alert-list u-hidden" style="margin-bottom: var(--sp-4);"></div>
 
             <form id="userCreateTicketForm" novalidate>
                 <div class="form-grid">
